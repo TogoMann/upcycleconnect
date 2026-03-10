@@ -1,0 +1,17 @@
+services:
+  mariadb:
+    image: postgres:18.3-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: upcycleconnect
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/seeds:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
