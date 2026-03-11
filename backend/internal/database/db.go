@@ -1,6 +1,7 @@
 package db
 
 import (
+	"backend/internal/config"
 	"context"
 	"fmt"
 
@@ -11,7 +12,16 @@ var Conn *pgx.Conn
 var Ctx = context.Background()
 
 func NewDB() *pgx.Conn {
-	conn, err := pgx.Connect(Ctx, "postgres://admin:root@localhost:5432/upcycleconnect")
+	cfg := config.Load()
+	cred := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s",
+		cfg.DBUser,
+		cfg.DBPass,
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBName,
+	)
+	conn, err := pgx.Connect(Ctx, cred)
 
 	if err != nil {
 		panic(err.Error())

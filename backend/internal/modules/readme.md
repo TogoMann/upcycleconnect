@@ -12,8 +12,8 @@ Exemples :
 
 ## Structure type d’un module
 
-- `handler.go` : Handlers HTTP (controllers)
-- `service.go` : Logique métier
+- `handler.go` : Handlers HTTP (controllers) (Convertit les données <-> json)
+- `service.go` : Logique métier (ex: Vérifie les valeurs)
 - `repository.go` : Accès base de données
 - `model.go` : Structures de données
 - `routes.go` : Déclaration des routes du module

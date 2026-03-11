@@ -1,4 +1,4 @@
-package models
+package users
 
 type UserRole string
 
