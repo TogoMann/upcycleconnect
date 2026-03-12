@@ -1,17 +1,41 @@
 services:
-  mariadb:
+  postgres:
     image: postgres:18.3-alpine
-    container_name: postgres
+    container_name: uc-postgres
     restart: always
     environment:
-      POSTGRES_DB: upcycleconnect
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: root
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/seeds:/docker-entrypoint-initdb.d:ro
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
+    networks:
+      - uc-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: uc-api-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_USER="${DB_USER}"
+      - DB_PASSWORD="${DB_PASSWORD}"
+      - DB_NAME="${DB_NAME}"
+      - DB_HOST="${DB_HOST}"
+      - DB_PORT="${DB_PORT}"
+    depends_on:
+      - postgres
+    networks:
+      - uc-network
 
 volumes:
   postgres_data:
+
+networks:
+  uc-network:
