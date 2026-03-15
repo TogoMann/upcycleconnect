@@ -17,14 +17,12 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Add("school", "esgi")
 
 	res, _ := json.Marshal("en vie.")
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func NewRouter(db *pgx.Conn) *http.ServeMux {
-
 	r := http.NewServeMux()
 
 	r.HandleFunc("GET /", healthCheck)
