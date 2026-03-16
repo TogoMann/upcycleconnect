@@ -24,7 +24,7 @@ func (r *Repository) GetAll() ([]User, error) {
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[User])
 
 	if err != nil {
-		return nil, fmt.Errorf("package tables/repo GetAllUsers: %v", err.Error())
+		return nil, fmt.Errorf("package users/repo GetAllUsers: %v", err.Error())
 	}
 
 	return users, nil
@@ -33,13 +33,13 @@ func (r *Repository) GetAll() ([]User, error) {
 func (r *Repository) GetById(id int64) (*User, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role FROM users WHERE id = $1", id)
 	if err != nil {
-		return nil, fmt.Errorf("package tables/repo GetUserById query: %w", err)
+		return nil, fmt.Errorf("package users/repo GetUserById query: %w", err)
 	}
 
 	user, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
 
 	if err != nil {
-		return nil, fmt.Errorf("package tables/repo GetUserById: %v", err.Error())
+		return nil, fmt.Errorf("package users/repo GetUserById: %v", err.Error())
 	}
 	return &user, nil
 }

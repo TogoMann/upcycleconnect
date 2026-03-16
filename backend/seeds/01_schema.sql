@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS event (
     id BIGSERIAL PRIMARY KEY,
     approved BOOLEAN NOT NULL,
+    approved_by BIGINT REFERENCES users(id),
+    approved_at TIMESTAMP,
     price DECIMAL(6,2) NOT NULL,
     date TIMESTAMP NOT NULL,
     created_by BIGINT NOT NULL REFERENCES users(id),
@@ -52,7 +54,7 @@ CREATE TABLE IF NOT EXISTS event_participation (
 
 CREATE TABLE IF NOT EXISTS thread (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id),
+    created_by BIGINT NOT NULL REFERENCES users(id),
     title VARCHAR(64) NOT NULL,
     content VARCHAR(255) NOT NULL,
     upvotes INTEGER NOT NULL,
@@ -64,8 +66,10 @@ CREATE TABLE IF NOT EXISTS thread (
 CREATE TABLE IF NOT EXISTS post (
     id BIGSERIAL PRIMARY KEY,
     thread_id BIGINT NOT NULL REFERENCES thread(id),
-    user_id BIGINT NOT NULL REFERENCES users(id),
+    created_by BIGINT NOT NULL REFERENCES users(id),
     content VARCHAR(255) NOT NULL,
+    upvotes INTEGER NOT NULL DEFAULT 0,
+    downvotes INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL,
     edited_at TIMESTAMP
 );
@@ -82,8 +86,8 @@ CREATE TABLE IF NOT EXISTS news (
 
 CREATE TABLE IF NOT EXISTS comments (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id),
     news_id BIGINT NOT NULL REFERENCES news(id),
+    created_by BIGINT NOT NULL REFERENCES users(id),
     content VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     upvotes INTEGER NOT NULL,
@@ -94,7 +98,7 @@ CREATE TABLE IF NOT EXISTS entry (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT NOT NULL REFERENCES users(id),
     created_at TIMESTAMP,
-    date DATE,
+    schedule DATE,
     start TIME,
     ending TIME
 );
@@ -111,6 +115,7 @@ CREATE TABLE IF NOT EXISTS entry_participation (
 CREATE TABLE IF NOT EXISTS course (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL,
     approved BOOLEAN NOT NULL,
     approved_by BIGINT REFERENCES users(id) DEFAULT NULL,
     approved_at TIMESTAMP,
