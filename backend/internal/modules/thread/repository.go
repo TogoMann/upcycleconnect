@@ -44,10 +44,10 @@ func (r *Repository) GetById(id int64) (*Thread, error) {
 	return &thread, nil
 }
 
-func (r *Repository) Create(threadDto ThreadDto) (int64, error) {
+func (r *Repository) Create(threadDto Thread) (int64, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
-		"INSERT INTO users (created_by, title, content, created_at) VALUES ($1, $2, $3, $4)",
+		"INSERT INTO thread (created_by, title, content, created_at) VALUES ($1, $2, $3, $4)",
 		threadDto.CreatedBy, threadDto.Title, threadDto.Content, threadDto.CreatedAt)
 
 	if err != nil {
