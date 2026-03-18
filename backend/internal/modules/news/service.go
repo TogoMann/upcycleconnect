@@ -26,7 +26,7 @@ func (s *Service) GetById(id int64) (*News, error) {
 }
 
 func (s *Service) Create(newsDto News) (int64, error) {
-	if strings.TrimSpace(newsDto.Content) == "" {
+	if strings.TrimSpace(newsDto.Content) == "" || strings.TrimSpace(newsDto.Title) == "" {
 		return 0, fmt.Errorf("news/service Invalid string(s): Missing values.")
 	}
 
