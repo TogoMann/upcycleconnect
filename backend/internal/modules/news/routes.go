@@ -12,11 +12,10 @@ func RegisterRoutes(r *http.ServeMux, db *pgx.Conn) {
 	service := NewService(repo)
 	handler := NewHandler(service)
 
-	r.HandleFunc("GET /post", handler.GetAll)
-	r.HandleFunc("GET /post/{id}", handler.GetById)
+	r.HandleFunc("GET /news", handler.GetAll)
+	r.HandleFunc("GET /news/{id}", handler.GetById)
 
-	r.HandleFunc("POST /post/", handler.Create)
-	// TODO: UPDATE post
+	r.HandleFunc("POST /news/", handler.Create)
 
-	r.HandleFunc("DELETE /psot/{id}", handler.DeleteById)
+	r.HandleFunc("DELETE /news/{id}", handler.DeleteById)
 }
