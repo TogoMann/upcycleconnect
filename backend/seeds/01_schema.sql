@@ -31,8 +31,9 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(64) NOT NULL,
     email VARCHAR(64) NOT NULL,
     password_hash CHAR(60) NOT NULL,
+    role USER_ROLE NOT NULL,
     score INTEGER NOT NULL DEFAULT 0,
-    role USER_ROLE NOT NULL
+    created_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS event (

@@ -16,7 +16,7 @@ func NewRepository(db *pgx.Conn) *Repository {
 }
 
 func (r *Repository) GetAll() ([]User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role FROM users")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role, score, created_at FROM users")
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetAllusers query: %w", err)
 	}
@@ -31,7 +31,7 @@ func (r *Repository) GetAll() ([]User, error) {
 }
 
 func (r *Repository) GetById(id int64) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role FROM users WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role, score, created_at FROM users WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetUserById query: %w", err)
 	}
