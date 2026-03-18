@@ -18,13 +18,13 @@ func NewRepository(db *pgx.Conn) *Repository {
 func (r *Repository) GetAll() ([]Post, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, thread_id, created_by, content, upvotes, downvotes, created_at, edited_at FROM post")
 	if err != nil {
-		return nil, fmt.Errorf("package thread/repo GetAllusers query: %w", err)
+		return nil, fmt.Errorf("package post/repo GetAll query: %w", err)
 	}
 
 	posts, err := pgx.CollectRows(rows, pgx.RowToStructByName[Post])
 
 	if err != nil {
-		return nil, fmt.Errorf("package post/repo GetAllUsers: %v", err.Error())
+		return nil, fmt.Errorf("package post/repo GetAll: %v", err.Error())
 	}
 
 	return posts, nil
@@ -33,13 +33,13 @@ func (r *Repository) GetAll() ([]Post, error) {
 func (r *Repository) GetById(id int64) (*Post, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, thread_id, created_by, content, upvotes, downvotes, created_at, edited_at FROM post WHERE id = $1", id)
 	if err != nil {
-		return nil, fmt.Errorf("package post/repo GetUserById query: %w", err)
+		return nil, fmt.Errorf("package post/repo GetById query: %w", err)
 	}
 
 	post, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Post])
 
 	if err != nil {
-		return nil, fmt.Errorf("package post/repo GetUserById: %v", err.Error())
+		return nil, fmt.Errorf("package post/repo GetById: %v", err.Error())
 	}
 	return &post, nil
 }

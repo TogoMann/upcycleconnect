@@ -1,12 +1,12 @@
 package entry
 
-import "time"
+import "github.com/jackc/pgx/v5/pgtype"
 
 type Entry struct {
-	Id        int64     `db:"id" json:"id"`
-	CreatedBy int64     `db:"created_by" json:"created_by"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	Schedule  time.Time `db:"schedule" json:"schedule"`
-	Start     time.Time `db:"start" json:"start"`
-	Ending    time.Time `db:"ending" json:"ending"`
+	Id        int64            `db:"id" json:"id"`
+	CreatedBy int64            `db:"created_by" json:"created_by"`
+	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
+	Schedule  pgtype.Timestamp `db:"schedule" json:"schedule"`
+	Start     pgtype.Timestamp `db:"start" json:"start"`
+	Ending    pgtype.Timestamp `db:"ending" json:"ending"`
 }

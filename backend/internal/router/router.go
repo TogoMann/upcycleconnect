@@ -2,6 +2,8 @@ package router
 
 import (
 	db "backend/internal/database"
+	"backend/internal/modules/post"
+	"backend/internal/modules/thread"
 	"backend/internal/modules/users"
 	"encoding/json"
 	"fmt"
@@ -29,6 +31,8 @@ func NewRouter(db *pgx.Conn) *http.ServeMux {
 
 	// modules
 	users.RegisterRoutes(r, db)
+	thread.RegisterRoutes(r, db)
+	post.RegisterRoutes(r, db)
 
 	return r
 }
