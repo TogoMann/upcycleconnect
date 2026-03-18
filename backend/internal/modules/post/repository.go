@@ -47,9 +47,8 @@ func (r *Repository) GetById(id int64) (*Post, error) {
 func (r *Repository) Create(postDto Post) (int64, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
-		"INSERT INTO post (thread_id, created_by, content, created_at) VALUES ($1, $2, $3, $4)",
-		postDto.CreatedBy, postDto.CreatedBy, postDto.Content, postDto.CreatedAt)
-	// TODO: Remove created_at and fill with postgres macro
+		"INSERT INTO post (thread_id, created_by, content) VALUES ($1, $2, $3, $4)",
+		postDto.CreatedBy, postDto.CreatedBy, postDto.Content)
 
 	if err != nil {
 		return 0, err

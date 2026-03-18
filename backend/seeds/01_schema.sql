@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash CHAR(60) NOT NULL,
     role USER_ROLE NOT NULL,
     score INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS event (
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS event (
     price DECIMAL(6,2) NOT NULL,
     date TIMESTAMP NOT NULL,
     created_by BIGINT NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS event_participation (
@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS thread (
     created_by BIGINT NOT NULL REFERENCES users(id),
     title VARCHAR(64) NOT NULL,
     content VARCHAR(255) NOT NULL,
-    upvotes INTEGER NOT NULL,
-    downvotes INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL,
+    upvotes INTEGER NOT NULL DEFAULT 0,
+    downvotes INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_post_at TIMESTAMP
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS post (
     content VARCHAR(255) NOT NULL,
     upvotes INTEGER NOT NULL DEFAULT 0,
     downvotes INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     edited_at TIMESTAMP
 );
 
@@ -80,9 +80,9 @@ CREATE TABLE IF NOT EXISTS news (
     created_by BIGINT NOT NULL REFERENCES users(id),
     title VARCHAR(64) NOT NULL,
     content VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    upvotes INTEGER NOT NULL,
-    downvotes INTEGER NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    upvotes INTEGER NOT NULL DEFAULT 0,
+    downvotes INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS comments (
@@ -90,15 +90,15 @@ CREATE TABLE IF NOT EXISTS comments (
     news_id BIGINT NOT NULL REFERENCES news(id),
     created_by BIGINT NOT NULL REFERENCES users(id),
     content VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    upvotes INTEGER NOT NULL,
-    downvotes INTEGER NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    upvotes INTEGER NOT NULL DEFAULT 0,
+    downvotes INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS entry (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     schedule DATE,
     start TIME,
     ending TIME
@@ -109,14 +109,14 @@ CREATE TABLE IF NOT EXISTS entry_participation (
     user_id BIGINT REFERENCES users(id),
     PRIMARY KEY (entry_id, user_id),
 
-    status ENTRY_STATUS NOT NULL,
-    joined_at TIMESTAMP
+    status ENTRY_STATUS NOT NULL DEFAULT 'pending',
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS course (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     approved BOOLEAN NOT NULL,
     approved_by BIGINT REFERENCES users(id) DEFAULT NULL,
     approved_at TIMESTAMP,
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS course_order (
     course_id BIGINT NOT NULL REFERENCES course(id),
     buyer_id BIGINT NOT NULL REFERENCES users(id),
     price DECIMAL(6,2),
-    booked_at TIMESTAMP
+    booked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS contract (
@@ -136,18 +136,18 @@ CREATE TABLE IF NOT EXISTS contract (
     name VARCHAR(255) NOT NULL,
     created_by BIGINT NOT NULL REFERENCES users(id),
     content TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     until DATE
 );
 
 CREATE TABLE IF NOT EXISTS listing (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     approved BOOLEAN NOT NULL,
     approved_by BIGINT NOT NULL REFERENCES users(id),
     approved_at TIMESTAMP,
-    status LISTING_STATUS NOT NULL,
+    status LISTING_STATUS NOT NULL DEFAULT 'active',
     price DECIMAL(6, 2) NOT NULL
 );
 
@@ -156,6 +156,6 @@ CREATE TABLE IF NOT EXISTS listing_order (
     listing_id BIGINT NOT NULL REFERENCES listing(id),
     user_id BIGINT NOT NULL REFERENCES users(id),
     price DECIMAL(6, 2) NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    status LISTING_ORDER_STATUS NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status LISTING_ORDER_STATUS NOT NULL DEFAULT 'pending'
 );
