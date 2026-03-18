@@ -13,8 +13,3 @@ Ce dossier contient la gestion de la configuration de l’application backend.
 - `config.go` : Structure de configuration globale
 - Chargement depuis `.env` ou variables système
 - Validation des valeurs critiques (ex: secrets, URLs, ports)
-
-## Objectif
-
-Éviter les valeurs “en dur” dans le code et faciliter le déploiement
-en environnement de développement, test et production.
