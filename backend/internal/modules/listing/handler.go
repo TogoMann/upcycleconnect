@@ -1,4 +1,4 @@
-package news
+package listing
 
 import (
 	"encoding/json"
@@ -18,13 +18,13 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	posts, err := h.service.GetAll()
+	listings, err := h.service.GetAll()
 
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	res, _ := json.Marshal(posts)
+	res, _ := json.Marshal(listings)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
@@ -39,30 +39,30 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.service.GetById(id)
+	listing, err := h.service.GetById(id)
 
-	res, _ := json.Marshal(post)
+	res, _ := json.Marshal(listing)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var newsDto News
+	var listingDto Listing
 
-	err := json.NewDecoder(r.Body).Decode(&newsDto)
+	err := json.NewDecoder(r.Body).Decode(&listingDto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	id, err := h.service.Create(newsDto)
+	id, err := h.service.Create(listingDto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	newsDto.Id = id
-	res, _ := json.Marshal(newsDto)
+	listingDto.Id = id
+	res, _ := json.Marshal(listingDto)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
@@ -84,5 +84,5 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"message": "news deleted successfully"}`)
+	fmt.Fprintf(w, `{"message": "listing deleted successfully"}`)
 }

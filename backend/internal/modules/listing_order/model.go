@@ -19,5 +19,5 @@ type ListingOrder struct {
 	UserId    int64              `db:"user_id" json:"user_id"`
 	Price     pgtype.Numeric     `db:"price" json:"price"`
 	CreatedAt pgtype.Timestamp   `db:"created_at" json:"created_at"`
-	status    ListingOrderStatus `db:"status" json:"status"`
+	Status    ListingOrderStatus `db:"status" json:"status"`
 }

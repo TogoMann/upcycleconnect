@@ -144,8 +144,8 @@ CREATE TABLE IF NOT EXISTS listing (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT NOT NULL REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    approved BOOLEAN NOT NULL,
-    approved_by BIGINT NOT NULL REFERENCES users(id),
+    approved BOOLEAN NOT NULL DEFAULT FALSE,
+    approved_by BIGINT REFERENCES users(id),
     approved_at TIMESTAMP,
     status LISTING_STATUS NOT NULL DEFAULT 'active',
     price DECIMAL(6, 2) NOT NULL
