@@ -18,5 +18,5 @@ func RegisterRoutes(r *http.ServeMux, db *pgx.Conn) {
 	r.HandleFunc("POST /post/", handler.Create)
 	// TODO: UPDATE post
 
-	r.HandleFunc("DELETE /psot/{id}", handler.DeleteById)
+	r.HandleFunc("DELETE /post/{id}", handler.DeleteById)
 }
