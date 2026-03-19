@@ -47,14 +47,25 @@ func (r *Repository) GetById(id int64) (*Post, error) {
 func (r *Repository) Create(postDto Post) (int64, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
-		"INSERT INTO post (thread_id, created_by, content) VALUES ($1, $2, $3, $4)",
-		postDto.CreatedBy, postDto.CreatedBy, postDto.Content)
+		"INSERT INTO post (thread_id, created_by, content) VALUES ($1, $2, $3)",
+		postDto.ThreadId, postDto.CreatedBy, postDto.Content)
 
 	if err != nil {
 		return 0, err
 	}
 
 	return tag.RowsAffected(), err
+}
+
+func (r *Repository) UpdateContent(id int64, content string) error {
+	tag, err := r.db.Exec(db.Ctx, "UPDATE post SET content = $1, edited_at = CURRENT_TIMESTAMP WHERE id = $2", content, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package post/repo: Id invalide: %d", id)
+	}
+	return nil
 }
 
 func (r *Repository) Delete(id int64) error {

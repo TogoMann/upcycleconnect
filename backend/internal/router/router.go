@@ -2,6 +2,17 @@ package router
 
 import (
 	db "backend/internal/database"
+	"backend/internal/modules/comments"
+	"backend/internal/modules/contract"
+	"backend/internal/modules/course"
+	courseorder "backend/internal/modules/course_order"
+	"backend/internal/modules/entry"
+	entryparticipation "backend/internal/modules/entry_participation"
+	"backend/internal/modules/event"
+	eventparticipation "backend/internal/modules/event_participation"
+	"backend/internal/modules/listing"
+	listingorder "backend/internal/modules/listing_order"
+	"backend/internal/modules/news"
 	"backend/internal/modules/post"
 	"backend/internal/modules/thread"
 	"backend/internal/modules/users"
@@ -33,6 +44,17 @@ func NewRouter(db *pgx.Conn) *http.ServeMux {
 	users.RegisterRoutes(r, db)
 	thread.RegisterRoutes(r, db)
 	post.RegisterRoutes(r, db)
+	news.RegisterRoutes(r, db)
+	listingorder.RegisterRoutes(r, db)
+	listing.RegisterRoutes(r, db)
+	eventparticipation.RegisterRoutes(r, db)
+	event.RegisterRoutes(r, db)
+	entryparticipation.RegisterRoutes(r, db)
+	entry.RegisterRoutes(r, db)
+	courseorder.RegisterRoutes(r, db)
+	course.RegisterRoutes(r, db)
+	contract.RegisterRoutes(r, db)
+	comments.RegisterRoutes(r, db)
 
 	return r
 }

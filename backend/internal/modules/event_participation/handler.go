@@ -1,4 +1,4 @@
-package post
+package eventparticipation
 
 import (
 	"encoding/json"
@@ -18,90 +18,58 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	posts, err := h.service.GetAll()
-
+	items, err := h.service.GetAll()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	res, _ := json.Marshal(posts)
+	res, _ := json.Marshal(items)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
-
 	id, err := strconv.ParseInt(idStr, 10, 64)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	post, err := h.service.GetById(id)
+	item, err := h.service.GetById(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-	res, _ := json.Marshal(post)
+	res, _ := json.Marshal(item)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var postDto Post
-
-	err := json.NewDecoder(r.Body).Decode(&postDto)
+	var dto Event
+	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	id, err := h.service.Create(postDto)
+	_, err = h.service.Create(dto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	postDto.Id = id
-	res, _ := json.Marshal(postDto)
+	res, _ := json.Marshal(dto)
 	fmt.Fprintf(w, "%s", string(res))
-}
-
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	idStr := r.PathValue("id")
-
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var req struct {
-		Content string `json:"content"`
-	}
-
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	err = h.service.UpdateContent(id, req.Content)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"message": "post updated successfully"}`)
 }
 
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
-
 	id, err := strconv.ParseInt(idStr, 10, 64)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -114,5 +82,5 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"message": "post deleted successfully"}`)
+	fmt.Fprintf(w, `{"message": "event_participation deleted successfully"}`)
 }

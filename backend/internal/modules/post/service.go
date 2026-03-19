@@ -33,6 +33,26 @@ func (s *Service) Create(postDto Post) (int64, error) {
 	return s.repo.Create(postDto)
 }
 
+func (s *Service) UpdateContent(id int64, content string) error {
+	if id < 1 {
+		return fmt.Errorf("post/service Post ID invalide: %d", id)
+	}
+	if strings.TrimSpace(content) == "" {
+		return fmt.Errorf("post/service Invalid string(s): Missing values.")
+	}
+
+	exists, err := s.repo.ExistsById(id)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return fmt.Errorf("post/service Post not found")
+	}
+
+	return s.repo.UpdateContent(id, content)
+}
+
 func (s *Service) Delete(id int64) error {
 	if id < 1 {
 		return fmt.Errorf("post/service Thread ID invalide: %d", id)
