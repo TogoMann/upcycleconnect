@@ -1,6 +1,7 @@
 package comments
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
 	"github.com/jackc/pgx/v5"
@@ -28,7 +29,7 @@ func (r *Repository) GetAll() ([]Comments, error) {
 	return items, nil
 }
 
-func (r *Repository) GetById(id int64) (*Comments, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*Comments, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, news_id, created_by, content, created_at, upvotes, downvotes FROM comments WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package comments/repo GetById query: %w", err)
@@ -41,20 +42,20 @@ func (r *Repository) GetById(id int64) (*Comments, error) {
 	return &item, nil
 }
 
-func (r *Repository) Create(dto Comments) (int64, error) {
+func (r *Repository) Create(dto Comments) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO comments (news_id, created_by, content) VALUES ($1, $2, $3)",
 		dto.NewsId, dto.CreatedBy, dto.Content)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE FROM comments WHERE id = $1", id)
 	if err != nil {
 		return err
@@ -65,7 +66,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM comments WHERE id = $1", id).Scan(&idFound)
 	if err != nil {

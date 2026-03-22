@@ -1,6 +1,7 @@
 package eventparticipation
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
 
@@ -29,7 +30,7 @@ func (r *Repository) GetAll() ([]Event, error) {
 	return items, nil
 }
 
-func (r *Repository) GetById(id int64) (*Event, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*Event, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT event_id, user_id FROM event_participation WHERE event_id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package event_participation/repo GetById query: %w", err)
@@ -42,20 +43,20 @@ func (r *Repository) GetById(id int64) (*Event, error) {
 	return &item, nil
 }
 
-func (r *Repository) Create(dto Event) (int64, error) {
+func (r *Repository) Create(dto Event) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO event_participation (event_id, user_id) VALUES ($1, $2)",
 		dto.EventId, dto.UserId)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE FROM event_participation WHERE event_id = $1", id)
 	if err != nil {
 		return err
@@ -66,7 +67,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM event_participation WHERE event_id = $1", id).Scan(&idFound)
 	if err != nil {

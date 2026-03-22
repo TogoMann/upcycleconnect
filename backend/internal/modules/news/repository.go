@@ -1,6 +1,7 @@
 package news
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
 
@@ -30,7 +31,7 @@ func (r *Repository) GetAll() ([]News, error) {
 	return news, nil
 }
 
-func (r *Repository) GetById(id int64) (*News, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*News, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, created_at, upvotes, downvotes FROM news WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package news/repo GetById query: %w", err)
@@ -44,20 +45,20 @@ func (r *Repository) GetById(id int64) (*News, error) {
 	return &news, nil
 }
 
-func (r *Repository) Create(newsDto News) (int64, error) {
+func (r *Repository) Create(newsDto News) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO news (created_by, title, content) VALUES ($1, $2, $3)",
 		newsDto.CreatedBy, newsDto.Title, newsDto.Content)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE news WHERE id = $1", id)
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM news WHERE id = $1", id).Scan(&idFound)

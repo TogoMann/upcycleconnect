@@ -1,6 +1,7 @@
 package event
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
 )
 
@@ -16,19 +17,19 @@ func (s *Service) GetAll() ([]Event, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetById(id int64) (*Event, error) {
-	if id < 1 {
+func (s *Service) GetById(id pgtype.Int8) (*Event, error) {
+	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("event/service ID invalide: %d", id)
 	}
 	return s.repo.GetById(id)
 }
 
-func (s *Service) Create(dto Event) (int64, error) {
+func (s *Service) Create(dto Event) (pgtype.Int8, error) {
 	return s.repo.Create(dto)
 }
 
-func (s *Service) Delete(id int64) error {
-	if id < 1 {
+func (s *Service) Delete(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("event/service ID invalide: %d", id)
 	}
 

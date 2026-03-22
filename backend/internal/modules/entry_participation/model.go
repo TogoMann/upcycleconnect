@@ -11,9 +11,9 @@ const (
 )
 
 type EntryParticipation struct {
-	Id       int64            `db:"id" json:"id"`
-	EntryId  int64            `db:"entry_id" json:"entry_id"`
-	UserId   int64            `db:"user_id" json:"user_id"`
+	Id       pgtype.Int8            `db:"id" json:"id"`
+	EntryId  pgtype.Int8            `db:"entry_id" json:"entry_id"`
+	UserId   pgtype.Int8            `db:"user_id" json:"user_id"`
 	Status   EntryStatus      `db:"status" json:"status"`
 	JoinedAt pgtype.Timestamp `db:"joined_at" json:"joined_at"`
 }

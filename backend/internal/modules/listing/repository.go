@@ -1,6 +1,7 @@
 package listing
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
 
@@ -30,7 +31,7 @@ func (r *Repository) GetAll() ([]Listing, error) {
 	return listings, nil
 }
 
-func (r *Repository) GetById(id int64) (*Listing, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, created_at, approved, approved_by, approved_at, status, price  FROM listing WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetById query: %w", err)
@@ -44,20 +45,20 @@ func (r *Repository) GetById(id int64) (*Listing, error) {
 	return &listing, nil
 }
 
-func (r *Repository) Create(listingDto Listing) (int64, error) {
+func (r *Repository) Create(listingDto Listing) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO listing (created_by, price) VALUES ($1, $2)",
 		listingDto.CreatedBy, listingDto.Price)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE listing WHERE id = $1", id)
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM listing WHERE id = $1", id).Scan(&idFound)

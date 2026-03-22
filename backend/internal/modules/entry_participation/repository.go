@@ -1,6 +1,7 @@
 package entryparticipation
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
 	"github.com/jackc/pgx/v5"
@@ -28,7 +29,7 @@ func (r *Repository) GetAll() ([]EntryParticipation, error) {
 	return items, nil
 }
 
-func (r *Repository) GetById(id int64) (*EntryParticipation, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*EntryParticipation, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT entry_id, user_id, status, joined_at FROM entry_participation WHERE entry_id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package entryparticipation/repo GetById query: %w", err)
@@ -41,20 +42,20 @@ func (r *Repository) GetById(id int64) (*EntryParticipation, error) {
 	return &item, nil
 }
 
-func (r *Repository) Create(dto EntryParticipation) (int64, error) {
+func (r *Repository) Create(dto EntryParticipation) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO entry_participation (entry_id, user_id, status) VALUES ($1, $2, $3)",
 		dto.EntryId, dto.UserId, dto.Status)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE FROM entry_participation WHERE entry_id = $1", id)
 	if err != nil {
 		return err
@@ -65,7 +66,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM entry_participation WHERE entry_id = $1", id).Scan(&idFound)
 	if err != nil {

@@ -12,12 +12,12 @@ const (
 )
 
 type User struct {
-	Id           int64            `db:"id" json:"id"`
+	Id           pgtype.Int8            `db:"id" json:"id"`
 	FirstName    string           `db:"first_name" json:"first_name"`
 	LastName     string           `db:"last_name" json:"last_name"`
 	Email        string           `db:"email" json:"email"`
 	PasswordHash string           `db:"password_hash" json:"password_hash"`
 	Role         UserRole         `db:"role" json:"role"`
-	Score        int64            `db:"score" json:"score"`
+	Score        pgtype.Int8            `db:"score" json:"score"`
 	CreatedAt    pgtype.Timestamp `db:"created_at" json:"created_at"`
 }

@@ -1,6 +1,8 @@
 package eventparticipation
 
+import "github.com/jackc/pgx/v5/pgtype"
+
 type Event struct {
-	EventId int64 `db:"event_id" json:"event_id"`
-	UserId  int64 `db:"user_id" json:"user_id"`
+	EventId pgtype.Int8 `db:"event_id" json:"event_id"`
+	UserId  pgtype.Int8 `db:"user_id" json:"user_id"`
 }

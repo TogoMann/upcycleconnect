@@ -1,6 +1,7 @@
 package thread
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
 
@@ -30,7 +31,7 @@ func (r *Repository) GetAll() ([]Thread, error) {
 	return threads, nil
 }
 
-func (r *Repository) GetById(id int64) (*Thread, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*Thread, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, upvotes, downvotes, created_at, last_post_at FROM thread WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package thread/repo GetById query: %w", err)
@@ -44,20 +45,20 @@ func (r *Repository) GetById(id int64) (*Thread, error) {
 	return &thread, nil
 }
 
-func (r *Repository) Create(threadDto Thread) (int64, error) {
+func (r *Repository) Create(threadDto Thread) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO thread (created_by, title, content) VALUES ($1, $2, $3, $4)",
 		threadDto.CreatedBy, threadDto.Title, threadDto.Content)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE thread WHERE id = $1", id)
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM thread WHERE id = $1", id).Scan(&idFound)

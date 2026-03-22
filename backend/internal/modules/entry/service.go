@@ -1,6 +1,7 @@
 package entry
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
 )
 
@@ -16,19 +17,19 @@ func (s *Service) GetAll() ([]Entry, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetById(id int64) (*Entry, error) {
-	if id < 1 {
+func (s *Service) GetById(id pgtype.Int8) (*Entry, error) {
+	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("entry/service ID invalide: %d", id)
 	}
 	return s.repo.GetById(id)
 }
 
-func (s *Service) Create(dto Entry) (int64, error) {
+func (s *Service) Create(dto Entry) (pgtype.Int8, error) {
 	return s.repo.Create(dto)
 }
 
-func (s *Service) Delete(id int64) error {
-	if id < 1 {
+func (s *Service) Delete(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("entry/service ID invalide: %d", id)
 	}
 

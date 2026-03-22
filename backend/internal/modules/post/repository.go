@@ -4,6 +4,8 @@ import (
 	db "backend/internal/database"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -30,7 +32,7 @@ func (r *Repository) GetAll() ([]Post, error) {
 	return posts, nil
 }
 
-func (r *Repository) GetById(id int64) (*Post, error) {
+func (r *Repository) GetById(id pgtype.Int8) (*Post, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, thread_id, created_by, content, upvotes, downvotes, created_at, edited_at FROM post WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package post/repo GetById query: %w", err)
@@ -44,20 +46,20 @@ func (r *Repository) GetById(id int64) (*Post, error) {
 	return &post, nil
 }
 
-func (r *Repository) Create(postDto Post) (int64, error) {
+func (r *Repository) Create(postDto Post) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
 		"INSERT INTO post (thread_id, created_by, content) VALUES ($1, $2, $3)",
 		postDto.ThreadId, postDto.CreatedBy, postDto.Content)
 
 	if err != nil {
-		return 0, err
+		return pgtype.Int8{}, err
 	}
 
-	return tag.RowsAffected(), err
+	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
 }
 
-func (r *Repository) UpdateContent(id int64, content string) error {
+func (r *Repository) UpdateContent(id pgtype.Int8, content string) error {
 	tag, err := r.db.Exec(db.Ctx, "UPDATE post SET content = $1, edited_at = CURRENT_TIMESTAMP WHERE id = $2", content, id)
 	if err != nil {
 		return err
@@ -68,7 +70,7 @@ func (r *Repository) UpdateContent(id int64, content string) error {
 	return nil
 }
 
-func (r *Repository) Delete(id int64) error {
+func (r *Repository) Delete(id pgtype.Int8) error {
 	tag, err := r.db.Exec(db.Ctx, "DELETE post WHERE id = $1", id)
 	if err != nil {
 		return err
@@ -79,7 +81,7 @@ func (r *Repository) Delete(id int64) error {
 	return nil
 }
 
-func (r *Repository) ExistsById(id int64) (bool, error) {
+func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM post WHERE id = $1", id).Scan(&idFound)

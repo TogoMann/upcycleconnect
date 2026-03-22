@@ -3,6 +3,8 @@ package post
 import (
 	"fmt"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -17,24 +19,24 @@ func (s *Service) GetAll() ([]Post, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetById(id int64) (*Post, error) {
-	if id < 1 {
+func (s *Service) GetById(id pgtype.Int8) (*Post, error) {
+	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("post/service Thread ID invalide: %d", id)
 	}
 
 	return s.repo.GetById(id)
 }
 
-func (s *Service) Create(postDto Post) (int64, error) {
+func (s *Service) Create(postDto Post) (pgtype.Int8, error) {
 	if strings.TrimSpace(postDto.Content) == "" {
-		return 0, fmt.Errorf("post/service Invalid string(s): Missing values.")
+		return pgtype.Int8{}, fmt.Errorf("post/service Invalid string(s): Missing values.")
 	}
 
 	return s.repo.Create(postDto)
 }
 
-func (s *Service) UpdateContent(id int64, content string) error {
-	if id < 1 {
+func (s *Service) UpdateContent(id pgtype.Int8, content string) error {
+	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("post/service Post ID invalide: %d", id)
 	}
 	if strings.TrimSpace(content) == "" {
@@ -53,8 +55,8 @@ func (s *Service) UpdateContent(id int64, content string) error {
 	return s.repo.UpdateContent(id, content)
 }
 
-func (s *Service) Delete(id int64) error {
-	if id < 1 {
+func (s *Service) Delete(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("post/service Thread ID invalide: %d", id)
 	}
 

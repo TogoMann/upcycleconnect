@@ -3,6 +3,8 @@ package news
 import (
 	"fmt"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -17,24 +19,24 @@ func (s *Service) GetAll() ([]News, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetById(id int64) (*News, error) {
-	if id < 1 {
+func (s *Service) GetById(id pgtype.Int8) (*News, error) {
+	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("news/service Thread ID invalide: %d", id)
 	}
 
 	return s.repo.GetById(id)
 }
 
-func (s *Service) Create(newsDto News) (int64, error) {
+func (s *Service) Create(newsDto News) (pgtype.Int8, error) {
 	if strings.TrimSpace(newsDto.Content) == "" || strings.TrimSpace(newsDto.Title) == "" {
-		return 0, fmt.Errorf("news/service Invalid string(s): Missing values.")
+		return pgtype.Int8{}, fmt.Errorf("news/service Invalid string(s): Missing values.")
 	}
 
 	return s.repo.Create(newsDto)
 }
 
-func (s *Service) Delete(id int64) error {
-	if id < 1 {
+func (s *Service) Delete(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("news/service Thread ID invalide: %d", id)
 	}
 
