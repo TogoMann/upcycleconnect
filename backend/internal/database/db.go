@@ -5,13 +5,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var Conn *pgx.Conn
+var Pool *pgxpool.Pool
 var Ctx = context.Background()
 
-func NewDB() *pgx.Conn {
+func NewDB() *pgxpool.Pool {
 	cfg := config.Load()
 	cred := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
@@ -21,7 +21,7 @@ func NewDB() *pgx.Conn {
 		cfg.DBPort,
 		cfg.DBName,
 	)
-	conn, err := pgx.Connect(Ctx, cred)
+	conn, err := pgxpool.New(Ctx, cred)
 
 	if err != nil {
 		panic(err.Error())

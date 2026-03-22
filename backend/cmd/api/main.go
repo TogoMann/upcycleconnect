@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	db.Conn = db.NewDB()
+	db.Pool = db.NewDB()
 
-	r := router.NewRouter(db.Conn)
+	r := router.NewRouter(db.Pool)
 	handlerWithCors := middlewares.CorsMiddleware(r)
 
 	fmt.Println("Listening at http://localhost:8081")

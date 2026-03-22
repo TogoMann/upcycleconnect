@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func healthCheck(w http.ResponseWriter, r *http.Request) {
-	err := db.Conn.Ping(db.Ctx)
+	err := db.Pool.Ping(db.Ctx)
 	if err != nil {
 		http.Error(w, " ping fail", http.StatusInternalServerError)
 		return
@@ -35,7 +35,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(res))
 }
 
-func NewRouter(db *pgx.Conn) *http.ServeMux {
+func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	r := http.NewServeMux()
 
 	r.HandleFunc("GET /", healthCheck)
