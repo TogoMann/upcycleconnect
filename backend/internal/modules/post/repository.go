@@ -47,6 +47,28 @@ func (r *Repository) GetById(id pgtype.Int8) (*Post, error) {
 	return &post, nil
 }
 
+func (r *Repository) GetThreadPosts(id pgtype.Int8) ([]ThreadPosts, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT
+			p.id, p.thread_id, p.created_by, p.content, p.upvotes, p.downvotes, p.created_at, p.edited_at,
+			t.title, t.content AS thread_content
+		FROM post AS p
+		INNER JOIN thread AS t
+		ON p.thread_id = t.id
+		WHERE t.id = $1`, id)
+
+	if err != nil {
+		return nil, fmt.Errorf("package post/repo GetThreadPosts query: %w", err)
+	}
+
+	posts, err := pgx.CollectRows(rows, pgx.RowToStructByName[ThreadPosts])
+
+	if err != nil {
+		return nil, fmt.Errorf("package post/repo GetThreadPosts: %v", err.Error())
+	}
+	return posts, nil
+}
+
 func (r *Repository) Create(postDto Post) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,

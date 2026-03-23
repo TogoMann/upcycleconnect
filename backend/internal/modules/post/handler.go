@@ -1,11 +1,12 @@
 package post
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -43,6 +44,23 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	post, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
 
 	res, _ := json.Marshal(post)
+	fmt.Fprintf(w, "%s", string(res))
+}
+
+func (h *Handler) GetThreadPosts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	idStr := r.PathValue("thread_id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	posts, err := h.service.GetThreadPosts(pgtype.Int8{Int64: idInt, Valid: true})
+
+	res, _ := json.Marshal(posts)
 	fmt.Fprintf(w, "%s", string(res))
 }
 

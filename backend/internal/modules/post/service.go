@@ -27,6 +27,14 @@ func (s *Service) GetById(id pgtype.Int8) (*Post, error) {
 	return s.repo.GetById(id)
 }
 
+func (s *Service) GetThreadPosts(id pgtype.Int8) ([]ThreadPosts, error) {
+	if !id.Valid || id.Int64 < 1 {
+		return nil, fmt.Errorf("post/service Thread ID invalide: %d", id)
+	}
+
+	return s.repo.GetThreadPosts(id)
+}
+
 func (s *Service) Create(postDto Post) (pgtype.Int8, error) {
 	if strings.TrimSpace(postDto.Content) == "" {
 		return pgtype.Int8{}, fmt.Errorf("post/service Invalid string(s): Missing values.")

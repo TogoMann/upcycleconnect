@@ -1,8 +1,9 @@
 package course
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -22,6 +23,13 @@ func (s *Service) GetById(id pgtype.Int8) (*Course, error) {
 		return nil, fmt.Errorf("course/service ID invalide: %d", id)
 	}
 	return s.repo.GetById(id)
+}
+
+func (s *Service) GetUserCourses(id pgtype.Int8) ([]UserCourse, error) {
+	if !id.Valid || id.Int64 < 1 {
+		return nil, fmt.Errorf("course/service User ID invalide: %d", id)
+	}
+	return s.repo.GetUserCourses(id)
 }
 
 func (s *Service) Create(dto Course) (pgtype.Int8, error) {

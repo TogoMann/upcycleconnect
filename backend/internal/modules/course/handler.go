@@ -1,11 +1,12 @@
 package course
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -44,6 +45,23 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, _ := json.Marshal(item)
+	fmt.Fprintf(w, "%s", string(res))
+}
+
+func (h *Handler) GetUserCourses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userIdStr := r.PathValue("user_id")
+	userIdInt, err := strconv.ParseInt(userIdStr, 10, 64)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	courses, err := h.service.GetUserCourses(pgtype.Int8{Int64: userIdInt, Valid: true})
+
+	res, _ := json.Marshal(courses)
 	fmt.Fprintf(w, "%s", string(res))
 }
 

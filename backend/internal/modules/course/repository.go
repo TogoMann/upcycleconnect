@@ -1,10 +1,11 @@
 package course
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -41,6 +42,26 @@ func (r *Repository) GetById(id pgtype.Int8) (*Course, error) {
 		return nil, fmt.Errorf("package course/repo GetById: %v", err.Error())
 	}
 	return &item, nil
+}
+
+func (r *Repository) GetUserCourses(id pgtype.Int8) ([]UserCourse, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT
+			c.id, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at, c.price,
+		    co.buyer_id, co.booked_at
+			FROM course AS c
+			INNER JOIN course_order AS co
+			ON co.course_id = c.id
+			WHERE buyer_id = $1`, id)
+	if err != nil {
+		return nil, fmt.Errorf("package course/repo GetUserCourses query: %w", err)
+	}
+
+	courses, err := pgx.CollectRows(rows, pgx.RowToStructByName[UserCourse])
+	if err != nil {
+		return nil, fmt.Errorf("package course/repo GetUserCourses: %v", err.Error())
+	}
+	return courses, nil
 }
 
 func (r *Repository) Create(dto Course) (pgtype.Int8, error) {
