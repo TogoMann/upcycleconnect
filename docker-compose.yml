@@ -13,13 +13,14 @@ services:
     ports:
       - "${DB_PORT}:5432"
     networks:
-      - uc-network
+      - uc-backend
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: uc-api-backend
+    image: jensentuang/upcycleconnect-api:latest
+    container_name: uc-api
     restart: always
     ports:
       - "8081:8081"
@@ -32,12 +33,14 @@ services:
     depends_on:
       - postgres
     networks:
-      - uc-network
+      - uc-api
+      - uc-backend
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: jensentuang/upcycleconnect-frontend:latest
     container_name: uc-frontend
     restart: always
     ports:
@@ -45,10 +48,10 @@ services:
     depends_on:
       - api
     networks:
-      - uc-network
-
+      - uc-api
 volumes:
   postgres_data:
 
 networks:
-  uc-network:
+  uc-backend:
+  uc-api:
