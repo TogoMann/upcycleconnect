@@ -47,10 +47,10 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                     <router-link to="/" class="nav-link">Accueil</router-link>
                     <router-link to="/prestations" class="nav-link active">Prestations</router-link>
                     <router-link to="/evenements" class="nav-link">Évènements</router-link>
-                    <router-link to="/forum" class="nav-link">Forum</router-link>
-                    <router-link to="/a-propos" class="nav-link">À propos</router-link>
+                    <router-link to="/annonces" class="nav-link">Annonces</router-link>
+                    <router-link to="/reparer" class="nav-link">Réparer</router-link>
                 </nav>
-                <router-link to="/auth/register" class="btn-nav">
+                <router-link to="/auth/login" class="btn-nav">
                     S'inscrire / Se connecter
                 </router-link>
             </div>

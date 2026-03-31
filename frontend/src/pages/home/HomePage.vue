@@ -257,7 +257,7 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 1060px;
     margin: 0 auto;
     padding: 0 32px;
 }
@@ -273,48 +273,53 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     z-index: 100;
 }
 .nav-container {
-    max-width: 1100px;
+    max-width: 1060px;
     margin: 0 auto;
     padding: 0 32px;
-    height: 64px;
+    height: 68px;
     display: flex;
     align-items: center;
     gap: 40px;
 }
 .nav-logo {
-    font-weight: 700;
-    font-size: 1.05rem;
+    font-weight: 800;
+    font-size: 1.1rem;
     color: var(--green-dark);
     flex-shrink: 0;
     text-decoration: none;
+    letter-spacing: -0.01em;
 }
 .nav-links {
     display: flex;
-    gap: 28px;
+    gap: 32px;
     flex: 1;
     justify-content: center;
 }
 .nav-link {
     font-size: 0.875rem;
-    color: var(--charcoal);
+    color: var(--green-mid);
     text-decoration: none;
     font-weight: 400;
     transition: color 0.2s;
 }
-.nav-link:hover,
+.nav-link:hover {
+    color: var(--green-dark);
+}
 .nav-link.active {
     color: var(--green-dark);
+    font-weight: 600;
 }
 .btn-nav {
     background: var(--green-dark);
     color: var(--white);
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 0.82rem;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
     transition: background 0.2s;
+    flex-shrink: 0;
 }
 .btn-nav:hover {
     background: var(--green-mid);
@@ -325,7 +330,7 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 56px 32px 0;
 }
 .hero-text-wrap {
-    max-width: 1100px;
+    max-width: 1060px;
     margin: 0 auto;
     text-align: center;
     padding-bottom: 32px;
@@ -339,7 +344,7 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     margin: 0;
 }
 .hero-image-wrap {
-    max-width: 1100px;
+    max-width: 1060px;
     margin: 0 auto;
     border-radius: 12px;
     overflow: hidden;
@@ -603,7 +608,7 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 40px 0;
 }
 .footer-container {
-    max-width: 1100px;
+    max-width: 1060px;
     margin: 0 auto;
     padding: 0 32px;
     display: flex;
