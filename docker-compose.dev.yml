@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15.3-alpine
+    container_name: uc-db-dev
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    networks:
+      - uc-backend
+
+  api:
+    build: 
+      context: ./backend
+    container_name: uc-api-dev
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    networks:
+      - uc-backend
+      - uc-api
+
+  frontend:
+    build: 
+      context: ./frontend
+    container_name: uc-front-dev
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    networks:
+      - uc-api
+
+networks:
+  uc-backend:
+  uc-api:
