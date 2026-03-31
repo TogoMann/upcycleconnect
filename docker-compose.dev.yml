@@ -6,6 +6,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      entrypoint: ["/app/main"]
     ports:
       - "5432:5432"
     networks:
@@ -23,6 +24,7 @@ services:
       - DB_PORT=${DB_PORT}
     volumes:
       - ./backend:/app
+      - /app/node_modules
     ports:
       - "8081:8081"
     depends_on:
