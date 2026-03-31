@@ -1,15 +1,53 @@
+<script setup lang="ts">
+defineProps<{
+    title: string
+    description: string
+    icon: string
+}>()
+</script>
+
 <template>
-  <div class="flex flex-col">
-    <div class="aspect-video w-full overflow-hidden mb-6 bg-gray-200">
-      <img :src="image" :alt="title" class="w-full h-full object-cover grayscale-[20%]" />
+    <div class="service-card">
+        <div class="icon-container">
+            <span v-if="icon === 'recycle'">♻️</span>
+            <span v-else-if="icon === 'tools'">🛠️</span>
+            <span v-else-if="icon === 'shop'">🛍️</span>
+            <span v-else>✨</span>
+        </div>
+        <h3>{{ title }}</h3>
+        <p>{{ description }}</p>
     </div>
-    <h3 class="font-bold text-lg mb-4 tracking-wider">{{ title }}</h3>
-    <p class="text-gray-600 text-sm leading-relaxed">
-      {{ description }}
-    </p>
-  </div>
 </template>
 
-<script setup>
-defineProps(['title', 'description', 'image'])
-</script>
+<style scoped>
+.service-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #d7ece1;
+    transition: transform 0.3s ease;
+}
+.service-card:hover {
+    transform: translateY(-5px);
+}
+.icon-container {
+    width: 50px;
+    height: 50px;
+    background: #f8f5ee;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.5rem;
+}
+h3 {
+    color: #086a35;
+    margin-bottom: 10px;
+}
+p {
+    color: #353535;
+    font-size: 0.9rem;
+}
+</style>
