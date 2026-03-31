@@ -1,6 +1,5 @@
 <template>
     <div class="admin-page">
-        <!-- En-tête de section -->
         <div class="section-header">
             <h2 class="section-title">Gestion des événements</h2>
             <button class="btn-refresh" @click="adminStore.fetchEvents()">
@@ -24,7 +23,6 @@
             </button>
         </div>
 
-        <!-- État : chargement -->
         <div v-if="adminStore.isLoading" class="state-loading">
             <svg
                 width="20"
@@ -40,7 +38,6 @@
             Chargement des événements...
         </div>
 
-        <!-- État : erreur -->
         <div v-if="adminStore.error" class="state-error">
             <svg
                 width="16"
@@ -57,7 +54,6 @@
             {{ adminStore.error }}
         </div>
 
-        <!-- Tableau -->
         <div class="table-wrap" v-if="!adminStore.isLoading">
             <table class="data-table">
                 <thead>
@@ -121,7 +117,6 @@
                         </td>
                     </tr>
 
-                    <!-- État vide -->
                     <tr v-if="adminStore.events.length === 0">
                         <td colspan="6" class="cell-empty">Aucun événement trouvé.</td>
                     </tr>
@@ -150,7 +145,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .admin-page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -164,7 +158,6 @@ onMounted(() => {
     color: var(--charcoal);
 }
 
-/* ── En-tête ── */
 .section-header {
     display: flex;
     align-items: center;
@@ -179,7 +172,6 @@ onMounted(() => {
     margin: 0;
 }
 
-/* Bouton Actualiser */
 .btn-refresh {
     display: flex;
     align-items: center;
@@ -204,7 +196,6 @@ onMounted(() => {
     border-color: var(--green-dark);
 }
 
-/* ── États ── */
 .state-loading {
     display: flex;
     align-items: center;
@@ -235,7 +226,6 @@ onMounted(() => {
     animation: spin 1s linear infinite;
 }
 
-/* ── Tableau ── */
 .table-wrap {
     background: var(--green-pale);
     border-radius: 14px;
@@ -309,7 +299,6 @@ onMounted(() => {
     font-size: 0.9rem;
 }
 
-/* ── Badges statut ── */
 .badge {
     display: inline-block;
     padding: 4px 12px;
@@ -327,7 +316,6 @@ onMounted(() => {
     color: #856404;
 }
 
-/* ── Bouton Supprimer ── */
 .btn-delete {
     display: inline-flex;
     align-items: center;

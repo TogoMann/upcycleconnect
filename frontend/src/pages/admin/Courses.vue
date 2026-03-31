@@ -1,6 +1,5 @@
 <template>
     <div class="admin-page">
-        <!-- En-tête de section -->
         <div class="section-header">
             <h2 class="section-title">Gestion des annonces</h2>
             <button class="btn-refresh" @click="adminStore.fetchCourses()">
@@ -24,7 +23,6 @@
             </button>
         </div>
 
-        <!-- État : chargement -->
         <div v-if="adminStore.isLoading" class="state-loading">
             <svg
                 width="20"
@@ -40,7 +38,6 @@
             Chargement des annonces...
         </div>
 
-        <!-- État : erreur -->
         <div v-if="adminStore.error" class="state-error">
             <svg
                 width="16"
@@ -57,7 +54,6 @@
             {{ adminStore.error }}
         </div>
 
-        <!-- Tableau -->
         <div class="table-wrap" v-if="!adminStore.isLoading">
             <table class="data-table">
                 <thead>
@@ -100,7 +96,6 @@
                         </td>
                     </tr>
 
-                    <!-- État vide -->
                     <tr v-if="adminStore.courses.length === 0">
                         <td colspan="5" class="cell-empty">Aucune annonce trouvée.</td>
                     </tr>
@@ -114,7 +109,6 @@
 import { onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
 
-// ── Logique existante conservée intacte ──
 const adminStore = useAdminStore()
 
 const deleteCourse = (id: number) => {
@@ -129,7 +123,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .admin-page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -143,7 +136,6 @@ onMounted(() => {
     color: var(--charcoal);
 }
 
-/* ── En-tête ── */
 .section-header {
     display: flex;
     align-items: center;
@@ -158,7 +150,6 @@ onMounted(() => {
     margin: 0;
 }
 
-/* Bouton Actualiser */
 .btn-refresh {
     display: flex;
     align-items: center;
@@ -182,7 +173,6 @@ onMounted(() => {
     border-color: var(--green-dark);
 }
 
-/* ── États ── */
 .state-loading {
     display: flex;
     align-items: center;
@@ -204,7 +194,6 @@ onMounted(() => {
     margin-bottom: 20px;
 }
 
-/* Animation spin pour le loader */
 @keyframes spin {
     to {
         transform: rotate(360deg);
@@ -214,7 +203,6 @@ onMounted(() => {
     animation: spin 1s linear infinite;
 }
 
-/* ── Tableau ── */
 .table-wrap {
     background: var(--green-pale);
     border-radius: 14px;
@@ -227,7 +215,6 @@ onMounted(() => {
     font-size: 0.875rem;
 }
 
-/* En-tête du tableau */
 .data-table thead tr {
     border-bottom: 1px solid rgba(53, 53, 53, 0.1);
 }
@@ -242,7 +229,6 @@ onMounted(() => {
     background: transparent;
 }
 
-/* Lignes */
 .table-row {
     border-bottom: 1px solid rgba(53, 53, 53, 0.07);
     transition: background 0.15s;
@@ -277,7 +263,6 @@ onMounted(() => {
     font-size: 0.9rem;
 }
 
-/* ── Badges statut ── */
 .badge {
     display: inline-block;
     padding: 4px 12px;
@@ -295,7 +280,6 @@ onMounted(() => {
     color: #856404;
 }
 
-/* ── Bouton Supprimer ── */
 .btn-delete {
     display: inline-flex;
     align-items: center;

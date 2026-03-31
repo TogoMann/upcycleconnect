@@ -34,7 +34,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 
 <template>
     <div class="page">
-        <!-- ════════ NAVBAR ════════ -->
         <header class="navbar">
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
@@ -51,14 +50,12 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </header>
 
-        <!-- ════════ HERO TITRE ════════ -->
         <section class="hero">
             <div class="container">
                 <h1 class="hero-title">Découvrez nos évènements.</h1>
             </div>
         </section>
 
-        <!-- ════════ LISTE DES ÉVÉNEMENTS ════════ -->
         <section class="events-section">
             <div class="container">
                 <div
@@ -67,18 +64,15 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                     class="event-block"
                     :class="{ 'event-block--last': index === events.length - 1 }"
                 >
-                    <!-- Grande image -->
                     <div class="event-img-wrap">
                         <img :src="event.img" :alt="event.alt" class="event-img" />
                     </div>
 
-                    <!-- Titre + description -->
                     <div class="event-info">
                         <h2 class="event-title">{{ event.title }}</h2>
                         <p class="event-desc">{{ event.description }}</p>
                     </div>
 
-                    <!-- Date + CTA (alignés à droite) -->
                     <div class="event-footer">
                         <span class="event-date">{{ event.date }}</span>
                         <button class="btn-reserver">Réserver</button>
@@ -87,7 +81,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </section>
 
-        <!-- ════════ FOOTER ════════ -->
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
@@ -111,7 +104,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 </template>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -136,7 +128,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 0 32px;
 }
 
-/* ══ NAVBAR ══ */
 .navbar {
     background: var(--cream);
     border-bottom: 1px solid rgba(53, 53, 53, 0.08);
@@ -197,7 +188,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* ══ HERO ══ */
 .hero {
     padding: 56px 0 36px;
     background: var(--cream);
@@ -211,7 +201,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     margin: 0;
 }
 
-/* ══ EVENTS ══ */
 .events-section {
     flex: 1;
     padding: 0 0 80px;
@@ -227,7 +216,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     margin-bottom: 0;
 }
 
-/* Grande image pleine largeur */
 .event-img-wrap {
     width: 100%;
     height: 380px;
@@ -246,7 +234,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     transform: scale(1.03);
 }
 
-/* Titre de l'événement */
 .event-title {
     font-size: clamp(1.4rem, 2.8vw, 1.9rem);
     font-weight: 700;
@@ -256,7 +243,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     letter-spacing: -0.01em;
 }
 
-/* Description */
 .event-info {
     max-width: 680px;
 }
@@ -268,7 +254,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     opacity: 0.8;
 }
 
-/* Ligne date + bouton alignée à droite */
 .event-footer {
     display: flex;
     align-items: center;
@@ -308,7 +293,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     transform: translateY(-1px);
 }
 
-/* ══ FOOTER ══ */
 .footer {
     background: var(--green-dark);
     color: var(--white);
@@ -357,7 +341,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     opacity: 0.5;
 }
 
-/* ══ RESPONSIVE ══ */
 @media (max-width: 860px) {
     .event-img-wrap {
         height: 260px;

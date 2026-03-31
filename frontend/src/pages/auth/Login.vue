@@ -10,7 +10,6 @@ const form = reactive({
 
 function handleLogin() {
     console.log('form:', form)
-    // TODO: call API
 }
 
 const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentialité']
@@ -18,7 +17,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 
 <template>
     <div class="page">
-        <!-- ════════ NAVBAR ════════ -->
         <header class="navbar">
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
@@ -35,15 +33,11 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </header>
 
-        <!-- ════════ CONTENU PRINCIPAL ════════ -->
         <main class="main">
             <div class="container">
-                <!-- Titre -->
                 <h1 class="page-title">Se connecter.</h1>
 
-                <!-- Formulaire -->
                 <form class="login-form" @submit.prevent="handleLogin">
-                    <!-- Email -->
                     <input
                         id="email"
                         v-model="form.email"
@@ -53,7 +47,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                         autocomplete="email"
                     />
 
-                    <!-- Mot de passe -->
                     <div class="password-field">
                         <input
                             id="password"
@@ -68,7 +61,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                         </router-link>
                     </div>
 
-                    <!-- Se rappeler de moi -->
                     <label class="remember-label">
                         <input
                             type="checkbox"
@@ -78,11 +70,9 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                         <span>Se rappeler de moi</span>
                     </label>
 
-                    <!-- Bouton connexion -->
                     <button type="submit" class="btn-submit">Se connecter</button>
                 </form>
 
-                <!-- Lien créer un compte -->
                 <div class="create-account">
                     <router-link to="/auth/register" class="create-link">
                         Créer un compte
@@ -91,7 +81,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </main>
 
-        <!-- ════════ FOOTER ════════ -->
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
@@ -115,7 +104,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 </template>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -140,7 +128,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 0 32px;
 }
 
-/* ══ NAVBAR ══ */
 .navbar {
     background: var(--cream);
     border-bottom: 1px solid rgba(53, 53, 53, 0.08);
@@ -197,7 +184,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* ══ MAIN ══ */
 .main {
     flex: 1;
     padding: 72px 0 80px;
@@ -205,7 +191,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     flex-direction: column;
 }
 
-/* Titre de page */
 .page-title {
     font-size: clamp(3rem, 7vw, 5.5rem);
     font-weight: 800;
@@ -216,7 +201,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     text-align: center;
 }
 
-/* ══ FORMULAIRE ══ */
 .login-form {
     max-width: 440px;
     margin: 0 auto;
@@ -225,7 +209,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     gap: 16px;
 }
 
-/* Inputs */
 .form-input {
     width: 100%;
     padding: 16px 18px;
@@ -249,7 +232,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.12);
 }
 
-/* Champ mot de passe avec lien "oublié" */
 .password-field {
     position: relative;
     display: flex;
@@ -271,7 +253,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     color: var(--green-dark);
 }
 
-/* Checkbox "Se rappeler de moi" */
 .remember-label {
     display: flex;
     align-items: center;
@@ -292,7 +273,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     flex-shrink: 0;
 }
 
-/* Bouton Se connecter */
 .btn-submit {
     width: 100%;
     padding: 16px;
@@ -318,7 +298,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     transform: translateY(0);
 }
 
-/* Lien Créer un compte */
 .create-account {
     max-width: 440px;
     margin: 48px auto 0;
@@ -335,7 +314,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     color: var(--green-dark);
 }
 
-/* ══ FOOTER ══ */
 .footer {
     background: var(--green-dark);
     color: var(--white);
@@ -384,7 +362,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     opacity: 0.5;
 }
 
-/* ══ RESPONSIVE ══ */
 @media (max-width: 700px) {
     .nav-links {
         display: none;

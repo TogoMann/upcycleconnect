@@ -39,7 +39,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 
 <template>
     <div class="page">
-        <!-- ════════ NAVBAR ════════ -->
         <header class="navbar">
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
@@ -56,7 +55,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </header>
 
-        <!-- ════════ HERO ════════ -->
         <section class="hero">
             <div class="container hero-inner">
                 <h1 class="hero-title">Découvrez nos prestations.</h1>
@@ -67,7 +65,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </section>
 
-        <!-- ════════ PRESTATIONS GRID ════════ -->
         <section class="prestations-section">
             <div class="container">
                 <div class="prestations-grid">
@@ -77,11 +74,9 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                         class="prestation-row"
                         :class="{ 'row-border': index < prestations.length - 2 }"
                     >
-                        <!-- Gauche : image -->
                         <div class="prestation-img-wrap">
                             <img :src="p.img" :alt="p.alt" class="prestation-img" />
                         </div>
-                        <!-- Droite : contenu -->
                         <div class="prestation-content">
                             <h2 class="prestation-label">{{ p.label }}</h2>
                             <p class="prestation-desc">{{ p.description }}</p>
@@ -92,7 +87,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </section>
 
-        <!-- ════════ FOOTER ════════ -->
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
@@ -116,7 +110,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 </template>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -141,7 +134,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 0 32px;
 }
 
-/* ══ NAVBAR ══ */
 .navbar {
     background: var(--cream);
     border-bottom: 1px solid rgba(53, 53, 53, 0.08);
@@ -202,7 +194,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* ══ HERO ══ */
 .hero {
     background: var(--cream);
     padding: 72px 0 52px;
@@ -233,20 +224,17 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     font-weight: 500;
 }
 
-/* ══ PRESTATIONS ══ */
 .prestations-section {
     padding: 8px 0 80px;
     flex: 1;
 }
 
-/* Grille 2 colonnes de rangées */
 .prestations-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
 }
 
-/* Chaque rangée = image + texte côte à côte */
 .prestation-row {
     display: flex;
     align-items: flex-start;
@@ -255,13 +243,11 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     border-bottom: 1px solid rgba(53, 53, 53, 0.1);
 }
 
-/* rangées du bas (3ème & 4ème) : pas de bordure en bas */
 .prestation-row:nth-child(3),
 .prestation-row:nth-child(4) {
     border-bottom: none;
 }
 
-/* Séparateur vertical entre les 2 colonnes */
 .prestation-row:nth-child(odd) {
     padding-right: 48px;
     border-right: 1px solid rgba(53, 53, 53, 0.1);
@@ -336,7 +322,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     transform: translateY(-1px);
 }
 
-/* ══ FOOTER ══ */
 .footer {
     background: var(--green-dark);
     color: var(--white);
@@ -384,7 +369,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     opacity: 0.5;
 }
 
-/* ══ RESPONSIVE ══ */
 @media (max-width: 860px) {
     .prestations-grid {
         grid-template-columns: 1fr;

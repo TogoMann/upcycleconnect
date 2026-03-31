@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-// ── Filtres
 const searchQuery = ref('')
 const filterType = ref('')
 const filterCategorie = ref('')
 const filterLocalisation = ref('')
 
-// ── Données des annonces
 const annonces = ref([
     {
         id: 1,
@@ -107,7 +105,6 @@ const annonces = ref([
     },
 ])
 
-// ── Annonces filtrées
 const annoncesFiltrees = computed(() => {
     return annonces.value.filter((a) => {
         const matchSearch =
@@ -127,7 +124,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 
 <template>
     <div class="page">
-        <!-- ════════ NAVBAR ════════ -->
         <header class="navbar">
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
@@ -144,17 +140,14 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </header>
 
-        <!-- ════════ HERO ════════ -->
         <section class="hero">
             <div class="container">
                 <h1 class="hero-title">A vendre ou à donner.</h1>
             </div>
         </section>
 
-        <!-- ════════ BARRE DE RECHERCHE ════════ -->
         <section class="search-section">
             <div class="container">
-                <!-- Search input -->
                 <div class="search-bar">
                     <input
                         v-model="searchQuery"
@@ -179,7 +172,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                     </button>
                 </div>
 
-                <!-- Filtres -->
                 <div class="filters-row">
                     <span class="filters-label">Type d'offre</span>
                     <div class="select-wrap">
@@ -218,19 +210,15 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </section>
 
-        <!-- ════════ GRILLE D'ANNONCES ════════ -->
         <section class="annonces-section">
             <div class="container">
                 <div class="annonces-grid">
                     <div v-for="annonce in annoncesFiltrees" :key="annonce.id" class="annonce-card">
-                        <!-- Image -->
                         <div class="annonce-img-wrap">
                             <img :src="annonce.img" :alt="annonce.titre" class="annonce-img" />
                         </div>
 
-                        <!-- Infos -->
                         <div class="annonce-body">
-                            <!-- Badge type -->
                             <div class="annonce-badges">
                                 <span
                                     class="badge"
@@ -246,7 +234,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                             <h3 class="annonce-titre">{{ annonce.titre }}</h3>
                             <p class="annonce-desc">{{ annonce.description }}</p>
 
-                            <!-- Localisation + date -->
                             <div class="annonce-meta">
                                 <svg
                                     class="pin-icon"
@@ -264,20 +251,17 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 
                             <p class="annonce-vendeur">{{ annonce.vendeur }}</p>
 
-                            <!-- CTA -->
                             <button class="btn-annonce">Voir l'annonce</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- État vide -->
                 <div v-if="annoncesFiltrees.length === 0" class="empty-state">
                     <p>Aucune annonce ne correspond à votre recherche.</p>
                 </div>
             </div>
         </section>
 
-        <!-- ════════ FOOTER ════════ -->
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
@@ -301,7 +285,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 </template>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -326,7 +309,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 0 32px;
 }
 
-/* ══ NAVBAR ══ */
 .navbar {
     background: var(--cream);
     border-bottom: 1px solid rgba(53, 53, 53, 0.08);
@@ -383,7 +365,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* ══ HERO ══ */
 .hero {
     padding: 64px 0 36px;
     text-align: center;
@@ -397,12 +378,10 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     margin: 0;
 }
 
-/* ══ RECHERCHE ══ */
 .search-section {
     padding: 0 0 32px;
 }
 
-/* Barre de recherche */
 .search-bar {
     display: flex;
     align-items: center;
@@ -450,7 +429,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* Ligne filtres */
 .filters-row {
     display: flex;
     align-items: center;
@@ -497,7 +475,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     line-height: 1;
 }
 
-/* ══ GRILLE ANNONCES ══ */
 .annonces-section {
     flex: 1;
     padding: 0 0 80px;
@@ -508,7 +485,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     gap: 20px;
 }
 
-/* Carte annonce */
 .annonce-card {
     background: var(--green-pale);
     border-radius: 10px;
@@ -524,7 +500,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     box-shadow: 0 10px 30px rgba(8, 106, 53, 0.12);
 }
 
-/* Image */
 .annonce-img-wrap {
     width: 100%;
     aspect-ratio: 4/3;
@@ -541,7 +516,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     transform: scale(1.05);
 }
 
-/* Corps */
 .annonce-body {
     padding: 12px 14px 16px;
     display: flex;
@@ -549,7 +523,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     flex: 1;
 }
 
-/* Badge Don / Vente */
 .annonce-badges {
     margin-bottom: 8px;
 }
@@ -570,7 +543,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     color: var(--white);
 }
 
-/* Titre */
 .annonce-titre {
     font-size: 1rem;
     font-weight: 700;
@@ -579,7 +551,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     line-height: 1.3;
 }
 
-/* Description */
 .annonce-desc {
     font-size: 0.8rem;
     color: var(--charcoal);
@@ -588,7 +559,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     line-height: 1.4;
 }
 
-/* Localisation */
 .annonce-meta {
     display: flex;
     align-items: center;
@@ -603,7 +573,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     flex-shrink: 0;
 }
 
-/* Vendeur */
 .annonce-vendeur {
     font-size: 0.78rem;
     color: var(--charcoal);
@@ -611,7 +580,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     margin: 0 0 12px;
 }
 
-/* Bouton */
 .btn-annonce {
     width: 100%;
     padding: 10px;
@@ -630,7 +598,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* État vide */
 .empty-state {
     text-align: center;
     padding: 60px 0;
@@ -639,7 +606,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     font-size: 1rem;
 }
 
-/* ══ FOOTER ══ */
 .footer {
     background: var(--green-dark);
     color: var(--white);
@@ -687,7 +653,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     opacity: 0.5;
 }
 
-/* ══ RESPONSIVE ══ */
 @media (max-width: 900px) {
     .annonces-grid {
         grid-template-columns: repeat(2, 1fr);

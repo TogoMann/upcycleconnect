@@ -1,6 +1,5 @@
 <template>
     <div class="admin-page">
-        <!-- En-tête de section -->
         <div class="section-header">
             <h2 class="section-title">Gestion des utilisateurs</h2>
             <button class="btn-refresh" @click="adminStore.fetchUsers()">
@@ -24,7 +23,6 @@
             </button>
         </div>
 
-        <!-- État : chargement -->
         <div v-if="adminStore.isLoading" class="state-loading">
             <svg
                 width="20"
@@ -40,7 +38,6 @@
             Chargement des utilisateurs...
         </div>
 
-        <!-- État : erreur -->
         <div v-if="adminStore.error" class="state-error">
             <svg
                 width="16"
@@ -57,7 +54,6 @@
             {{ adminStore.error }}
         </div>
 
-        <!-- Tableau -->
         <div class="table-wrap" v-if="!adminStore.isLoading">
             <table class="data-table">
                 <thead>
@@ -74,7 +70,6 @@
                     <tr v-for="user in adminStore.users" :key="user.id" class="table-row">
                         <td class="cell-id">{{ user.id }}</td>
 
-                        <!-- Nom avec avatar initiales -->
                         <td>
                             <div class="user-name-wrap">
                                 <div class="user-avatar">
@@ -86,7 +81,6 @@
 
                         <td class="cell-email">{{ user.email }}</td>
 
-                        <!-- Badge rôle -->
                         <td>
                             <span
                                 class="badge"
@@ -96,7 +90,6 @@
                             </span>
                         </td>
 
-                        <!-- Score avec barre visuelle -->
                         <td>
                             <div class="score-wrap">
                                 <span class="score-value">{{ user.score }}</span>
@@ -133,7 +126,6 @@
                         </td>
                     </tr>
 
-                    <!-- État vide -->
                     <tr v-if="adminStore.users.length === 0">
                         <td colspan="6" class="cell-empty">Aucun utilisateur trouvé.</td>
                     </tr>
@@ -147,7 +139,6 @@
 import { onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
 
-// ── Logique existante conservée intacte ──
 const adminStore = useAdminStore()
 
 const deleteUser = (id: number) => {
@@ -162,7 +153,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .admin-page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -176,7 +166,6 @@ onMounted(() => {
     color: var(--charcoal);
 }
 
-/* ── En-tête ── */
 .section-header {
     display: flex;
     align-items: center;
@@ -215,7 +204,6 @@ onMounted(() => {
     border-color: var(--green-dark);
 }
 
-/* ── États ── */
 .state-loading {
     display: flex;
     align-items: center;
@@ -246,7 +234,6 @@ onMounted(() => {
     animation: spin 1s linear infinite;
 }
 
-/* ── Tableau ── */
 .table-wrap {
     background: var(--green-pale);
     border-radius: 14px;
@@ -285,7 +272,6 @@ onMounted(() => {
     vertical-align: middle;
 }
 
-/* ID */
 .cell-id {
     font-weight: 600;
     color: rgba(53, 53, 53, 0.45);
@@ -293,13 +279,11 @@ onMounted(() => {
     width: 60px;
 }
 
-/* Email */
 .cell-email {
     font-size: 0.84rem;
     color: rgba(53, 53, 53, 0.7);
 }
 
-/* Nom avec avatar initiales */
 .user-name-wrap {
     display: flex;
     align-items: center;
@@ -321,7 +305,6 @@ onMounted(() => {
     letter-spacing: 0.02em;
 }
 
-/* Badges rôle */
 .badge {
     display: inline-block;
     padding: 4px 12px;
@@ -340,7 +323,6 @@ onMounted(() => {
     color: var(--green-mid);
 }
 
-/* Score avec barre */
 .score-wrap {
     display: flex;
     align-items: center;
@@ -368,7 +350,6 @@ onMounted(() => {
     transition: width 0.4s ease;
 }
 
-/* État vide */
 .cell-empty {
     text-align: center;
     padding: 48px !important;
@@ -376,7 +357,6 @@ onMounted(() => {
     font-size: 0.9rem;
 }
 
-/* Bouton Supprimer */
 .btn-delete {
     display: inline-flex;
     align-items: center;

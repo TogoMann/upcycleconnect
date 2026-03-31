@@ -56,7 +56,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 
 <template>
     <div class="page">
-        <!-- ════════ NAVBAR ════════ -->
         <header class="navbar">
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
@@ -73,25 +72,20 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
             </div>
         </header>
 
-        <!-- ════════ HERO ════════ -->
         <section class="hero">
             <div class="container">
                 <h1 class="hero-title">Réparer vos objets.</h1>
             </div>
         </section>
 
-        <!-- ════════ FORMULAIRE DE RECHERCHE ════════ -->
         <section class="search-section">
             <div class="container">
                 <div class="search-card">
-                    <!-- En-tête de la carte -->
                     <div class="search-card-header">
                         <h2 class="search-card-title">Trouver une ressource de réparation</h2>
                     </div>
 
-                    <!-- Corps de la carte -->
                     <div class="search-card-body">
-                        <!-- Ligne avec les 2 selects -->
                         <div class="search-fields">
                             <div class="field-group">
                                 <label class="field-label">Type d'objet</label>
@@ -122,17 +116,14 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                             </div>
                         </div>
 
-                        <!-- Bouton Rechercher -->
                         <button class="btn-search" @click="handleRecherche">Rechercher</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Espace pour les résultats futurs -->
         <div class="results-placeholder" />
 
-        <!-- ════════ FOOTER ════════ -->
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
@@ -156,7 +147,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 </template>
 
 <style scoped>
-/* ══ Charte graphique UCC ══ */
 .page {
     --cream: #f8f5ee;
     --green-dark: #086a35;
@@ -181,7 +171,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     padding: 0 32px;
 }
 
-/* ══ NAVBAR ══ */
 .navbar {
     background: var(--cream);
     border-bottom: 1px solid rgba(53, 53, 53, 0.08);
@@ -242,7 +231,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     background: var(--green-mid);
 }
 
-/* ══ HERO ══ */
 .hero {
     padding: 72px 0 48px;
     text-align: center;
@@ -256,7 +244,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     margin: 0;
 }
 
-/* ══ FORMULAIRE ══ */
 .search-section {
     padding: 0 0 40px;
 }
@@ -267,7 +254,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     box-shadow: 0 4px 24px rgba(8, 106, 53, 0.1);
 }
 
-/* En-tête verte foncée */
 .search-card-header {
     background: var(--green-mid);
     padding: 24px 28px;
@@ -280,7 +266,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     letter-spacing: -0.01em;
 }
 
-/* Corps vert clair */
 .search-card-body {
     background: var(--green-light);
     padding: 28px 28px 28px;
@@ -289,7 +274,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     gap: 20px;
 }
 
-/* Ligne des 2 selects */
 .search-fields {
     display: flex;
     gap: 14px;
@@ -313,7 +297,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     letter-spacing: -0.01em;
 }
 
-/* Select custom */
 .select-wrap {
     position: relative;
     display: flex;
@@ -353,7 +336,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     line-height: 1;
 }
 
-/* Bouton Rechercher */
 .btn-search {
     width: 100%;
     padding: 22px;
@@ -378,13 +360,11 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     transform: translateY(0);
 }
 
-/* Espace résultats */
 .results-placeholder {
     flex: 1;
     min-height: 120px;
 }
 
-/* ══ FOOTER ══ */
 .footer {
     background: var(--green-dark);
     color: var(--white);
@@ -433,7 +413,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     opacity: 0.5;
 }
 
-/* ══ RESPONSIVE ══ */
 @media (max-width: 700px) {
     .search-fields {
         flex-direction: column;
