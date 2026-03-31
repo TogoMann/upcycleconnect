@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15.3-alpine
+    container_name: uc-db-prod
+    [cite_start]restart: always [cite: 203]
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - [cite_start]postgres_data:/var/lib/postgresql/data [cite: 204]
+    networks:
+      - uc-backend
+
+  api:
+    image: jensentuang/upcycleconnect-api:latest
+    container_name: uc-api-prod
+    restart: always
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    networks:
+      - uc-backend
+      - uc-api
+
+  frontend:
+    image: jensentuang/upcycleconnect-frontend:latest
+    container_name: uc-front-prod
+    restart: always
+    ports:
+      - [cite_start]"80:5173" [cite: 201]
+    networks:
+      - uc-api
+
+volumes:
+  [cite_start]postgres_data: [cite: 204]
+
+networks:
+  uc-backend:
+  uc-api:
