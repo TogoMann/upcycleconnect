@@ -21,7 +21,7 @@ func (s *Service) GetAll() ([]News, error) {
 
 func (s *Service) GetById(id pgtype.Int8) (*News, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("news/service Thread ID invalide: %d", id)
+		return nil, fmt.Errorf("news/service News ID invalide: %d", id)
 	}
 
 	return s.repo.GetById(id)
@@ -37,7 +37,7 @@ func (s *Service) Create(newsDto News) (pgtype.Int8, error) {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("news/service Thread ID invalide: %d", id)
+		return fmt.Errorf("news/service News ID invalide: %d", id)
 	}
 
 	exists, err := s.repo.ExistsById(id)

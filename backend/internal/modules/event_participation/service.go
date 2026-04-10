@@ -1,8 +1,9 @@
 package eventparticipation
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -13,18 +14,18 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetAll() ([]Event, error) {
+func (s *Service) GetAll() ([]EventParticipation, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetById(id pgtype.Int8) (*Event, error) {
+func (s *Service) GetById(id pgtype.Int8) (*EventParticipation, error) {
 	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("eventparticipation/service ID invalide: %d", id)
 	}
 	return s.repo.GetById(id)
 }
 
-func (s *Service) Create(dto Event) (pgtype.Int8, error) {
+func (s *Service) Create(dto EventParticipation) (pgtype.Int8, error) {
 	return s.repo.Create(dto)
 }
 

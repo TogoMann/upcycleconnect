@@ -1,11 +1,49 @@
 -- =========================
+-- CITY & ADDRESS & SITE & CONTAINER
+-- =========================
+INSERT INTO city (name, zip_code) VALUES
+('Paris', '75000'),
+('Lyon', '69000'),
+('Marseille', '13000');
+
+INSERT INTO address (city_id, street_name, street_number) VALUES
+(1, 'Rue de Rivoli', '1'),
+(2, 'Rue de la République', '10'),
+(3, 'La Canebière', '100');
+
+INSERT INTO site (address_id, type_site, created_at) VALUES
+(1, 'Point de collecte', NOW()),
+(2, 'Atelier de réparation', NOW()),
+(3, 'Centre de tri', NOW());
+
+INSERT INTO container (site_id, status, size, created_at) VALUES
+(1, 'Available', 'M', NOW()),
+(1, 'Occupied', 'L', NOW()),
+(2, 'HS', 'S', NOW());
+
+-- =========================
 -- USERS
 -- =========================
-INSERT INTO users (first_name, last_name, email, password_hash, role, score, created_at) VALUES
-('Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', 10, NOW()),
-('Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', 50, NOW()),
-('Charlie', 'Lefevre', 'charlie@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'admin', 100, NOW()),
-('Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'intra', 20, NOW());
+INSERT INTO users (username, first_name, last_name, email, password_hash, role, score, created_at) VALUES
+('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', 10, NOW()),
+('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', 50, NOW()),
+('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'admin', 100, NOW()),
+('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', 20, NOW());
+
+-- =========================
+-- SCORE HISTORY
+-- =========================
+INSERT INTO score_history (user_id, points, description, created_at) VALUES
+(1, 10, 'Premier don d''objet', NOW()),
+(1, 5, 'Commentaire utile', NOW()),
+(2, 50, 'Vente finalisée', NOW());
+
+-- =========================
+-- ITEMS
+-- =========================
+INSERT INTO item (owner_id, container_id, site_id, material_type, physical_state, status, weight, created_at) VALUES
+(1, 1, 1, 'Bois', 'bon etat', 'deposited', 5.5, NOW()),
+(2, 2, 1, 'Metal', 'neuf', 'validated', 12.0, NOW());
 
 -- =========================
 -- EVENTS
@@ -15,9 +53,9 @@ INSERT INTO event (approved, approved_by, approved_at, price, date, created_by, 
 (false, NULL, NULL, 0.00, NOW() + INTERVAL '14 days', 1, NOW());
 
 -- Participation events
-INSERT INTO event_participation (event_id, user_id) VALUES
-(1, 1),
-(1, 2);
+INSERT INTO event_participation (event_id, user_id, stripe_payment_intent_id) VALUES
+(1, 1, 'pi_123456789'),
+(1, 2, 'pi_987654321');
 
 -- =========================
 -- THREADS & POSTS
@@ -43,7 +81,7 @@ INSERT INTO comments (news_id, created_by, content, created_at, upvotes, downvot
 -- ENTRY & PARTICIPATION
 -- =========================
 INSERT INTO entry (created_by, created_at, schedule, start, ending) VALUES
-(2, NOW(), CURRENT_DATE + 3, '10:00', '12:00');
+(2, NOW(), CURRENT_DATE + 3, '10:00:00', '12:00:00');
 
 INSERT INTO entry_participation (entry_id, user_id, status, joined_at) VALUES
 (1, 1, 'accepted', NOW()),
@@ -52,26 +90,36 @@ INSERT INTO entry_participation (entry_id, user_id, status, joined_at) VALUES
 -- =========================
 -- COURSES & ORDERS
 -- =========================
-INSERT INTO course (created_by, created_at, approved, approved_by, approved_at, price) VALUES
-(2, NOW(), true, 3, NOW(), 99.99),
-(2, NOW(), false, NULL, NULL, 49.99);
+INSERT INTO course (name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price) VALUES
+('Couture Débutant', 'Apprenez les bases de la couture.', 10, 2, NOW(), true, 3, NOW(), 99.99),
+('Menuiserie', 'Travail du bois pour tous.', 5, 2, NOW(), false, NULL, NULL, 49.99);
 
-INSERT INTO course_order (course_id, buyer_id, price, booked_at) VALUES
-(1, 1, 99.99, NOW());
+INSERT INTO course_order (course_id, buyer_id, price, booked_at, stripe_payment_intent_id) VALUES
+(1, 1, 99.99, NOW(), 'pi_course_1');
 
 -- =========================
--- CONTRACTS
+-- SUBSCRIPTIONS
 -- =========================
-INSERT INTO contract (name, created_by, content, created_at, until) VALUES
-('Contrat coaching', 2, 'Contenu du contrat...', NOW(), CURRENT_DATE + 30);
+INSERT INTO subscriptions (subscriber_id, price, tier, created_at, until) VALUES
+(2, 49.99, 'Premium', CURRENT_DATE, CURRENT_DATE + 30);
 
 -- =========================
 -- LISTINGS & ORDERS
 -- =========================
-INSERT INTO listing (created_by, created_at, approved, approved_by, approved_at, status, price) VALUES
-(2, NOW(), true, 3, NOW(), 'active', 150.00),
-(2, NOW(), true, 3, NOW(), 'sold', 200.00);
+INSERT INTO listing (name, description, item_id, created_by, created_at, approved, approved_by, approved_at, status, price) VALUES
+('Chaise en bois', 'Une belle chaise faite main.', 1, 2, NOW(), true, 3, NOW(), 'active', 150.00),
+('Etagère métal', 'Etagère solide en métal.', 2, 2, NOW(), true, 3, NOW(), 'sold', 200.00);
 
-INSERT INTO listing_order (listing_id, user_id, price, created_at, status) VALUES
-(1, 1, 150.00, NOW(), 'paid'),
-(2, 4, 200.00, NOW(), 'completed');
+INSERT INTO listing_order (listing_id, user_id, price, created_at, status, stripe_payment_intent_id) VALUES
+(1, 1, 150.00, NOW(), 'paid', 'pi_listing_1'),
+(2, 4, 200.00, NOW(), 'completed', 'pi_listing_2');
+
+-- =========================
+-- PROJECTS & STEPS
+-- =========================
+INSERT INTO project (listing_id, creator_id, title, description, final_score, status, created_at) VALUES
+(1, 1, 'Restauration Chaise', 'Ponçage et vernissage.', 80, 'in progress', NOW());
+
+INSERT INTO project_steps (project_id, step_number, description, created_at) VALUES
+(1, 1, 'Achat du matériel', NOW()),
+(1, 2, 'Ponçage de la structure', NOW());

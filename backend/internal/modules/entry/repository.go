@@ -1,10 +1,11 @@
 package entry
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -44,16 +45,17 @@ func (r *Repository) GetById(id pgtype.Int8) (*Entry, error) {
 }
 
 func (r *Repository) Create(dto Entry) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO entry (created_by, schedule, start, ending) VALUES ($1, $2, $3, $4)",
-		dto.CreatedBy, dto.Schedule, dto.Start, dto.Ending)
+		"INSERT INTO entry (created_by, schedule, start, ending) VALUES ($1, $2, $3, $4) RETURNING id",
+		dto.CreatedBy, dto.Schedule, dto.Start, dto.Ending).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {

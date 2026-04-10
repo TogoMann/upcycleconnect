@@ -1,9 +1,10 @@
 package eventparticipation
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,13 +18,13 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetAll() ([]Event, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT event_id, user_id FROM event_participation")
+func (r *Repository) GetAll() ([]EventParticipation, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT event_id, user_id, stripe_payment_intent_id FROM event_participation")
 	if err != nil {
 		return nil, fmt.Errorf("package event_participation/repo GetAll query: %w", err)
 	}
 
-	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[Event])
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[EventParticipation])
 	if err != nil {
 		return nil, fmt.Errorf("package event_participation/repo GetAll: %v", err.Error())
 	}
@@ -31,24 +32,24 @@ func (r *Repository) GetAll() ([]Event, error) {
 	return items, nil
 }
 
-func (r *Repository) GetById(id pgtype.Int8) (*Event, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT event_id, user_id FROM event_participation WHERE event_id = $1", id)
+func (r *Repository) GetById(id pgtype.Int8) (*EventParticipation, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT event_id, user_id, stripe_payment_intent_id FROM event_participation WHERE event_id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package event_participation/repo GetById query: %w", err)
 	}
 
-	item, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Event])
+	item, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[EventParticipation])
 	if err != nil {
 		return nil, fmt.Errorf("package event_participation/repo GetById: %v", err.Error())
 	}
 	return &item, nil
 }
 
-func (r *Repository) Create(dto Event) (pgtype.Int8, error) {
+func (r *Repository) Create(dto EventParticipation) (pgtype.Int8, error) {
 	tag, err := r.db.Exec(
 		db.Ctx,
-		"INSERT INTO event_participation (event_id, user_id) VALUES ($1, $2)",
-		dto.EventId, dto.UserId)
+		"INSERT INTO event_participation (event_id, user_id, stripe_payment_intent_id) VALUES ($1, $2, $3)",
+		dto.EventId, dto.UserId, dto.StripePaymentIntentId)
 
 	if err != nil {
 		return pgtype.Int8{}, err

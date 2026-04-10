@@ -1,9 +1,10 @@
 package listing
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,7 +19,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]Listing, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, created_at, approved, approved_by, approved_at, status, price FROM listing")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, item_id, created_by, created_at, approved, approved_by, approved_at, status, price FROM listing")
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAll query: %w", err)
 	}
@@ -26,14 +27,14 @@ func (r *Repository) GetAll() ([]Listing, error) {
 	listings, err := pgx.CollectRows(rows, pgx.RowToStructByName[Listing])
 
 	if err != nil {
-		return nil, fmt.Errorf("package news/repo GetAll: %v", err.Error())
+		return nil, fmt.Errorf("package listing/repo GetAll: %v", err.Error())
 	}
 
 	return listings, nil
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, created_at, approved, approved_by, approved_at, status, price  FROM listing WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, item_id, created_by, created_at, approved, approved_by, approved_at, status, price FROM listing WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetById query: %w", err)
 	}
@@ -47,20 +48,21 @@ func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 }
 
 func (r *Repository) Create(listingDto Listing) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO listing (created_by, price) VALUES ($1, $2)",
-		listingDto.CreatedBy, listingDto.Price)
+		"INSERT INTO listing (name, description, item_id, created_by, price) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		listingDto.Name, listingDto.Description, listingDto.ItemId, listingDto.CreatedBy, listingDto.Price).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {
-	tag, err := r.db.Exec(db.Ctx, "DELETE listing WHERE id = $1", id)
+	tag, err := r.db.Exec(db.Ctx, "DELETE FROM listing WHERE id = $1", id)
 	if err != nil {
 		return err
 	}

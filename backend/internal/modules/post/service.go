@@ -18,10 +18,9 @@ func NewService(repo *Repository) *Service {
 func (s *Service) GetAll() ([]Post, error) {
 	return s.repo.GetAll()
 }
-
 func (s *Service) GetById(id pgtype.Int8) (*Post, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("post/service Thread ID invalide: %d", id)
+		return nil, fmt.Errorf("post/service Post ID invalide: %d", id)
 	}
 
 	return s.repo.GetById(id)
@@ -47,10 +46,6 @@ func (s *Service) UpdateContent(id pgtype.Int8, content string) error {
 	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("post/service Post ID invalide: %d", id)
 	}
-	if strings.TrimSpace(content) == "" {
-		return fmt.Errorf("post/service Invalid string(s): Missing values.")
-	}
-
 	exists, err := s.repo.ExistsById(id)
 	if err != nil {
 		return err
@@ -65,7 +60,7 @@ func (s *Service) UpdateContent(id pgtype.Int8, content string) error {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("post/service Thread ID invalide: %d", id)
+		return fmt.Errorf("post/service Post ID invalide: %d", id)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -75,6 +70,15 @@ func (s *Service) Delete(id pgtype.Int8) error {
 
 	if !exists {
 		return nil
+	}
+
+	hasReplies, err := s.repo.HasReplies(id)
+	if err != nil {
+		return err
+	}
+
+	if hasReplies {
+		return s.repo.SoftDelete(id)
 	}
 
 	return s.repo.Delete(id)

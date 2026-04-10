@@ -1,4 +1,4 @@
-package users
+package project
 
 import (
 	"encoding/json"
@@ -20,62 +20,59 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	users, err := h.service.GetAll()
-
+	items, err := h.service.GetAll()
 	if err != nil {
 		fmt.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
-	res, _ := json.Marshal(users)
+	res, _ := json.Marshal(items)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
-
 	idInt, err := strconv.ParseInt(idStr, 10, 64)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	item, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-	res, _ := json.Marshal(user)
+	res, _ := json.Marshal(item)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var userDto User
-
-	err := json.NewDecoder(r.Body).Decode(&userDto)
+	var dto Project
+	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	id, err := h.service.Create(userDto)
+	id, err := h.service.Create(dto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	userDto.Id = id
-	res, _ := json.Marshal(userDto)
+	dto.Id = id
+	res, _ := json.Marshal(dto)
 	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
-
 	idInt, err := strconv.ParseInt(idStr, 10, 64)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,10 +85,10 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"message": "user deleted successfully"}`)
+	fmt.Fprintf(w, `{"message": "project deleted successfully"}`)
 }
 
-func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSteps(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
 	idInt, err := strconv.ParseInt(idStr, 10, 64)
@@ -100,11 +97,12 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	score, err := h.service.GetScore(pgtype.Int8{Int64: idInt, Valid: true})
+	steps, err := h.service.GetSteps(pgtype.Int8{Int64: idInt, Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, `{"score": %d}`, score)
+	res, _ := json.Marshal(steps)
+	fmt.Fprintf(w, "%s", string(res))
 }

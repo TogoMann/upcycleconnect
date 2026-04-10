@@ -1,11 +1,12 @@
 package eventparticipation
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -50,7 +51,7 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var dto Event
+	var dto EventParticipation
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
