@@ -1,9 +1,10 @@
 package news
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -47,20 +48,21 @@ func (r *Repository) GetById(id pgtype.Int8) (*News, error) {
 }
 
 func (r *Repository) Create(newsDto News) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO news (created_by, title, content) VALUES ($1, $2, $3)",
-		newsDto.CreatedBy, newsDto.Title, newsDto.Content)
+		"INSERT INTO news (created_by, title, content) VALUES ($1, $2, $3) RETURNING id",
+		newsDto.CreatedBy, newsDto.Title, newsDto.Content).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {
-	tag, err := r.db.Exec(db.Ctx, "DELETE news WHERE id = $1", id)
+	tag, err := r.db.Exec(db.Ctx, "DELETE FROM news WHERE id = $1", id)
 	if err != nil {
 		return err
 	}

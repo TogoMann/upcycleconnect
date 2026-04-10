@@ -18,7 +18,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]Course, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, created_at, approved, approved_by, approved_at, price FROM course")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price FROM course")
 	if err != nil {
 		return nil, fmt.Errorf("package course/repo GetAll query: %w", err)
 	}
@@ -32,7 +32,7 @@ func (r *Repository) GetAll() ([]Course, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Course, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, created_at, approved, approved_by, approved_at, price FROM course WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price FROM course WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package course/repo GetById query: %w", err)
 	}
@@ -47,7 +47,7 @@ func (r *Repository) GetById(id pgtype.Int8) (*Course, error) {
 func (r *Repository) GetUserCourses(id pgtype.Int8) ([]UserCourse, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT
-			c.id, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at, c.price,
+			c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at, c.price,
 		    co.buyer_id, co.booked_at
 			FROM course AS c
 			INNER JOIN course_order AS co
@@ -65,16 +65,17 @@ func (r *Repository) GetUserCourses(id pgtype.Int8) ([]UserCourse, error) {
 }
 
 func (r *Repository) Create(dto Course) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO course (created_by, approved, price) VALUES ($1, $2, $3)",
-		dto.CreatedBy, dto.Approved, dto.Price)
+		"INSERT INTO course (name, description, max_capacity, created_by, approved, price) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		dto.Name, dto.Description, dto.MaxCapacity, dto.CreatedBy, dto.Approved, dto.Price).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {

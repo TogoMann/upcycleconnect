@@ -28,7 +28,7 @@ func (s *Service) GetById(id pgtype.Int8) (*User, error) {
 }
 
 func (s *Service) Create(userDto User) (pgtype.Int8, error) {
-	if strings.TrimSpace(userDto.FirstName) == "" || strings.TrimSpace(userDto.LastName) == "" || strings.TrimSpace(userDto.Email) == "" {
+	if strings.TrimSpace(userDto.Username) == "" || strings.TrimSpace(userDto.FirstName) == "" || strings.TrimSpace(userDto.LastName) == "" || strings.TrimSpace(userDto.Email) == "" {
 		return pgtype.Int8{}, fmt.Errorf("users/service Invalid string(s): Missing values.")
 	}
 	if !IsValidRole(userDto.Role) {
@@ -53,4 +53,11 @@ func (s *Service) Delete(id pgtype.Int8) error {
 	}
 
 	return s.repo.Delete(id)
+}
+
+func (s *Service) GetScore(userId pgtype.Int8) (int32, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return 0, fmt.Errorf("users/service User ID invalide: %d", userId)
+	}
+	return s.repo.GetScore(userId)
 }

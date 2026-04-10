@@ -20,7 +20,7 @@ func (s *Service) GetAll() ([]Listing, error) {
 
 func (s *Service) GetById(id pgtype.Int8) (*Listing, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("listing/service Listing order ID invalide: %d", id)
+		return nil, fmt.Errorf("listing/service Listing ID invalide: %d", id)
 	}
 
 	return s.repo.GetById(id)
@@ -41,7 +41,7 @@ func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("listing/service Thread ID invalide: %d", id)
+		return fmt.Errorf("listing/service Listing ID invalide: %d", id)
 	}
 
 	exists, err := s.repo.ExistsById(id)

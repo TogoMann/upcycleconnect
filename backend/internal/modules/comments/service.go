@@ -1,8 +1,9 @@
 package comments
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -40,6 +41,15 @@ func (s *Service) Delete(id pgtype.Int8) error {
 
 	if !exists {
 		return nil
+	}
+
+	hasReplies, err := s.repo.HasReplies(id)
+	if err != nil {
+		return err
+	}
+
+	if hasReplies {
+		return s.repo.SoftDelete(id)
 	}
 
 	return s.repo.Delete(id)

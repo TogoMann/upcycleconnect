@@ -1,10 +1,11 @@
 package comments
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,7 +18,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]Comments, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, news_id, created_by, content, created_at, upvotes, downvotes FROM comments")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, news_id, created_by, parent_id, content, created_at, upvotes, downvotes FROM comments")
 	if err != nil {
 		return nil, fmt.Errorf("package comments/repo GetAll query: %w", err)
 	}
@@ -31,7 +32,7 @@ func (r *Repository) GetAll() ([]Comments, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Comments, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, news_id, created_by, content, created_at, upvotes, downvotes FROM comments WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, news_id, created_by, parent_id, content, created_at, upvotes, downvotes FROM comments WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package comments/repo GetById query: %w", err)
 	}
@@ -44,16 +45,17 @@ func (r *Repository) GetById(id pgtype.Int8) (*Comments, error) {
 }
 
 func (r *Repository) Create(dto Comments) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO comments (news_id, created_by, content) VALUES ($1, $2, $3)",
-		dto.NewsId, dto.CreatedBy, dto.Content)
+		"INSERT INTO comments (news_id, created_by, parent_id, content) VALUES ($1, $2, $3, $4) RETURNING id",
+		dto.NewsId, dto.CreatedBy, dto.ParentId, dto.Content).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {
@@ -65,6 +67,23 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 		return fmt.Errorf("package comments/repo: Id invalide: %d", id)
 	}
 	return nil
+}
+
+func (r *Repository) SoftDelete(id pgtype.Int8) error {
+	tag, err := r.db.Exec(db.Ctx, "UPDATE comments SET content = '[Deleted comment]', created_by = NULL WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package comments/repo SoftDelete: Id invalide: %d", id)
+	}
+	return nil
+}
+
+func (r *Repository) HasReplies(id pgtype.Int8) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(db.Ctx, "SELECT EXISTS(SELECT 1 FROM comments WHERE parent_id = $1)", id).Scan(&exists)
+	return exists, err
 }
 
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {

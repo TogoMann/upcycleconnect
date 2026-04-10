@@ -48,20 +48,21 @@ func (r *Repository) GetById(id pgtype.Int8) (*Thread, error) {
 }
 
 func (r *Repository) Create(threadDto Thread) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO thread (created_by, title, content) VALUES ($1, $2, $3, $4)",
-		threadDto.CreatedBy, threadDto.Title, threadDto.Content)
+		"INSERT INTO thread (created_by, title, content) VALUES ($1, $2, $3) RETURNING id",
+		threadDto.CreatedBy, threadDto.Title, threadDto.Content).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {
-	tag, err := r.db.Exec(db.Ctx, "DELETE thread WHERE id = $1", id)
+	tag, err := r.db.Exec(db.Ctx, "DELETE FROM thread WHERE id = $1", id)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	r.HandleFunc("GET /users", handler.GetAll)
 	r.HandleFunc("GET /users/{id}", handler.GetById)
+	r.HandleFunc("GET /users/{id}/score", handler.GetScore)
 
 	r.HandleFunc("POST /users/", handler.Create)
 

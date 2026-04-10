@@ -1,9 +1,10 @@
 package users
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,7 +19,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role, score, created_at FROM users")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, score, created_at FROM users")
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetAllusers query: %w", err)
 	}
@@ -33,7 +34,7 @@ func (r *Repository) GetAll() ([]User, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, first_name, last_name, email, password_hash, role, score, created_at FROM users WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, score, created_at FROM users WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetUserById query: %w", err)
 	}
@@ -47,20 +48,21 @@ func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
 }
 
 func (r *Repository) Create(userDto User) (pgtype.Int8, error) {
-	tag, err := r.db.Exec(
+	var id int64
+	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)",
-		userDto.FirstName, userDto.LastName, userDto.Email, userDto.PasswordHash, userDto.Role)
+		"INSERT INTO users (username, first_name, last_name, email, password_hash, role, language_preference) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		userDto.Username, userDto.FirstName, userDto.LastName, userDto.Email, userDto.PasswordHash, userDto.Role, userDto.LanguagePreference).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
 
-	return pgtype.Int8{Int64: tag.RowsAffected(), Valid: true}, err
+	return pgtype.Int8{Int64: id, Valid: true}, nil
 }
 
 func (r *Repository) Delete(id pgtype.Int8) error {
-	tag, err := r.db.Exec(db.Ctx, "DELETE users WHERE id = $1", id)
+	tag, err := r.db.Exec(db.Ctx, "DELETE FROM users WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -83,4 +85,13 @@ func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (r *Repository) GetScore(userId pgtype.Int8) (int32, error) {
+	var totalScore int32
+	err := r.db.QueryRow(db.Ctx, "SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = $1", userId).Scan(&totalScore)
+	if err != nil {
+		return 0, fmt.Errorf("package users/repo GetScore query: %w", err)
+	}
+	return totalScore, nil
 }

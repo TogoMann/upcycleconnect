@@ -1,8 +1,9 @@
-package contract
+package subscriptions
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -13,24 +14,24 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetAll() ([]Contract, error) {
+func (s *Service) GetAll() ([]Subscriptions, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetById(id pgtype.Int8) (*Contract, error) {
+func (s *Service) GetById(id pgtype.Int8) (*Subscriptions, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("contract/service ID invalide: %d", id)
+		return nil, fmt.Errorf("subscriptions/service ID invalide: %d", id)
 	}
 	return s.repo.GetById(id)
 }
 
-func (s *Service) Create(dto Contract) (pgtype.Int8, error) {
+func (s *Service) Create(dto Subscriptions) (pgtype.Int8, error) {
 	return s.repo.Create(dto)
 }
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("contract/service ID invalide: %d", id)
+		return fmt.Errorf("subscriptions/service ID invalide: %d", id)
 	}
 
 	exists, err := s.repo.ExistsById(id)
