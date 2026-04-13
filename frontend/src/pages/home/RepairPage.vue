@@ -15,63 +15,19 @@ const typesObjets = [
 ]
 
 const codesPostaux = [
-    '75001',
-    '75002',
-    '75003',
-    '75004',
-    '75005',
-    '75006',
-    '75007',
-    '75008',
-    '75009',
-    '75010',
-    '75011',
-    '75012',
-    '75013',
-    '75014',
-    '75015',
-    '75016',
-    '75017',
-    '75018',
-    '75019',
-    '75020',
-    '69001',
-    '13001',
-    '31000',
-    '33000',
-    '59000',
-    '67000',
-    '06000',
-    '44000',
-    '34000',
-    '76000',
+    '75001', '75002', '75003', '75004', '75005', '75006', '75007', '75008',
+    '75009', '75010', '75011', '75012', '75013', '75014', '75015', '75016',
+    '75017', '75018', '75019', '75020', '69001', '13001', '31000', '33000',
+    '59000', '67000', '06000', '44000', '34000', '76000',
 ]
 
 const handleRecherche = () => {
     console.log('Recherche :', { typeObjet: typeObjet.value, codePostal: codePostal.value })
 }
-
-const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentialité']
 </script>
 
 <template>
-    <div class="page">
-        <header class="navbar">
-            <div class="nav-container">
-                <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
-                <nav class="nav-links">
-                    <router-link to="/" class="nav-link">Accueil</router-link>
-                    <router-link to="/prestations" class="nav-link">Prestations</router-link>
-                    <router-link to="/evenements" class="nav-link">Évènements</router-link>
-                    <router-link to="/forum" class="nav-link">Forum</router-link>
-                    <router-link to="/a-propos" class="nav-link">À propos</router-link>
-                </nav>
-                <router-link to="/auth/register" class="btn-nav">
-                    S'inscrire / Se connecter
-                </router-link>
-            </div>
-        </header>
-
+    <div class="page-content">
         <section class="hero">
             <div class="container">
                 <h1 class="hero-title">Réparer vos objets.</h1>
@@ -123,44 +79,12 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
         </section>
 
         <div class="results-placeholder" />
-
-        <footer class="footer">
-            <div class="footer-top">
-                <div class="footer-links-wrap">
-                    <a v-for="link in footerLinks" :key="link" href="#" class="footer-link">
-                        {{ link }}
-                    </a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <div class="footer-container">
-                    <span class="footer-logo">UpCycleConnect</span>
-                    <div class="footer-lang">
-                        <span>Choisir la langue</span>
-                        <span class="lang-sep"> - </span>
-                        <span>Français</span>
-                    </div>
-                </div>
-            </div>
-        </footer>
     </div>
 </template>
 
 <style scoped>
-.page {
-    --cream: #f8f5ee;
-    --green-dark: #086a35;
-    --green-mid: #34895b;
-    --green-light: #8bbd94;
-    --green-pale: #d7ece1;
-    --charcoal: #353535;
-    --white: #ffffff;
-
-    background-color: var(--cream);
-    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-    color: var(--charcoal);
-    overflow-x: hidden;
-    min-height: 100vh;
+.page-content {
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
@@ -169,66 +93,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     max-width: 1060px;
     margin: 0 auto;
     padding: 0 32px;
-}
-
-.navbar {
-    background: var(--cream);
-    border-bottom: 1px solid rgba(53, 53, 53, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-.nav-container {
-    max-width: 1060px;
-    margin: 0 auto;
-    padding: 0 32px;
-    height: 68px;
-    display: flex;
-    align-items: center;
-    gap: 40px;
-}
-.nav-logo {
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: var(--green-dark);
-    text-decoration: none;
-    flex-shrink: 0;
-    letter-spacing: -0.01em;
-}
-.nav-links {
-    display: flex;
-    gap: 32px;
-    flex: 1;
-    justify-content: center;
-}
-.nav-link {
-    font-size: 0.875rem;
-    color: var(--green-light);
-    text-decoration: none;
-    font-weight: 400;
-    transition: color 0.2s;
-}
-.nav-link:hover {
-    color: var(--green-dark);
-}
-.nav-link.active {
-    color: var(--green-dark);
-    font-weight: 600;
-}
-.btn-nav {
-    background: var(--green-dark);
-    color: var(--white);
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.2s;
-    flex-shrink: 0;
-}
-.btn-nav:hover {
-    background: var(--green-mid);
 }
 
 .hero {
@@ -365,54 +229,6 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
     min-height: 120px;
 }
 
-.footer {
-    background: var(--green-dark);
-    color: var(--white);
-    margin-top: auto;
-}
-.footer-top {
-    display: flex;
-    justify-content: center;
-    padding: 32px 32px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-.footer-links-wrap {
-    display: flex;
-    gap: 40px;
-}
-.footer-link {
-    color: rgba(255, 255, 255, 0.75);
-    text-decoration: none;
-    font-size: 0.85rem;
-    transition: color 0.2s;
-}
-.footer-link:hover {
-    color: var(--white);
-}
-.footer-bottom {
-    padding: 20px 32px 28px;
-}
-.footer-container {
-    max-width: 1060px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.footer-logo {
-    font-weight: 800;
-    font-size: 1.2rem;
-    color: var(--white);
-    letter-spacing: -0.01em;
-}
-.footer-lang {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.75);
-}
-.lang-sep {
-    opacity: 0.5;
-}
-
 @media (max-width: 700px) {
     .search-fields {
         flex-direction: column;
@@ -421,21 +237,8 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
         flex: none;
         width: 100%;
     }
-    .nav-links {
-        display: none;
-    }
     .hero-title {
         font-size: 2.4rem;
-    }
-    .footer-links-wrap {
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-    }
-    .footer-container {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
     }
 }
 </style>

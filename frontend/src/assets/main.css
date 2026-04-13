@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+:root {
+    --cream: #f8f5ee;
+    --green-dark: #086a35;
+    --green-mid: #34895b;
+    --green-light: #8bbd94;
+    --green-pale: #d7ece1;
+    --charcoal: #353535;
+    --white: #ffffff;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 body {
-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    margin: 0;
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--cream);
+    color: var(--charcoal);
+    overflow-x: hidden;
 }
