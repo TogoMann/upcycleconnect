@@ -72,6 +72,19 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) Update(id pgtype.Int8, thread Thread) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE thread SET title=$1, content=$2 WHERE id=$3",
+		thread.Title, thread.Content, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package thread/repo Update: Id invalide: %d", id)
+	}
+	return nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 

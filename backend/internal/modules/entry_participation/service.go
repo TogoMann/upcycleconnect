@@ -1,8 +1,9 @@
 package entryparticipation
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
@@ -22,6 +23,13 @@ func (s *Service) GetById(id pgtype.Int8) (*EntryParticipation, error) {
 		return nil, fmt.Errorf("entryparticipation/service ID invalide: %d", id)
 	}
 	return s.repo.GetById(id)
+}
+
+func (s *Service) GetByUser(userId pgtype.Int8) ([]EntryParticipation, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return nil, fmt.Errorf("entryparticipation/service User ID invalide")
+	}
+	return s.repo.GetByUserId(userId)
 }
 
 func (s *Service) Create(dto EntryParticipation) (pgtype.Int8, error) {

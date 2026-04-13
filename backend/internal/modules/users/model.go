@@ -20,6 +20,6 @@ type User struct {
 	PasswordHash       string           `db:"password_hash" json:"password_hash"`
 	Role               UserRole         `db:"role" json:"role"`
 	LanguagePreference string           `db:"language_preference" json:"language_preference"`
-	Score              pgtype.Int4      `db:"score" json:"score"`
+	HasSeenTutorial    bool             `db:"has_seen_tutorial" json:"has_seen_tutorial"`
 	CreatedAt          pgtype.Timestamp `db:"created_at" json:"created_at"`
 }

@@ -35,6 +35,26 @@ func (s *Service) Create(threadDto Thread) (pgtype.Int8, error) {
 	return s.repo.Create(threadDto)
 }
 
+func (s *Service) Update(id pgtype.Int8, thread Thread) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("thread/service ID invalide: %d", id)
+	}
+
+	exists, err := s.repo.ExistsById(id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("thread/service thread not found")
+	}
+
+	if strings.TrimSpace(thread.Title) == "" || strings.TrimSpace(thread.Content) == "" {
+		return fmt.Errorf("thread/service Invalid string(s): Missing values.")
+	}
+
+	return s.repo.Update(id, thread)
+}
+
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("thread/service Thread ID invalide: %d", id)

@@ -1,6 +1,7 @@
 package subscriptions
 
 import (
+	"backend/internal/middlewares"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,5 +15,9 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /subscriptions", handler.GetAll)
 	r.HandleFunc("GET /subscriptions/{id}", handler.GetById)
 	r.HandleFunc("POST /subscriptions/", handler.Create)
-	r.HandleFunc("DELETE /subscriptions/{id}", handler.DeleteById)
+
+	r.HandleFunc("PUT /subscriptions/{id}", middlewares.ProOnly(handler.Update))
+	r.HandleFunc("PATCH /subscriptions/{id}", middlewares.ProOnly(handler.Update))
+
+	r.HandleFunc("DELETE /subscriptions/{id}", middlewares.AdminOnly(handler.DeleteById))
 }

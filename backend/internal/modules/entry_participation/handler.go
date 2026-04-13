@@ -1,11 +1,12 @@
 package entryparticipation
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -65,6 +66,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	res, _ := json.Marshal(dto)
 	fmt.Fprintf(w, "%s", string(res))
+}
+
+func (h *Handler) GetByUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := r.PathValue("user_id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	items, err := h.service.GetByUser(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(items)
 }
 
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {

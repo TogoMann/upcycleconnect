@@ -24,11 +24,11 @@ INSERT INTO container (site_id, status, size, created_at) VALUES
 -- =========================
 -- USERS
 -- =========================
-INSERT INTO users (username, first_name, last_name, email, password_hash, role, score, created_at) VALUES
-('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', 10, NOW()),
-('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', 50, NOW()),
-('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'admin', 100, NOW()),
-('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', 20, NOW());
+INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at) VALUES
+('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW()),
+('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', NOW()),
+('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'admin', NOW()),
+('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW());
 
 -- =========================
 -- SCORE HISTORY

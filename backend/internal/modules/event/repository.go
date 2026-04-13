@@ -69,6 +69,19 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) Update(id pgtype.Int8, e Event) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE event SET approved=$1, approved_by=$2, approved_at=$3, price=$4, date=$5, created_by=$6 WHERE id=$7",
+		e.Approved, e.ApprovedBy, e.ApprovedAt, e.Price, e.Date, e.CreatedBy, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package event/repo Update: Id invalide: %d", id)
+	}
+	return nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM event WHERE id = $1", id).Scan(&idFound)

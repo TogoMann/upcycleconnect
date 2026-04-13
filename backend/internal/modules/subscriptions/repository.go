@@ -69,6 +69,19 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) Update(id pgtype.Int8, sub Subscriptions) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE subscriptions SET subscriber_id=$1, price=$2, tier=$3, until=$4 WHERE id=$5",
+		sub.SubscriberId, sub.Price, sub.Tier, sub.Until, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package subscriptions/repo Update: Id invalide: %d", id)
+	}
+	return nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM subscriptions WHERE id = $1", id).Scan(&idFound)

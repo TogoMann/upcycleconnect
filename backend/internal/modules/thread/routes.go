@@ -1,6 +1,7 @@
 package thread
 
 import (
+	"backend/internal/middlewares"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,5 +18,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	r.HandleFunc("POST /thread/", handler.Create)
 
-	r.HandleFunc("DELETE /thread/{id}", handler.DeleteById)
+	r.HandleFunc("PUT /thread/{id}", middlewares.StaffOnly(handler.Update))
+	r.HandleFunc("PATCH /thread/{id}", middlewares.StaffOnly(handler.Update))
+	r.HandleFunc("DELETE /thread/{id}", middlewares.StaffOnly(handler.DeleteById))
 }

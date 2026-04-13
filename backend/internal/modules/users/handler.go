@@ -70,6 +70,32 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(res))
 }
 
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := r.PathValue("id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var userDto User
+	err = json.NewDecoder(r.Body).Decode(&userDto)
+	if err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, userDto)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"message": "user updated successfully"}`)
+}
+
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
@@ -107,4 +133,22 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, `{"score": %d}`, score)
+}
+
+func (h *Handler) UpdateTutorialSeen(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := r.PathValue("id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.UpdateTutorialSeen(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, `{"message": "tutorial status updated"}`)
 }

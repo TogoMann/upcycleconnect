@@ -39,6 +39,22 @@ func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 	return s.repo.Create(loDto)
 }
 
+func (s *Service) Update(id pgtype.Int8, l Listing) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("listing/service ID invalide: %d", id)
+	}
+
+	exists, err := s.repo.ExistsById(id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("listing/service listing not found")
+	}
+
+	return s.repo.Update(id, l)
+}
+
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("listing/service Listing ID invalide: %d", id)

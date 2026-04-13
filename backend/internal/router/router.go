@@ -2,6 +2,7 @@ package router
 
 import (
 	db "backend/internal/database"
+	"backend/internal/modules/auth"
 	"backend/internal/modules/comments"
 	"backend/internal/modules/course"
 	courseorder "backend/internal/modules/course_order"
@@ -9,6 +10,7 @@ import (
 	entryparticipation "backend/internal/modules/entry_participation"
 	"backend/internal/modules/event"
 	eventparticipation "backend/internal/modules/event_participation"
+	"backend/internal/modules/item"
 	"backend/internal/modules/listing"
 	listingorder "backend/internal/modules/listing_order"
 	"backend/internal/modules/news"
@@ -42,8 +44,9 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 
 	r.HandleFunc("GET /", healthCheck)
 
-	// modules
+	auth.RegisterRoutes(r, db)
 	users.RegisterRoutes(r, db)
+	item.RegisterRoutes(r, db)
 	thread.RegisterRoutes(r, db)
 	post.RegisterRoutes(r, db)
 	news.RegisterRoutes(r, db)

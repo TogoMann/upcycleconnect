@@ -1,9 +1,9 @@
 package listing
 
 import (
+	"backend/internal/middlewares"
 	"net/http"
 
-	
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,6 +17,9 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /listing/{id}", handler.GetById)
 
 	r.HandleFunc("POST /listing/", handler.Create)
+
+	r.HandleFunc("PUT /listing/{id}", middlewares.AdminOnly(handler.Update))
+	r.HandleFunc("PATCH /listing/{id}", middlewares.AdminOnly(handler.Update))
 
 	r.HandleFunc("DELETE /listing/{id}", handler.DeleteById)
 }

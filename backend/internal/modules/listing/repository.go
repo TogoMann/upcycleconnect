@@ -72,6 +72,19 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) Update(id pgtype.Int8, l Listing) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE listing SET name=$1, description=$2, item_id=$3, created_by=$4, approved=$5, approved_by=$6, approved_at=$7, status=$8, price=$9 WHERE id=$10",
+		l.Name, l.Description, l.ItemId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package listing/repo Update: Id invalide: %d", id)
+	}
+	return nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 

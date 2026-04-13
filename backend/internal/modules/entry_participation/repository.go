@@ -1,10 +1,11 @@
 package entryparticipation
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	db "backend/internal/database"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -65,6 +66,14 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 		return fmt.Errorf("package entryparticipation/repo: Id invalide: %d", id)
 	}
 	return nil
+}
+
+func (r *Repository) GetByUserId(userId pgtype.Int8) ([]EntryParticipation, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT entry_id, user_id, status, joined_at FROM entry_participation WHERE user_id = $1", userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[EntryParticipation])
 }
 
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {

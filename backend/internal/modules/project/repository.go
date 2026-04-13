@@ -69,6 +69,54 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) Update(id pgtype.Int8, p Project) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE project SET listing_id=$1, creator_id=$2, title=$3, description=$4, final_score=$5, status=$6, completed_at=$7 WHERE id=$8",
+		p.ListingId, p.CreatorId, p.Title, p.Description, p.FinalScore, p.Status, p.CompletedAt, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package project/repo Update: Id invalide: %d", id)
+	}
+	return nil
+}
+
+func (r *Repository) CreateStep(dto ProjectStep) (pgtype.Int8, error) {
+	var id int64
+	err := r.db.QueryRow(db.Ctx,
+		"INSERT INTO project_steps (project_id, step_number, description) VALUES ($1, $2, $3) RETURNING id",
+		dto.ProjectId, dto.StepNumber, dto.Description).Scan(&id)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+	return pgtype.Int8{Int64: id, Valid: true}, nil
+}
+
+func (r *Repository) UpdateStep(id pgtype.Int8, dto ProjectStep) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE project_steps SET step_number=$1, description=$2 WHERE id=$3",
+		dto.StepNumber, dto.Description, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package project/repo UpdateStep: Id invalide: %d", id)
+	}
+	return nil
+}
+
+func (r *Repository) DeleteStep(id pgtype.Int8) error {
+	tag, err := r.db.Exec(db.Ctx, "DELETE FROM project_steps WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package project/repo DeleteStep: Id invalide: %d", id)
+	}
+	return nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM project WHERE id = $1", id).Scan(&idFound)

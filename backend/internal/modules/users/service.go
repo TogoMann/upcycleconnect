@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -35,7 +36,33 @@ func (s *Service) Create(userDto User) (pgtype.Int8, error) {
 		return pgtype.Int8{}, fmt.Errorf("invalid role: %s", userDto.Role)
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userDto.PasswordHash), bcrypt.DefaultCost)
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("failed to hash password: %w", err)
+	}
+	userDto.PasswordHash = string(hashedPassword)
+
 	return s.repo.Create(userDto)
+}
+
+func (s *Service) Update(id pgtype.Int8, user User) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("users/service ID invalide: %d", id)
+	}
+
+	exists, err := s.repo.ExistsById(id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("users/service user not found")
+	}
+
+	if !IsValidRole(user.Role) {
+		return fmt.Errorf("invalid role: %s", user.Role)
+	}
+
+	return s.repo.Update(id, user)
 }
 
 func (s *Service) Delete(id pgtype.Int8) error {
@@ -60,4 +87,11 @@ func (s *Service) GetScore(userId pgtype.Int8) (int32, error) {
 		return 0, fmt.Errorf("users/service User ID invalide: %d", userId)
 	}
 	return s.repo.GetScore(userId)
+}
+
+func (s *Service) UpdateTutorialSeen(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("users/service User ID invalide")
+	}
+	return s.repo.UpdateTutorialSeen(id)
 }

@@ -1,6 +1,7 @@
 package course
 
 import (
+	"backend/internal/middlewares"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,9 +15,12 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /course", handler.GetAll)
 	r.HandleFunc("GET /course/{id}", handler.GetById)
 
-	// Get every course of user
 	r.HandleFunc("GET /users/{user_id}/courses", handler.GetUserCourses)
 
 	r.HandleFunc("POST /course/", handler.Create)
+
+	r.HandleFunc("PUT /course/{id}", middlewares.AdminOnly(handler.Update))
+	r.HandleFunc("PATCH /course/{id}", middlewares.AdminOnly(handler.Update))
+
 	r.HandleFunc("DELETE /course/{id}", handler.DeleteById)
 }
