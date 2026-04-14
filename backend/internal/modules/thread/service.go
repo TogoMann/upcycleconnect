@@ -28,7 +28,7 @@ func (s *Service) GetById(id pgtype.Int8) (*Thread, error) {
 }
 
 func (s *Service) Create(threadDto Thread) (pgtype.Int8, error) {
-	if strings.TrimSpace(threadDto.Title) == "" || strings.TrimSpace(threadDto.Content) == "" {
+	if strings.TrimSpace(threadDto.Title) == "" || strings.TrimSpace(threadDto.Content) == "" || strings.TrimSpace(string(threadDto.Category)) == "" {
 		return pgtype.Int8{}, fmt.Errorf("thread/service Invalid string(s): Missing values.")
 	}
 
@@ -48,7 +48,7 @@ func (s *Service) Update(id pgtype.Int8, thread Thread) error {
 		return fmt.Errorf("thread/service thread not found")
 	}
 
-	if strings.TrimSpace(thread.Title) == "" || strings.TrimSpace(thread.Content) == "" {
+	if strings.TrimSpace(thread.Title) == "" || strings.TrimSpace(thread.Content) == "" || strings.TrimSpace(string(thread.Category)) == "" {
 		return fmt.Errorf("thread/service Invalid string(s): Missing values.")
 	}
 

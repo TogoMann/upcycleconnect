@@ -19,7 +19,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]Thread, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, upvotes, downvotes, created_at, last_post_at FROM thread")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, category, title, content, upvotes, downvotes, created_at, last_post_at FROM thread")
 	if err != nil {
 		return nil, fmt.Errorf("package thread/repo GetAll query: %w", err)
 	}
@@ -34,7 +34,7 @@ func (r *Repository) GetAll() ([]Thread, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Thread, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, upvotes, downvotes, created_at, last_post_at FROM thread WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, category, title, content, upvotes, downvotes, created_at, last_post_at FROM thread WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package thread/repo GetById query: %w", err)
 	}
@@ -51,8 +51,8 @@ func (r *Repository) Create(threadDto Thread) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO thread (created_by, title, content) VALUES ($1, $2, $3) RETURNING id",
-		threadDto.CreatedBy, threadDto.Title, threadDto.Content).Scan(&id)
+		"INSERT INTO thread (created_by, category, title, content) VALUES ($1, $2, $3, $4) RETURNING id",
+		threadDto.CreatedBy, threadDto.Category, threadDto.Title, threadDto.Content).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -74,8 +74,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 
 func (r *Repository) Update(id pgtype.Int8, thread Thread) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE thread SET title=$1, content=$2 WHERE id=$3",
-		thread.Title, thread.Content, id)
+		"UPDATE thread SET category=$1, title=$2, content=$3 WHERE id=$4",
+		thread.Category, thread.Title, thread.Content, id)
 	if err != nil {
 		return err
 	}

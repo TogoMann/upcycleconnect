@@ -7,16 +7,27 @@ import (
 type ListingStatus string
 
 const (
-	Active    = "active"
-	Sold      = "sold"
-	Cancelled = "cancelled"
+	Active    ListingStatus = "active"
+	Sold      ListingStatus = "sold"
+	Cancelled ListingStatus = "cancelled"
+)
+
+type ListingCategory string
+
+const (
+	Mobilier     ListingCategory = "Mobilier"
+	Decoration   ListingCategory = "Décoration"
+	Vetements    ListingCategory = "Vêtements"
+	Jouet        ListingCategory = "Jouet"
+	Electronique ListingCategory = "Electronique"
+	Outils       ListingCategory = "Outils"
 )
 
 type Listing struct {
 	Id          pgtype.Int8      `db:"id" json:"id"`
 	Name        string           `db:"name" json:"name"`
 	Description string           `db:"description" json:"description"`
-	Category    string           `db:"category" json:"category"`
+	Category    ListingCategory  `db:"category" json:"category"`
 	ItemId      pgtype.Int8      `db:"item_id" json:"item_id"`
 	CityId      pgtype.Int8      `db:"city_id" json:"city_id"`
 	CityName    string           `db:"city_name" json:"city_name"`

@@ -6,6 +6,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'entry_status') THEN
         CREATE TYPE ENTRY_STATUS AS ENUM ('accepted', 'declined', 'pending');
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listing_categories') THEN
+        CREATE TYPE LISTING_CATEGORIES AS ENUM ('Mobilier', 'Décoration', 'Vêtements', 'Jouet', 'Electronique', 'Outils');
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listing_status') THEN
         CREATE TYPE LISTING_STATUS AS ENUM ('active', 'sold', 'cancelled');
     END IF;
@@ -23,6 +26,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'container_size') THEN
         CREATE TYPE CONTAINER_SIZE AS ENUM ('S', 'M', 'L');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'thread_categories') THEN
+        CREATE TYPE THREAD_CATEGORIES AS ENUM ('Bricolage', 'Textile', 'Ressources', 'Débutants', 'Communauté');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'project_status') THEN
         CREATE TYPE PROJECT_STATUS AS ENUM ('in progress', 'done', 'featured', 'cancelled');
@@ -107,12 +113,20 @@ CREATE TABLE IF NOT EXISTS event_participation (
 CREATE TABLE IF NOT EXISTS thread (
     id BIGSERIAL PRIMARY KEY,
     created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    category THREAD_CATEGORIES NOT NULL,
     title VARCHAR(128) NOT NULL,
     content TEXT NOT NULL,
     upvotes INTEGER NOT NULL DEFAULT 0,
     downvotes INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_post_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS thread_views (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES user(id) ON DELETE SET NULL,
+    thread_id BIGINT REFERENCES thread(id) ON  DELETE CASCADE,
+    times INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS post (
@@ -222,7 +236,7 @@ CREATE TABLE IF NOT EXISTS listing (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
     description TEXT,
-    category VARCHAR(64),
+    category LISTING_CATEGORIES,
     item_id BIGINT REFERENCES item(id) ON DELETE CASCADE,
     city_id BIGINT REFERENCES city(id) ON DELETE SET NULL,
     created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

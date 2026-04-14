@@ -7,10 +7,10 @@ import (
 type ListingOrderStatus string
 
 const (
-	Pending   = "pending"
-	Paid      = "paid"
-	Shipped   = "shipped"
-	Completed = "completed"
+	Pending   ListingOrderStatus = "pending"
+	Paid      ListingOrderStatus = "paid"
+	Shipped   ListingOrderStatus = "shipped"
+	Completed ListingOrderStatus = "completed"
 )
 
 type ListingOrder struct {

@@ -27,6 +27,10 @@ func (s *Service) GetById(id pgtype.Int8) (*Listing, error) {
 }
 
 func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
+	if loDto.Category == "" {
+		return pgtype.Int8{}, fmt.Errorf("listing/service Listing category manquante")
+	}
+
 	val, err := loDto.Price.Value()
 
 	if err != nil {
@@ -42,6 +46,10 @@ func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 func (s *Service) Update(id pgtype.Int8, l Listing) error {
 	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("listing/service ID invalide: %d", id)
+	}
+
+	if l.Category == "" {
+		return fmt.Errorf("listing/service Listing category manquante")
 	}
 
 	exists, err := s.repo.ExistsById(id)
