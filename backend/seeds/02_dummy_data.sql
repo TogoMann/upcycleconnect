@@ -106,9 +106,9 @@ INSERT INTO subscriptions (subscriber_id, price, tier, created_at, until) VALUES
 -- =========================
 -- LISTINGS & ORDERS
 -- =========================
-INSERT INTO listing (name, description, item_id, created_by, created_at, approved, approved_by, approved_at, status, price) VALUES
-('Chaise en bois', 'Une belle chaise faite main.', 1, 2, NOW(), true, 3, NOW(), 'active', 150.00),
-('Etagère métal', 'Etagère solide en métal.', 2, 2, NOW(), true, 3, NOW(), 'sold', 200.00);
+INSERT INTO listing (name, description, category, item_id, city_id, created_by, created_at, approved, approved_by, approved_at, status, price) VALUES
+('Chaise en bois', 'Une belle chaise faite main.', 'Mobilier', 1, 1, 2, NOW(), true, 3, NOW(), 'active', 150.00),
+('Etagère métal', 'Etagère solide en métal.', 'Mobilier', 2, 2, 2, NOW(), true, 3, NOW(), 'sold', 200.00);
 
 INSERT INTO listing_order (listing_id, user_id, price, created_at, status, stripe_payment_intent_id) VALUES
 (1, 1, 150.00, NOW(), 'paid', 'pi_listing_1'),

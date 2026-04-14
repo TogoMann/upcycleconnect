@@ -1,109 +1,35 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useClientStore } from '@/stores/client'
+
+const clientStore = useClientStore()
 
 const searchQuery = ref('')
 const filterType = ref('')
 const filterCategorie = ref('')
 const filterLocalisation = ref('')
 
-const annonces = ref([
-    {
-        id: 1,
-        titre: 'Chaise en chêne',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Don',
-        prix: null,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Mobilier',
-        img: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
-    },
-    {
-        id: 2,
-        titre: 'Vase',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Vente',
-        prix: 25,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Décoration',
-        img: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=400&q=80',
-    },
-    {
-        id: 3,
-        titre: 'Panier à fruits',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Don',
-        prix: null,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Cuisine',
-        img: 'https://images.unsplash.com/photo-1611735341450-74d61e660ad2?w=400&q=80',
-    },
-    {
-        id: 4,
-        titre: 'Pull gris',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Don',
-        prix: null,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Vêtement',
-        img: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400&q=80',
-    },
-    {
-        id: 5,
-        titre: 'Lampe dorée',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Vente',
-        prix: 4,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Décoration',
-        img: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&q=80',
-    },
-    {
-        id: 6,
-        titre: 'Tableau enfant',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Don',
-        prix: null,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Jouet',
-        img: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=400&q=80',
-    },
-    {
-        id: 7,
-        titre: 'Chaise en chêne',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Vente',
-        prix: 7,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Mobilier',
-        img: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=400&q=80',
-    },
-    {
-        id: 8,
-        titre: 'Table basse',
-        description: 'Ponçage et vernis mat ...',
-        type: 'Vente',
-        prix: 40,
-        localisation: 'Nantes',
-        date: '14 Mai',
-        vendeur: 'Mégane K.',
-        categorie: 'Mobilier',
-        img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80',
-    },
-])
+onMounted(async () => {
+    await clientStore.fetchAllAnnonces()
+})
+
+const annonces = computed(() => {
+    return clientStore.allAnnonces.map((a: any) => ({
+        id: a.id.Int64,
+        titre: a.name,
+        description: a.description,
+        type: a.price?.Exp === 0 && a.price?.Int === 0 ? 'Don' : 'Vente',
+        prix: a.price?.Exp === 0 && a.price?.Int === 0 ? null : parseFloat(a.price?.Int) / 100, // Very simple parsing for Numeric
+        localisation: a.city_name || 'Inconnue',
+        date: new Date(a.created_at).toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short',
+        }),
+        vendeur: 'Utilisateur', // We don't have the seller name in the listing model yet
+        categorie: a.category || 'Non classé',
+        img: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80', // Placeholder
+    }))
+})
 
 const annoncesFiltrees = computed(() => {
     return annonces.value.filter((a) => {

@@ -19,7 +19,13 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]Listing, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, item_id, created_by, created_at, approved, approved_by, approved_at, status, price FROM listing")
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			c.name as city_name
+		FROM listing l
+		LEFT JOIN city c ON l.city_id = c.id`)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAll query: %w", err)
 	}
@@ -34,7 +40,14 @@ func (r *Repository) GetAll() ([]Listing, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, item_id, created_by, created_at, approved, approved_by, approved_at, status, price FROM listing WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			c.name as city_name
+		FROM listing l
+		LEFT JOIN city c ON l.city_id = c.id
+		WHERE l.id = $1`, id)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetById query: %w", err)
 	}
@@ -51,8 +64,8 @@ func (r *Repository) Create(listingDto Listing) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO listing (name, description, item_id, created_by, price) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-		listingDto.Name, listingDto.Description, listingDto.ItemId, listingDto.CreatedBy, listingDto.Price).Scan(&id)
+		"INSERT INTO listing (name, description, category, item_id, city_id, created_by, price) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		listingDto.Name, listingDto.Description, listingDto.Category, listingDto.ItemId, listingDto.CityId, listingDto.CreatedBy, listingDto.Price).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -74,8 +87,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 
 func (r *Repository) Update(id pgtype.Int8, l Listing) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE listing SET name=$1, description=$2, item_id=$3, created_by=$4, approved=$5, approved_by=$6, approved_at=$7, status=$8, price=$9 WHERE id=$10",
-		l.Name, l.Description, l.ItemId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, id)
+		"UPDATE listing SET name=$1, description=$2, category=$3, item_id=$4, city_id=$5, created_by=$6, approved=$7, approved_by=$8, approved_at=$9, status=$10, price=$11 WHERE id=$12",
+		l.Name, l.Description, l.Category, l.ItemId, l.CityId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, id)
 	if err != nil {
 		return err
 	}

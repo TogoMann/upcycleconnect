@@ -35,6 +35,21 @@ export const useClientStore = defineStore('client', () => {
         }
     }
 
+    const allAnnonces = ref<any[]>([])
+    async function fetchAllAnnonces() {
+        isLoading.value = true
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/listing`, { headers: authHeaders() })
+            if (!res.ok) throw new Error('Erreur chargement annonces')
+            allAnnonces.value = await res.json()
+        } catch (e: any) {
+            error.value = e.message
+        } finally {
+            isLoading.value = false
+        }
+    }
+
     async function createAnnonce(data: { name: string; description: string; price: number }) {
         const authStore = useAuthStore()
         const res = await fetch(`${API_BASE}/listing/`, {
@@ -170,6 +185,7 @@ export const useClientStore = defineStore('client', () => {
 
     return {
         annonces,
+        allAnnonces,
         depots,
         entries,
         score,
@@ -178,6 +194,7 @@ export const useClientStore = defineStore('client', () => {
         isLoading,
         error,
         fetchAnnonces,
+        fetchAllAnnonces,
         createAnnonce,
         deleteAnnonce,
         fetchDepots,

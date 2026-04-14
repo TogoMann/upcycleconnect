@@ -16,7 +16,10 @@ type Listing struct {
 	Id          pgtype.Int8      `db:"id" json:"id"`
 	Name        string           `db:"name" json:"name"`
 	Description string           `db:"description" json:"description"`
+	Category    string           `db:"category" json:"category"`
 	ItemId      pgtype.Int8      `db:"item_id" json:"item_id"`
+	CityId      pgtype.Int8      `db:"city_id" json:"city_id"`
+	CityName    string           `db:"city_name" json:"city_name"`
 	CreatedBy   pgtype.Int8      `db:"created_by" json:"created_by"`
 	CreatedAt   pgtype.Timestamp `db:"created_at" json:"created_at"`
 	Approved    bool             `db:"approved" json:"approved"`
