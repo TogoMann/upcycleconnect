@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -12,16 +12,16 @@ function logout() {
 </script>
 
 <template>
-    <div class="admin-layout">
+    <div class="pro-layout">
         <header class="navbar">
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
                 <div class="nav-profile">
                     <div class="profile-info">
                         <span class="profile-name">
-                            {{ authStore.user?.first_name || authStore.user?.username || 'Admin' }}
+                            {{ authStore.user?.first_name || authStore.user?.username || 'Professionnel' }}
                         </span>
-                        <span class="profile-role">Administrateur</span>
+                        <span class="profile-role">Espace professionnel</span>
                     </div>
                     <button class="btn-logout" @click="logout">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -37,32 +37,16 @@ function logout() {
         <div class="layout-body">
             <aside class="sidebar">
                 <nav class="sidebar-nav">
-                    <router-link to="/admin" class="sidebar-item" exact-active-class="sidebar-item--active">
+                    <router-link to="/pro" class="sidebar-item" exact-active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <rect x="3" y="12" width="4" height="9" />
                             <rect x="10" y="7" width="4" height="14" />
                             <rect x="17" y="3" width="4" height="18" />
                         </svg>
-                        <span>Dashboard</span>
+                        <span>Tableau de bord</span>
                     </router-link>
 
-                    <router-link to="/admin/conteneurs" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                        </svg>
-                        <span>Conteneurs</span>
-                    </router-link>
-
-                    <router-link to="/admin/depots" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <polyline points="16 16 12 12 8 16" />
-                            <line x1="12" y1="12" x2="12" y2="21" />
-                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-                        </svg>
-                        <span>Dépôts</span>
-                    </router-link>
-
-                    <router-link to="/admin/abonnements" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link to="/pro/abonnements" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                             <line x1="1" y1="10" x2="23" y2="10" />
@@ -70,131 +54,69 @@ function logout() {
                         <span>Abonnements</span>
                     </router-link>
 
-                    <router-link to="/admin/catalogue" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <rect x="3" y="3" width="7" height="7" />
-                            <rect x="14" y="3" width="7" height="7" />
-                            <rect x="14" y="14" width="7" height="7" />
-                            <rect x="3" y="14" width="7" height="7" />
-                        </svg>
-                        <span>Catalogue</span>
-                    </router-link>
-
-                    <router-link to="/admin/publicites" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link to="/pro/publicites" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                         </svg>
                         <span>Publicités</span>
                     </router-link>
 
-                    <router-link to="/admin/commissions" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link to="/pro/facturation" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <line x1="12" y1="1" x2="12" y2="23" />
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
                         </svg>
-                        <span>Commissions</span>
+                        <span>Facturation</span>
                     </router-link>
 
-                    <router-link to="/admin/financier" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link to="/pro/annonces" class="sidebar-item" active-class="sidebar-item--active">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                        <span>Annonces</span>
+                    </router-link>
+
+                    <router-link to="/pro/conteneurs/recuperer" class="sidebar-item" active-class="sidebar-item--active">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                        </svg>
+                        <span>Récupérer un objet</span>
+                    </router-link>
+
+                    <router-link to="/pro/projets" class="sidebar-item" active-class="sidebar-item--active">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span>Mes Projets</span>
+                    </router-link>
+
+                    <router-link to="/pro/dashboard-avance" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                             <polyline points="17 6 23 6 23 12" />
                         </svg>
-                        <span>Financier</span>
+                        <span>Tableau avancé</span>
                     </router-link>
 
-                    <router-link to="/admin/notifications" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link to="/pro/profil" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
                         </svg>
-                        <span>Notifications</span>
-                    </router-link>
-
-                    <router-link to="/admin/documents" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        <span>Documents</span>
-                    </router-link>
-
-                    <router-link to="/admin/plannings" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        <span>Plannings</span>
-                    </router-link>
-
-                    <router-link to="/admin/projets" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                        </svg>
-                        <span>Projets</span>
-                    </router-link>
-
-                    <router-link to="/admin/evenements" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                            <line x1="8" y1="14" x2="8" y2="14" />
-                        </svg>
-                        <span>Évènements</span>
-                    </router-link>
-
-                    <router-link to="/admin/actualites" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a4 4 0 0 1-4 4z" />
-                            <line x1="10" y1="7" x2="16" y2="7" />
-                            <line x1="10" y1="11" x2="16" y2="11" />
-                            <line x1="10" y1="15" x2="14" y2="15" />
-                        </svg>
-                        <span>Actualités</span>
-                    </router-link>
-
-                    <router-link to="/admin/forum" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
-                        <span>Forum</span>
-                    </router-link>
-
-                    <router-link to="/admin/langues" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="2" y1="12" x2="22" y2="12" />
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                        </svg>
-                        <span>Langues</span>
-                    </router-link>
-
-                    <router-link to="/admin/logs" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                        </svg>
-                        <span>Logs</span>
-                    </router-link>
-
-                    <router-link to="/admin/parametres" class="sidebar-item" active-class="sidebar-item--active">
-                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                        </svg>
-                        <span>Paramètres</span>
+                        <span>Mon Profil</span>
                     </router-link>
 
                     <div class="sidebar-divider"></div>
 
                     <router-link to="/" class="sidebar-item sidebar-item--back">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                            <polyline points="16 17 21 12 16 7" />
-                            <line x1="21" y1="12" x2="9" y2="12" />
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
                         </svg>
                         <span>Retour au site</span>
                     </router-link>
@@ -202,7 +124,7 @@ function logout() {
             </aside>
 
             <main class="main-content">
-                <router-view />
+                <RouterView />
             </main>
         </div>
 
@@ -219,7 +141,7 @@ function logout() {
                     <span class="footer-logo">UpCycleConnect</span>
                     <div class="footer-lang">
                         <span>Choisir la langue</span>
-                        <span class="lang-sep"> - </span>
+                        <span class="lang-sep">&nbsp;·&nbsp;</span>
                         <span>Français</span>
                     </div>
                 </div>
@@ -229,13 +151,13 @@ function logout() {
 </template>
 
 <style scoped>
-.admin-layout {
-    background-color: var(--cream);
-    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-    color: var(--charcoal);
+.pro-layout {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: var(--cream);
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--charcoal);
 }
 .navbar {
     background: var(--cream);
@@ -258,8 +180,8 @@ function logout() {
     font-size: 1.1rem;
     color: var(--green-dark);
     text-decoration: none;
-    flex-shrink: 0;
     letter-spacing: -0.01em;
+    flex-shrink: 0;
 }
 .nav-profile {
     display: flex;
@@ -313,7 +235,6 @@ function logout() {
 .sidebar {
     flex: 0 0 220px;
     padding: 40px 0;
-    overflow-y: auto;
 }
 .sidebar-nav {
     display: flex;
@@ -324,7 +245,7 @@ function logout() {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 16px;
+    padding: 11px 16px;
     border-radius: 8px;
     text-decoration: none;
     font-size: 0.92rem;
@@ -402,6 +323,7 @@ function logout() {
     font-weight: 800;
     font-size: 1.2rem;
     color: var(--white);
+    letter-spacing: -0.01em;
 }
 .footer-lang {
     font-size: 0.85rem;
@@ -431,6 +353,8 @@ function logout() {
     .main-content {
         padding: 24px 0 40px;
     }
+}
+@media (max-width: 560px) {
     .footer-links-wrap {
         flex-direction: column;
         align-items: center;

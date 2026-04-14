@@ -1,15 +1,34 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
+const router = useRouter()
+const authStore = useAuthStore()
+
+const error = ref('')
+const loading = ref(false)
 const showPassword = ref(false)
 const form = reactive({
-    email: '',
+    username: '',
     password: '',
-    rememberMe: false,
 })
 
-function handleLogin() {
-    console.log('form:', form)
+async function handleLogin() {
+    if (!form.username || !form.password) return
+    loading.value = true
+    error.value = ''
+    try {
+        await authStore.login(form.username, form.password)
+        const role = authStore.userRole
+        if (role === 'admin') router.push('/admin')
+        else if (role === 'pro') router.push('/pro')
+        else if (role === 'salarie') router.push('/salarie')
+        else router.push('/particulier')
+    } catch (e: any) {
+        error.value = 'Identifiants invalides.'
+    }
+    loading.value = false
 }
 </script>
 
@@ -19,13 +38,14 @@ function handleLogin() {
             <h1 class="page-title">Se connecter.</h1>
 
             <form class="login-form" @submit.prevent="handleLogin">
+                <div v-if="error" class="form-error">{{ error }}</div>
                 <input
-                    id="email"
-                    v-model="form.email"
-                    type="email"
-                    placeholder="Email"
+                    id="username"
+                    v-model="form.username"
+                    type="text"
+                    placeholder="Nom d'utilisateur"
                     class="form-input"
-                    autocomplete="email"
+                    autocomplete="username"
                 />
 
                 <div class="password-field">
@@ -42,16 +62,9 @@ function handleLogin() {
                     </router-link>
                 </div>
 
-                <label class="remember-label">
-                    <input
-                        type="checkbox"
-                        v-model="form.rememberMe"
-                        class="remember-checkbox"
-                    />
-                    <span>Se rappeler de moi</span>
-                </label>
-
-                <button type="submit" class="btn-submit">Se connecter</button>
+                <button type="submit" class="btn-submit" :disabled="loading">
+                    {{ loading ? 'Connexion…' : 'Se connecter' }}
+                </button>
             </form>
 
             <div class="create-account">
@@ -198,6 +211,15 @@ function handleLogin() {
 }
 .create-link:hover {
     color: var(--green-dark);
+}
+
+.form-error {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
 }
 
 @media (max-width: 700px) {
