@@ -60,8 +60,8 @@ INSERT INTO event_participation (event_id, user_id, stripe_payment_intent_id) VA
 -- =========================
 -- THREADS & POSTS
 -- =========================
-INSERT INTO thread (created_by, title, content, upvotes, downvotes, created_at, last_post_at) VALUES
-(1, 'Bienvenue', 'Premier thread de discussion', 5, 0, NOW(), NOW());
+INSERT INTO thread (created_by, category, title, content, upvotes, downvotes, created_at, last_post_at) VALUES
+(1, 'Communauté', 'Bienvenue', 'Premier thread de discussion', 5, 0, NOW(), NOW());
 
 INSERT INTO post (thread_id, created_by, content, upvotes, downvotes, created_at) VALUES
 (1, 2, 'Super idée !', 3, 0, NOW()),
