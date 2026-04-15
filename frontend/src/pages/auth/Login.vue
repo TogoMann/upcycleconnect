@@ -23,7 +23,7 @@ async function handleLogin() {
         const role = authStore.userRole
         if (role === 'admin') router.push('/admin')
         else if (role === 'pro') router.push('/pro')
-        else if (role === 'salarie') router.push('/salarie')
+        else if (role === 'interne') router.push('/salarie')
         else router.push('/particulier')
     } catch (e: any) {
         error.value = 'Identifiants invalides.'

@@ -34,12 +34,27 @@ function formatPrice(price: any): string {
     return num > 0 ? `${num.toFixed(2)} €` : 'Gratuit'
 }
 
+function getItemName(item: any): string {
+    if (item.name) return item.name
+    if (item._type === 'event') {
+        const d = item.date ?? item.created_at
+        return d ? `Événement du ${formatDate(d)}` : 'Événement'
+    }
+    return 'Atelier sans titre'
+}
+
+function getItemDesc(item: any): string {
+    if (item.description) return item.description
+    if (item._type === 'event') return 'Aucune description disponible pour cet événement.'
+    return 'Aucune description disponible pour cet atelier.'
+}
+
 function handleBuy(item: any) {
     router.push({
         path: '/particulier/paiement',
         query: {
             id: item.id?.Int64,
-            name: item.name,
+            name: getItemName(item),
             price: typeof item.price === 'object' ? item.price?.Float64 ?? item.price?.Int64 : item.price,
             type: item._type,
         },
@@ -109,8 +124,8 @@ onMounted(() => {
                     <span class="card-price">{{ formatPrice(item.price) }}</span>
                 </div>
 
-                <h3 class="card-name">{{ item.name }}</h3>
-                <p class="card-desc">{{ item.description }}</p>
+                <h3 class="card-name">{{ getItemName(item) }}</h3>
+                <p class="card-desc">{{ getItemDesc(item) }}</p>
 
                 <div class="card-footer">
                     <span v-if="item.created_at" class="card-date">

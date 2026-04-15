@@ -1,7 +1,51 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { RouterView, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const router = useRouter()
+const dropdownOpen = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
 
 const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentialité']
+
+function espaceUrl(): string {
+    const role = authStore.userRole
+    if (role === 'pro') return '/pro'
+    if (role === 'interne') return '/salarie'
+    if (role === 'admin') return '/admin'
+    return '/particulier'
+}
+
+function profilUrl(): string {
+    const role = authStore.userRole
+    if (role === 'pro') return '/pro/profil'
+    if (role === 'interne') return '/salarie/profil'
+    if (role === 'admin') return '/admin'
+    return '/particulier/profil'
+}
+
+function userInitials(): string {
+    const u = authStore.user
+    if (!u) return '?'
+    return ((u.first_name?.[0] ?? '') + (u.last_name?.[0] ?? u.username?.[0] ?? '')).toUpperCase() || '?'
+}
+
+function logout() {
+    authStore.logout()
+    dropdownOpen.value = false
+    router.push('/auth/login')
+}
+
+function handleClickOutside(e: MouseEvent) {
+    if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
+        dropdownOpen.value = false
+    }
+}
+
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
@@ -17,9 +61,47 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
                     <router-link to="/forum" class="nav-link" active-class="nav-link--active">Forum</router-link>
                     <router-link to="/a-propos" class="nav-link" active-class="nav-link--active">À propos</router-link>
                 </nav>
-                <router-link to="/auth/login" class="btn-nav">
+
+                <router-link v-if="!authStore.isAuthenticated" to="/auth/login" class="btn-nav">
                     S'inscrire / Se connecter
                 </router-link>
+
+                <div v-else class="user-dropdown" ref="dropdownRef">
+                    <button class="user-trigger" @click.stop="dropdownOpen = !dropdownOpen">
+                        <span class="user-avatar">{{ userInitials() }}</span>
+                        <span class="user-name">{{ authStore.user?.first_name || authStore.user?.username }}</span>
+                        <svg class="chevron" :class="{ 'chevron--open': dropdownOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+
+                    <div v-if="dropdownOpen" class="dropdown-menu">
+                        <router-link :to="espaceUrl()" class="dropdown-item" @click="dropdownOpen = false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <rect x="3" y="12" width="4" height="9" />
+                                <rect x="10" y="7" width="4" height="14" />
+                                <rect x="17" y="3" width="4" height="18" />
+                            </svg>
+                            Mon espace
+                        </router-link>
+                        <router-link :to="profilUrl()" class="dropdown-item" @click="dropdownOpen = false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            Mon profil
+                        </router-link>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item dropdown-item--danger" @click="logout">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            Se déconnecter
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -114,6 +196,122 @@ const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentia
 }
 .btn-nav:hover {
     background: var(--green-mid);
+}
+
+.user-dropdown {
+    position: relative;
+    flex-shrink: 0;
+}
+.user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--green-pale);
+    border: 1.5px solid rgba(8, 106, 53, 0.15);
+    border-radius: 40px;
+    padding: 7px 14px 7px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, border-color 0.2s;
+}
+.user-trigger:hover {
+    background: rgba(139, 189, 148, 0.35);
+    border-color: var(--green-light);
+}
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    background: var(--green-mid);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+}
+.user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--green-dark);
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chevron {
+    width: 14px;
+    height: 14px;
+    color: var(--green-mid);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+.chevron--open {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--white);
+    border: 1.5px solid rgba(53, 53, 53, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(8, 106, 53, 0.12), 0 2px 8px rgba(53, 53, 53, 0.08);
+    min-width: 200px;
+    padding: 6px;
+    z-index: 200;
+}
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--charcoal);
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    width: 100%;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+}
+.dropdown-item svg {
+    width: 16px;
+    height: 16px;
+    color: var(--green-mid);
+    flex-shrink: 0;
+}
+.dropdown-item:hover {
+    background: var(--green-pale);
+    color: var(--green-dark);
+}
+.dropdown-item:hover svg {
+    color: var(--green-dark);
+}
+.dropdown-item--danger {
+    color: rgba(53, 53, 53, 0.7);
+}
+.dropdown-item--danger svg {
+    color: rgba(53, 53, 53, 0.4);
+}
+.dropdown-item--danger:hover {
+    background: rgba(229, 62, 62, 0.07);
+    color: #c53030;
+}
+.dropdown-item--danger:hover svg {
+    color: #c53030;
+}
+.dropdown-divider {
+    height: 1px;
+    background: rgba(53, 53, 53, 0.08);
+    margin: 4px 6px;
 }
 
 .layout-main {

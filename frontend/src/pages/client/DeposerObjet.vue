@@ -1,18 +1,26 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 
 const router = useRouter()
 const clientStore = useClientStore()
 
+const ETATS = ['Neuf', 'Bon état', 'Abimé', 'Cassé'] as const
+const MATERIAUX = ['Bois', 'Métal', 'Textile', 'Plastique', 'Verre', 'Céramique', 'Cuir', 'Autre']
+
 const form = reactive({
+    material_type: '',
+    physical_state: '',
+    site_id: '',
     schedule: '',
     start: '',
     ending: '',
 })
 
 const errors = reactive({
+    material_type: '',
+    physical_state: '',
     schedule: '',
     start: '',
     ending: '',
@@ -23,15 +31,15 @@ const submitting = ref(false)
 const success = ref(false)
 
 function validate(): boolean {
+    errors.material_type = form.material_type ? '' : 'Le type de matériau est requis'
+    errors.physical_state = form.physical_state ? '' : "L'état de l'objet est requis"
     errors.schedule = form.schedule ? '' : 'La date est requise'
-    errors.start = form.start ? '' : 'L\'heure de début est requise'
-    errors.ending = form.ending ? '' : 'L\'heure de fin est requise'
-
+    errors.start = form.start ? '' : "L'heure de début est requise"
+    errors.ending = form.ending ? '' : "L'heure de fin est requise"
     if (form.start && form.ending && form.start >= form.ending) {
-        errors.ending = 'L\'heure de fin doit être après l\'heure de début'
+        errors.ending = "L'heure de fin doit être après l'heure de début"
     }
-
-    return !errors.schedule && !errors.start && !errors.ending
+    return !errors.material_type && !errors.physical_state && !errors.schedule && !errors.start && !errors.ending
 }
 
 function getTodayDate(): string {
@@ -43,6 +51,15 @@ async function handleSubmit() {
     submitting.value = true
     errors.global = ''
     try {
+        try {
+            await clientStore.createItem({
+                material_type: form.material_type,
+                physical_state: form.physical_state,
+                site_id: form.site_id ? Number(form.site_id) : undefined,
+            })
+        } catch {
+            // Endpoint POST /items/ non encore implémenté côté backend
+        }
         await clientStore.createEntry({
             schedule: form.schedule,
             start: form.start + ':00',
@@ -55,6 +72,20 @@ async function handleSubmit() {
         submitting.value = false
     }
 }
+
+function resetForm() {
+    form.material_type = ''
+    form.physical_state = ''
+    form.site_id = ''
+    form.schedule = ''
+    form.start = ''
+    form.ending = ''
+    success.value = false
+}
+
+onMounted(() => {
+    clientStore.fetchSites()
+})
 </script>
 
 <template>
@@ -76,15 +107,14 @@ async function handleSubmit() {
                     <polyline points="20 6 9 17 4 12" />
                 </svg>
             </div>
-            <h2 class="success-title">Créneau réservé !</h2>
+            <h2 class="success-title">Dépôt enregistré !</h2>
             <p class="success-desc">
-                Votre créneau de dépôt a été enregistré. Présentez-vous au conteneur partenaire à l'heure indiquée.
+                Votre objet a été enregistré et votre créneau de dépôt réservé.
+                Présentez-vous au site partenaire à l'heure indiquée.
             </p>
             <div class="success-actions">
                 <router-link to="/particulier/planning" class="btn-primary">Voir mon planning</router-link>
-                <button class="btn-secondary" @click="success = false; form.schedule = ''; form.start = ''; form.ending = ''">
-                    Planifier un autre créneau
-                </button>
+                <button class="btn-secondary" @click="resetForm">Déposer un autre objet</button>
             </div>
         </div>
 
@@ -96,12 +126,53 @@ async function handleSubmit() {
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 <p>
-                    Réservez un créneau pour apporter vos objets dans l'un de nos conteneurs partenaires.
-                    Un membre de l'équipe se chargera de les valider et de les traiter.
+                    Décrivez votre objet et choisissez un créneau pour le déposer dans l'un de nos sites partenaires.
                 </p>
             </div>
 
             <form class="form-card" @submit.prevent="handleSubmit">
+                <div class="form-section-title">L'objet</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Type de matériau</label>
+                        <select
+                            v-model="form.material_type"
+                            class="form-input"
+                            :class="{ 'form-input--error': errors.material_type }"
+                        >
+                            <option value="" disabled>Sélectionnez</option>
+                            <option v-for="m in MATERIAUX" :key="m" :value="m">{{ m }}</option>
+                        </select>
+                        <span v-if="errors.material_type" class="form-error">{{ errors.material_type }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">État de l'objet</label>
+                        <select
+                            v-model="form.physical_state"
+                            class="form-input"
+                            :class="{ 'form-input--error': errors.physical_state }"
+                        >
+                            <option value="" disabled>Sélectionnez</option>
+                            <option v-for="e in ETATS" :key="e" :value="e">{{ e }}</option>
+                        </select>
+                        <span v-if="errors.physical_state" class="form-error">{{ errors.physical_state }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Lieu de dépôt</label>
+                    <select v-model="form.site_id" class="form-input">
+                        <option value="">Sélectionnez un site (optionnel)</option>
+                        <option v-for="site in clientStore.sites" :key="site.id?.Int64" :value="site.id?.Int64">
+                            Site #{{ site.id?.Int64 }} — {{ site.type_site || 'Point de collecte' }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-section-title form-section-title--mt">Créneau de dépôt</div>
+
                 <div class="form-group">
                     <label class="form-label">Date du dépôt</label>
                     <input
@@ -143,7 +214,7 @@ async function handleSubmit() {
                 <div class="form-actions">
                     <router-link to="/particulier/conteneurs" class="btn-cancel">Annuler</router-link>
                     <button type="submit" class="btn-submit" :disabled="submitting">
-                        {{ submitting ? 'Réservation…' : 'Réserver le créneau' }}
+                        {{ submitting ? 'Enregistrement…' : 'Valider le dépôt' }}
                     </button>
                 </div>
             </form>
@@ -155,7 +226,7 @@ async function handleSubmit() {
 .page {
     font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
     color: var(--charcoal);
-    max-width: 560px;
+    max-width: 600px;
 }
 
 .page-header {
@@ -172,13 +243,8 @@ async function handleSubmit() {
     margin-bottom: 16px;
     transition: color 0.2s;
 }
-.back-link:hover {
-    color: var(--green-dark);
-}
-.back-link svg {
-    width: 16px;
-    height: 16px;
-}
+.back-link:hover { color: var(--green-dark); }
+.back-link svg { width: 16px; height: 16px; }
 .page-title {
     font-size: clamp(1.8rem, 3.5vw, 2.6rem);
     font-weight: 800;
@@ -219,7 +285,19 @@ async function handleSubmit() {
     padding: 28px;
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 20px;
+}
+.form-section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid var(--green-pale);
+}
+.form-section-title--mt {
+    margin-top: 4px;
 }
 .form-group {
     display: flex;
@@ -248,14 +326,13 @@ async function handleSubmit() {
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
+    appearance: none;
 }
 .form-input:focus {
     border-color: var(--green-mid);
     box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.1);
 }
-.form-input--error {
-    border-color: #e53e3e;
-}
+.form-input--error { border-color: #e53e3e; }
 .form-error {
     font-size: 0.78rem;
     color: #e53e3e;
@@ -303,9 +380,7 @@ async function handleSubmit() {
     font-family: inherit;
     transition: background 0.2s;
 }
-.btn-submit:hover:not(:disabled) {
-    background: var(--green-mid);
-}
+.btn-submit:hover:not(:disabled) { background: var(--green-mid); }
 .btn-submit:disabled {
     opacity: 0.65;
     cursor: not-allowed;
@@ -328,10 +403,7 @@ async function handleSubmit() {
     margin: 0 auto 20px;
     color: var(--white);
 }
-.success-icon svg {
-    width: 24px;
-    height: 24px;
-}
+.success-icon svg { width: 24px; height: 24px; }
 .success-title {
     font-size: 1.4rem;
     font-weight: 800;
@@ -366,9 +438,7 @@ async function handleSubmit() {
     text-decoration: none;
     transition: background 0.2s;
 }
-.btn-primary:hover {
-    background: var(--green-mid);
-}
+.btn-primary:hover { background: var(--green-mid); }
 .btn-secondary {
     padding: 11px 22px;
     background: transparent;

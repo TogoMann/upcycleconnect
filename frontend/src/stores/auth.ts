@@ -40,6 +40,28 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
+    async function register(username: string, firstName: string, lastName: string, email: string, password: string) {
+        const res = await fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                password,
+            }),
+        })
+        if (!res.ok) {
+            const msg = await res.text()
+            throw new Error(msg || 'Erreur lors de la création du compte')
+        }
+        const data = await res.json()
+        token.value = data.token
+        localStorage.setItem('auth_token', data.token)
+        await fetchCurrentUser()
+    }
+
     async function login(username: string, password: string) {
         const res = await fetch(`${API_BASE}/login`, {
             method: 'POST',
@@ -61,8 +83,15 @@ export const useAuthStore = defineStore('auth', () => {
             headers: { Authorization: `Bearer ${token.value}` },
         })
         if (!res.ok) return
-        const users: AuthUser[] = await res.json()
-        user.value = users.find(u => u.username === payload.username) ?? null
+        const users: any[] = await res.json()
+        const found = users.find(u => u.username === payload.username) ?? null
+        if (found) {
+            const rawId = found.id
+            if (rawId && typeof rawId === 'object' && 'Int64' in rawId) {
+                found.id = rawId.Int64
+            }
+        }
+        user.value = found
     }
 
     function logout() {
@@ -75,5 +104,5 @@ export const useAuthStore = defineStore('auth', () => {
         fetchCurrentUser()
     }
 
-    return { token, user, isAuthenticated, userRole, login, logout, fetchCurrentUser }
+    return { token, user, isAuthenticated, userRole, login, register, logout, fetchCurrentUser }
 })

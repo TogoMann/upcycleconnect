@@ -8,6 +8,7 @@ const clientStore = useClientStore()
 
 const editing = ref(false)
 const saved = ref(false)
+const saveError = ref('')
 
 const form = reactive({
     first_name: authStore.user?.first_name ?? '',
@@ -48,9 +49,19 @@ function cancelEdit() {
 }
 
 async function handleSave() {
-    editing.value = false
-    saved.value = true
-    setTimeout(() => (saved.value = false), 3000)
+    saveError.value = ''
+    try {
+        await clientStore.updateProfile({
+            first_name: form.first_name,
+            last_name: form.last_name,
+            email: form.email,
+        })
+        editing.value = false
+        saved.value = true
+        setTimeout(() => (saved.value = false), 3000)
+    } catch (e: any) {
+        saveError.value = e.message
+    }
 }
 </script>
 
@@ -128,6 +139,7 @@ async function handleSave() {
                             <label class="form-label">Email</label>
                             <input v-model="form.email" type="email" class="form-input" placeholder="email@exemple.com" />
                         </div>
+                        <div v-if="saveError" class="save-error">{{ saveError }}</div>
                         <div class="form-actions">
                             <button type="button" class="btn-cancel" @click="cancelEdit">Annuler</button>
                             <button type="submit" class="btn-save">Enregistrer</button>
@@ -380,6 +392,14 @@ async function handleSave() {
 .btn-cancel:hover {
     border-color: rgba(53, 53, 53, 0.35);
     color: var(--charcoal);
+}
+.save-error {
+    background: rgba(229, 62, 62, 0.08);
+    border: 1px solid rgba(229, 62, 62, 0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: #c53030;
 }
 .btn-save {
     padding: 10px 20px;

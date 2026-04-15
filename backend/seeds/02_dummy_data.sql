@@ -28,7 +28,8 @@ INSERT INTO users (username, first_name, last_name, email, password_hash, role, 
 ('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW()),
 ('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', NOW()),
 ('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'admin', NOW()),
-('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW());
+('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW()),
+('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW());
 
 -- =========================
 -- SCORE HISTORY

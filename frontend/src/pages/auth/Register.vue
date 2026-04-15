@@ -1,18 +1,49 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const form = reactive({
+    username: '',
     prenom: '',
     nom: '',
     email: '',
     password: '',
     confirmPassword: '',
-    typeCompte: '',
     acceptTerms: false,
 })
 
-function handleRegister() {
-    console.log('form:', form)
+const error = ref('')
+const loading = ref(false)
+
+async function handleRegister() {
+    error.value = ''
+
+    if (form.password !== form.confirmPassword) {
+        error.value = 'Les mots de passe ne correspondent pas.'
+        return
+    }
+    if (!form.acceptTerms) {
+        error.value = "Vous devez accepter les conditions d'utilisation."
+        return
+    }
+
+    loading.value = true
+    try {
+        await authStore.register(form.username, form.prenom, form.nom, form.email, form.password)
+        const role = authStore.userRole
+        if (role === 'admin') router.push('/admin')
+        else if (role === 'pro') router.push('/pro')
+        else if (role === 'interne') router.push('/salarie')
+        else router.push('/particulier')
+    } catch (e: any) {
+        error.value = e.message || 'Erreur lors de la création du compte.'
+    } finally {
+        loading.value = false
+    }
 }
 </script>
 
@@ -22,6 +53,15 @@ function handleRegister() {
             <h1 class="page-title">Créer un compte.</h1>
 
             <form class="register-form" @submit.prevent="handleRegister">
+                <input
+                    v-model="form.username"
+                    type="text"
+                    placeholder="Nom d'utilisateur"
+                    class="form-input"
+                    autocomplete="username"
+                    required
+                />
+
                 <div class="form-row">
                     <input
                         v-model="form.prenom"
@@ -29,6 +69,7 @@ function handleRegister() {
                         placeholder="Prénom"
                         class="form-input"
                         autocomplete="given-name"
+                        required
                     />
                     <input
                         v-model="form.nom"
@@ -36,6 +77,7 @@ function handleRegister() {
                         placeholder="Nom"
                         class="form-input"
                         autocomplete="family-name"
+                        required
                     />
                 </div>
 
@@ -45,6 +87,7 @@ function handleRegister() {
                     placeholder="Email"
                     class="form-input"
                     autocomplete="email"
+                    required
                 />
 
                 <input
@@ -53,6 +96,7 @@ function handleRegister() {
                     placeholder="Mot de passe"
                     class="form-input"
                     autocomplete="new-password"
+                    required
                 />
 
                 <input
@@ -61,17 +105,10 @@ function handleRegister() {
                     placeholder="Confirmer le mot de passe"
                     class="form-input"
                     autocomplete="new-password"
+                    required
                 />
 
-                <div class="select-wrap">
-                    <select v-model="form.typeCompte" class="form-select">
-                        <option value="" disabled>Type de compte</option>
-                        <option value="individuel">Particulier</option>
-                        <option value="pro">Professionnel</option>
-                        <option value="interne">Interne</option>
-                    </select>
-                    <span class="chevron">&#8964;</span>
-                </div>
+                <p v-if="error" class="error-msg">{{ error }}</p>
 
                 <label class="terms-label">
                     <input
@@ -87,7 +124,9 @@ function handleRegister() {
                     </span>
                 </label>
 
-                <button type="submit" class="btn-submit">Créer mon compte</button>
+                <button type="submit" class="btn-submit" :disabled="loading">
+                    {{ loading ? 'Création...' : 'Créer mon compte' }}
+                </button>
             </form>
 
             <div class="login-link-wrap">
@@ -159,39 +198,10 @@ function handleRegister() {
     box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.12);
 }
 
-.select-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-.form-select {
-    width: 100%;
-    padding: 16px 48px 16px 18px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    color: var(--charcoal);
-    background: var(--cream);
-    border: 1.5px solid rgba(53, 53, 53, 0.35);
-    border-radius: 8px;
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
-    cursor: pointer;
-    transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
-}
-.form-select:focus {
-    border-color: var(--green-mid);
-    box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.12);
-}
-.chevron {
-    position: absolute;
-    right: 16px;
-    font-size: 1.1rem;
-    color: var(--charcoal);
-    pointer-events: none;
-    line-height: 1;
+.error-msg {
+    font-size: 0.88rem;
+    color: #c0392b;
+    margin: 0;
 }
 
 .terms-label {
@@ -241,11 +251,16 @@ function handleRegister() {
         background 0.2s,
         transform 0.15s;
 }
-.btn-submit:hover {
+.btn-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+.btn-submit:not(:disabled):hover {
     background: var(--green-mid);
     transform: translateY(-1px);
 }
-.btn-submit:active {
+.btn-submit:not(:disabled):active {
     transform: translateY(0);
 }
 

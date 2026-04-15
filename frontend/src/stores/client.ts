@@ -50,7 +50,7 @@ export const useClientStore = defineStore('client', () => {
         }
     }
 
-    async function createAnnonce(data: { name: string; description: string; price: number }) {
+    async function createAnnonce(data: { name: string; description: string; price: number; category?: string }) {
         const authStore = useAuthStore()
         const res = await fetch(`${API_BASE}/listing/`, {
             method: 'POST',
@@ -183,6 +183,52 @@ export const useClientStore = defineStore('client', () => {
         }
     }
 
+    const sites = ref<any[]>([])
+    async function fetchSites() {
+        try {
+            const res = await fetch(`${API_BASE}/sites`, { headers: authHeaders() })
+            if (!res.ok) return
+            sites.value = await res.json()
+        } catch {
+            sites.value = []
+        }
+    }
+
+    async function createItem(data: {
+        material_type: string
+        physical_state: string
+        weight?: number
+        site_id?: number
+    }) {
+        const authStore = useAuthStore()
+        const body: any = {
+            owner_id: { Int64: authStore.user?.id, Valid: true },
+            material_type: data.material_type,
+            physical_state: data.physical_state,
+            status: 'deposited',
+        }
+        if (data.site_id) body.site_id = { Int64: data.site_id, Valid: true }
+        const res = await fetch(`${API_BASE}/items/`, {
+            method: 'POST',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        })
+        if (!res.ok) throw new Error('Erreur création objet')
+        return await res.json()
+    }
+
+    async function updateProfile(data: { first_name: string; last_name: string; email: string }) {
+        const authStore = useAuthStore()
+        if (!authStore.user) return
+        const res = await fetch(`${API_BASE}/users/${authStore.user.id}`, {
+            method: 'PATCH',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Erreur mise à jour profil')
+        await authStore.fetchCurrentUser()
+    }
+
     return {
         annonces,
         allAnnonces,
@@ -191,6 +237,7 @@ export const useClientStore = defineStore('client', () => {
         score,
         events,
         courses,
+        sites,
         isLoading,
         error,
         fetchAnnonces,
@@ -205,5 +252,8 @@ export const useClientStore = defineStore('client', () => {
         fetchCatalogue,
         createOrder,
         markTutorialSeen,
+        fetchSites,
+        createItem,
+        updateProfile,
     }
 })

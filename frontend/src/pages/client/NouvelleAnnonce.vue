@@ -6,16 +6,21 @@ import { useClientStore } from '@/stores/client'
 const router = useRouter()
 const clientStore = useClientStore()
 
+const CATEGORIES = ['Mobilier', 'Décoration', 'Vêtements', 'Jouet', 'Electronique', 'Outils'] as const
+
 const form = reactive({
     name: '',
     description: '',
     price: '',
+    category: '' as string,
 })
 
 const errors = reactive({
     name: '',
     description: '',
     price: '',
+    category: '',
+    global: '',
 })
 
 const submitting = ref(false)
@@ -24,21 +29,24 @@ function validate(): boolean {
     errors.name = form.name.trim() ? '' : 'Le titre est requis'
     errors.description = form.description.trim() ? '' : 'La description est requise'
     errors.price = form.price && Number(form.price) > 0 ? '' : 'Un prix valide est requis'
-    return !errors.name && !errors.description && !errors.price
+    errors.category = form.category ? '' : 'La catégorie est requise'
+    return !errors.name && !errors.description && !errors.price && !errors.category
 }
 
 async function handleSubmit() {
     if (!validate()) return
     submitting.value = true
+    errors.global = ''
     try {
         await clientStore.createAnnonce({
             name: form.name.trim(),
             description: form.description.trim(),
             price: Number(form.price),
+            category: form.category,
         })
         router.push('/particulier/annonces')
     } catch (e: any) {
-        errors.name = e.message
+        errors.global = e.message
     } finally {
         submitting.value = false
     }
@@ -84,6 +92,19 @@ async function handleSubmit() {
             </div>
 
             <div class="form-group">
+                <label class="form-label">Catégorie</label>
+                <select
+                    v-model="form.category"
+                    class="form-input"
+                    :class="{ 'form-input--error': errors.category }"
+                >
+                    <option value="" disabled>Sélectionnez une catégorie</option>
+                    <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+                <span v-if="errors.category" class="form-error">{{ errors.category }}</span>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">Prix (€)</label>
                 <div class="input-prefix-wrap">
                     <span class="input-prefix">€</span>
@@ -99,6 +120,8 @@ async function handleSubmit() {
                 </div>
                 <span v-if="errors.price" class="form-error">{{ errors.price }}</span>
             </div>
+
+            <div v-if="errors.global" class="error-banner">{{ errors.global }}</div>
 
             <div class="form-actions">
                 <router-link to="/particulier/annonces" class="btn-cancel">Annuler</router-link>
@@ -214,6 +237,14 @@ async function handleSubmit() {
     font-size: 0.78rem;
     color: #e53e3e;
     font-weight: 500;
+}
+.error-banner {
+    background: rgba(229, 62, 62, 0.08);
+    border: 1px solid rgba(229, 62, 62, 0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.83rem;
+    color: #e53e3e;
 }
 
 .form-actions {

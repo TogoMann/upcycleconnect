@@ -151,7 +151,7 @@ const router = createRouter({
         {
             path: '/salarie',
             component: SalarieLayout,
-            meta: { requiresAuth: true, role: 'salarie' },
+            meta: { requiresAuth: true, role: 'interne' },
             children: [
                 { path: '', component: SalarieDashboard },
                 { path: 'formations', component: SalarieMesFormations },
