@@ -13,4 +13,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    watch: {
+      // Polling requis dans Docker / WSL2 (inotify non fiable)
+      usePolling: true,
+      interval: 300,
+    },
+    hmr: {
+      port: 5173,
+    },
+  },
 })
