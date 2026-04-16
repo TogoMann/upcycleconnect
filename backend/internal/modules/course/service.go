@@ -20,14 +20,14 @@ func (s *Service) GetAll() ([]Course, error) {
 
 func (s *Service) GetById(id pgtype.Int8) (*Course, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("course/service ID invalide: %d", id)
+		return nil, fmt.Errorf("course/service ID invalide: %d", id.Int64)
 	}
 	return s.repo.GetById(id)
 }
 
 func (s *Service) GetUserCourses(id pgtype.Int8) ([]UserCourse, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("course/service User ID invalide: %d", id)
+		return nil, fmt.Errorf("course/service User ID invalide: %d", id.Int64)
 	}
 	return s.repo.GetUserCourses(id)
 }
@@ -38,7 +38,7 @@ func (s *Service) Create(dto Course) (pgtype.Int8, error) {
 
 func (s *Service) Update(id pgtype.Int8, c Course) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("course/service ID invalide: %d", id)
+		return fmt.Errorf("course/service ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -54,7 +54,7 @@ func (s *Service) Update(id pgtype.Int8, c Course) error {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("course/service ID invalide: %d", id)
+		return fmt.Errorf("course/service ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -67,4 +67,14 @@ func (s *Service) Delete(id pgtype.Int8) error {
 	}
 
 	return s.repo.Delete(id)
+}
+
+func (s *Service) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("course/service Course ID invalide")
+	}
+	if !adminId.Valid || adminId.Int64 < 1 {
+		return fmt.Errorf("course/service Admin ID invalide")
+	}
+	return s.repo.Approve(id, adminId)
 }

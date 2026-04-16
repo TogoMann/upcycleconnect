@@ -20,7 +20,7 @@ func (s *Service) GetAll() ([]Event, error) {
 
 func (s *Service) GetById(id pgtype.Int8) (*Event, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("event/service ID invalide: %d", id)
+		return nil, fmt.Errorf("event/service ID invalide: %d", id.Int64)
 	}
 	return s.repo.GetById(id)
 }
@@ -31,7 +31,7 @@ func (s *Service) Create(dto Event) (pgtype.Int8, error) {
 
 func (s *Service) Update(id pgtype.Int8, e Event) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("event/service ID invalide: %d", id)
+		return fmt.Errorf("event/service ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -47,7 +47,7 @@ func (s *Service) Update(id pgtype.Int8, e Event) error {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("event/service ID invalide: %d", id)
+		return fmt.Errorf("event/service ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -60,4 +60,14 @@ func (s *Service) Delete(id pgtype.Int8) error {
 	}
 
 	return s.repo.Delete(id)
+}
+
+func (s *Service) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("event/service Event ID invalide")
+	}
+	if !adminId.Valid || adminId.Int64 < 1 {
+		return fmt.Errorf("event/service Admin ID invalide")
+	}
+	return s.repo.Approve(id, adminId)
 }

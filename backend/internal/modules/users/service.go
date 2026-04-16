@@ -22,10 +22,17 @@ func (s *Service) GetAll() ([]User, error) {
 
 func (s *Service) GetById(id pgtype.Int8) (*User, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("users/service User ID invalide: %d", id)
+		return nil, fmt.Errorf("users/service User ID invalide: %d", id.Int64)
 	}
 
 	return s.repo.GetById(id)
+}
+
+func (s *Service) GetByUsername(username string) (*User, error) {
+	if strings.TrimSpace(username) == "" {
+		return nil, fmt.Errorf("username cannot be empty")
+	}
+	return s.repo.GetByUsername(username)
 }
 
 func (s *Service) Create(userDto User) (pgtype.Int8, error) {
@@ -47,7 +54,7 @@ func (s *Service) Create(userDto User) (pgtype.Int8, error) {
 
 func (s *Service) Update(id pgtype.Int8, user User) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("users/service ID invalide: %d", id)
+		return fmt.Errorf("users/service ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -67,7 +74,7 @@ func (s *Service) Update(id pgtype.Int8, user User) error {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("users/service User ID invalide: %d", id)
+		return fmt.Errorf("users/service User ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -84,7 +91,7 @@ func (s *Service) Delete(id pgtype.Int8) error {
 
 func (s *Service) GetScore(userId pgtype.Int8) (int32, error) {
 	if !userId.Valid || userId.Int64 < 1 {
-		return 0, fmt.Errorf("users/service User ID invalide: %d", userId)
+		return 0, fmt.Errorf("users/service User ID invalide: %d", userId.Int64)
 	}
 	return s.repo.GetScore(userId)
 }

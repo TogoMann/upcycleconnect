@@ -20,6 +20,22 @@ func (s *Service) GetAll() ([]Item, error) {
 	return s.repo.GetAll()
 }
 
+func (s *Service) GetById(id pgtype.Int8) (*Item, error) {
+	return s.repo.GetById(id)
+}
+
+func (s *Service) Create(item Item) (pgtype.Int8, error) {
+	return s.repo.Create(item)
+}
+
+func (s *Service) Update(id pgtype.Int8, item Item) error {
+	return s.repo.Update(id, item)
+}
+
+func (s *Service) Delete(id pgtype.Int8) error {
+	return s.repo.Delete(id)
+}
+
 func (s *Service) RequestDeposit(dto Item) error {
 	// Logic to save item with status 'deposited'
 	// TODO: Create method

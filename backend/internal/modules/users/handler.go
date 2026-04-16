@@ -1,11 +1,13 @@
 package users
 
 import (
+	"backend/internal/middlewares"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -15,6 +17,31 @@ type Handler struct {
 
 func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
+}
+
+func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	username, ok := claims["username"].(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.service.GetByUsername(username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res, _ := json.Marshal(user)
+	fmt.Fprintf(w, "%s", string(res))
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -79,14 +106,76 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userDto User
-	err = json.NewDecoder(r.Body).Decode(&userDto)
+	userId := pgtype.Int8{Int64: idInt, Valid: true}
+
+	// Permission check
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	role, _ := claims["role"].(string)
+	username, _ := claims["username"].(string)
+
+	existingUser, err := h.service.GetById(userId)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	if role != string(Admin) && existingUser.Username != username {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var updateData map[string]interface{}
+	err = json.NewDecoder(r.Body).Decode(&updateData)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	err = h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, userDto)
+	// Merge logic
+	if val, ok := updateData["username"].(string); ok {
+		existingUser.Username = val
+	}
+	if val, ok := updateData["first_name"].(string); ok {
+		existingUser.FirstName = val
+	}
+	if val, ok := updateData["last_name"].(string); ok {
+		existingUser.LastName = val
+	}
+	if val, ok := updateData["email"].(string); ok {
+		existingUser.Email = val
+	}
+	if val, ok := updateData["role"].(string); ok {
+		existingUser.Role = UserRole(val)
+	}
+	if val, ok := updateData["language_preference"].(string); ok {
+		existingUser.LanguagePreference = val
+	}
+
+	// If not admin, prevent role change and username change
+	if role != string(Admin) {
+		// We already checked that existingUser.Username == claimsUsername if not admin
+		// but let's re-enforce the role and username from the database
+		// We actually need to fetch the original user role again to be sure
+		// or just use what we got from GetById
+		
+		// Actually, I should probably re-read the original user to be safe if I want to be super strict,
+		// but since I just did GetById, existingUser is correct.
+	}
+	
+	// Re-fetch original values for restricted fields if not admin
+	if role != string(Admin) {
+		// Get original user to restore sensitive fields
+		originalUser, _ := h.service.GetById(userId)
+		existingUser.Role = originalUser.Role
+		existingUser.Username = originalUser.Username
+	}
+
+	err = h.service.Update(userId, *existingUser)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

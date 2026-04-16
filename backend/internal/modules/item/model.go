@@ -29,4 +29,5 @@ type Item struct {
 	Status        ItemStatus       `db:"status" json:"status"`
 	Weight        pgtype.Numeric   `db:"weight" json:"weight"`
 	CreatedAt     pgtype.Timestamp `db:"created_at" json:"created_at"`
+	SiteType      string           `db:"site_type" json:"site_type"`
 }

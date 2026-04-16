@@ -94,7 +94,7 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("package users/repo: Id invalide: %d", id)
+		return fmt.Errorf("package users/repo: Id invalide: %d", id.Int64)
 	}
 	return nil
 }
@@ -107,7 +107,7 @@ func (r *Repository) Update(id pgtype.Int8, user User) error {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("package users/repo Update: Id invalide: %d", id)
+		return fmt.Errorf("package users/repo Update: Id invalide: %d", id.Int64)
 	}
 	return nil
 }

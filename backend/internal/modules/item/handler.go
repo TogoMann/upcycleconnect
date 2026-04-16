@@ -26,6 +26,65 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(items)
 }
 
+func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	idInt, _ := strconv.ParseInt(idStr, 10, 64)
+
+	item, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	json.NewEncoder(w).Encode(item)
+}
+
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	var item Item
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	id, err := h.service.Create(item)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	item.Id = id
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(item)
+}
+
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	idInt, _ := strconv.ParseInt(idStr, 10, 64)
+
+	var item Item
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, item)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, `{"message": "item updated successfully"}`)
+}
+
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	idInt, _ := strconv.ParseInt(idStr, 10, 64)
+
+	err := h.service.Delete(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, `{"message": "item deleted successfully"}`)
+}
+
 func (h *Handler) Collect(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	idInt, _ := strconv.ParseInt(idStr, 10, 64)

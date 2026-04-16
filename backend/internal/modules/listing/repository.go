@@ -80,7 +80,7 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("package listing/repo: Id invalide: %d", id)
+		return fmt.Errorf("package listing/repo: Id invalide: %d", id.Int64)
 	}
 	return nil
 }
@@ -93,7 +93,20 @@ func (r *Repository) Update(id pgtype.Int8, l Listing) error {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("package listing/repo Update: Id invalide: %d", id)
+		return fmt.Errorf("package listing/repo Update: Id invalide: %d", id.Int64)
+	}
+	return nil
+}
+
+func (r *Repository) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
+	tag, err := r.db.Exec(db.Ctx,
+		"UPDATE listing SET approved = TRUE, approved_by = $1, approved_at = NOW() WHERE id = $2",
+		adminId, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package listing/repo Approve: Id invalide: %d", id.Int64)
 	}
 	return nil
 }

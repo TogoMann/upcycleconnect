@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"backend/internal/utils"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -42,6 +43,7 @@ func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), ClaimsKey, claims)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }

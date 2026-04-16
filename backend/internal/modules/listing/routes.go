@@ -2,6 +2,7 @@ package listing
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/users"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,7 +12,11 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	repo := NewRepository(db)
 	service := NewService(repo)
-	handler := NewHandler(service)
+
+	userRepo := users.NewRepository(db)
+	userService := users.NewService(userRepo)
+
+	handler := NewHandler(service, userService)
 
 	r.HandleFunc("GET /listing", handler.GetAll)
 	r.HandleFunc("GET /listing/{id}", handler.GetById)
@@ -20,6 +25,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	r.HandleFunc("PUT /listing/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("PATCH /listing/{id}", middlewares.AdminOnly(handler.Update))
+	r.HandleFunc("PATCH /listing/{id}/approve", middlewares.AdminOnly(handler.Approve))
 
 	r.HandleFunc("DELETE /listing/{id}", handler.DeleteById)
 }

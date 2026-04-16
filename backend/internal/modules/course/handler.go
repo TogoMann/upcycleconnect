@@ -1,20 +1,55 @@
 package course
 
 import (
+	"backend/internal/middlewares"
+	"backend/internal/modules/users"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
-	service *Service
+	service     *Service
+	userService *users.Service
 }
 
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, userService *users.Service) *Handler {
+	return &Handler{service: service, userService: userService}
+}
+
+func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := r.PathValue("id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	username, _ := claims["username"].(string)
+	admin, err := h.userService.GetByUsername(username)
+	if err != nil {
+		http.Error(w, "Admin user not found", http.StatusInternalServerError)
+		return
+	}
+
+	err = h.service.Approve(pgtype.Int8{Int64: idInt, Valid: true}, admin.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, `{"message": "course approved successfully"}`)
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {

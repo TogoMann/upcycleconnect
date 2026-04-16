@@ -10,7 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func ProOnly(next http.HandlerFunc) http.HandlerFunc {
+type contextKey string
+
+const ClaimsKey contextKey = "claims"
+
+func Authenticated(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -34,12 +38,6 @@ func ProOnly(next http.HandlerFunc) http.HandlerFunc {
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			http.Error(w, "Unauthorized: Invalid claims", http.StatusUnauthorized)
-			return
-		}
-
-		role, ok := claims["role"].(string)
-		if !ok || (role != "admin" && role != "pro") {
-			http.Error(w, "Forbidden: Pro access required", http.StatusForbidden)
 			return
 		}
 

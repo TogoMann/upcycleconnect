@@ -20,7 +20,7 @@ func (s *Service) GetAll() ([]Listing, error) {
 
 func (s *Service) GetById(id pgtype.Int8) (*Listing, error) {
 	if !id.Valid || id.Int64 < 1 {
-		return nil, fmt.Errorf("listing/service Listing ID invalide: %d", id)
+		return nil, fmt.Errorf("listing/service Listing ID invalide: %d", id.Int64)
 	}
 
 	return s.repo.GetById(id)
@@ -45,7 +45,7 @@ func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 
 func (s *Service) Update(id pgtype.Int8, l Listing) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("listing/service ID invalide: %d", id)
+		return fmt.Errorf("listing/service ID invalide: %d", id.Int64)
 	}
 
 	if l.Category == "" {
@@ -65,7 +65,7 @@ func (s *Service) Update(id pgtype.Int8, l Listing) error {
 
 func (s *Service) Delete(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
-		return fmt.Errorf("listing/service Listing ID invalide: %d", id)
+		return fmt.Errorf("listing/service ID invalide: %d", id.Int64)
 	}
 
 	exists, err := s.repo.ExistsById(id)
@@ -79,3 +79,14 @@ func (s *Service) Delete(id pgtype.Int8) error {
 
 	return s.repo.Delete(id)
 }
+
+func (s *Service) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("listing/service Listing ID invalide")
+	}
+	if !adminId.Valid || adminId.Int64 < 1 {
+		return fmt.Errorf("listing/service Admin ID invalide")
+	}
+	return s.repo.Approve(id, adminId)
+}
+
