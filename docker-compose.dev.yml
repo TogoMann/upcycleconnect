@@ -6,15 +6,15 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      
     ports:
       - "5432:5432"
     networks:
       - uc-backend
 
   api:
-    build: 
+    build:
       context: ./backend
+      dockerfile: Dockerfile.dev
     container_name: uc-api-dev
     environment:
       - DB_NAME=${DB_NAME}
@@ -22,8 +22,11 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
-    entrypoint: ["/app/main"]
-   
+    volumes:
+      # Monte le code source pour que air détecte les changements
+      - ./backend:/app
+      # Cache des modules Go (évite de re-télécharger à chaque rebuild)
+      - go_mod_cache:/root/go/pkg/mod
     ports:
       - "8081:8081"
     depends_on:
@@ -33,14 +36,21 @@ services:
       - uc-api
 
   frontend:
-    build: 
+    build:
       context: ./frontend
     container_name: uc-front-dev
-    
+    volumes:
+      # Monte le code source pour que Vite détecte les changements
+      - ./frontend:/app
+      # node_modules isolé dans le conteneur (évite les conflits host/conteneur)
+      - /app/node_modules
     ports:
       - "5173:5173"
     networks:
       - uc-api
+
+volumes:
+  go_mod_cache:
 
 networks:
   uc-backend:
