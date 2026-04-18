@@ -53,6 +53,7 @@ import AdminForum from '@/pages/admin/Forum.vue'
 import AdminLangues from '@/pages/admin/Langues.vue'
 import AdminLogs from '@/pages/admin/Logs.vue'
 import AdminParametres from '@/pages/admin/Parametres.vue'
+import AdminUsers from '@/pages/admin/Users.vue'
 
 import ClientDashboard from '@/pages/client/Dashboard.vue'
 import MesAnnonces from '@/pages/client/MesAnnonces.vue'
@@ -187,6 +188,7 @@ const router = createRouter({
                 { path: 'langues', component: AdminLangues },
                 { path: 'logs', component: AdminLogs },
                 { path: 'parametres', component: AdminParametres },
+                { path: 'utilisateurs', component: AdminUsers },
             ],
         },
         {

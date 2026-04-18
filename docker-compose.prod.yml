@@ -1,20 +1,19 @@
 services:
   postgres:
-    image: postgres:15.3-alpine
+    image: postgres:18.3-alpine
     container_name: uc-db-prod
-    [cite_start]restart: always [cite: 203]
+    restart: always
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - [cite_start]postgres_data:/var/lib/postgresql/data [cite: 204]
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - uc-backend
 
   api:
     image: jensentuang/upcycleconnect-api:latest
-    entrypoint: ["/app/main"]
     container_name: uc-api-prod
     restart: always
     environment:
@@ -36,12 +35,14 @@ services:
     container_name: uc-front-prod
     restart: always
     ports:
-      - [cite_start]"80:5173" [cite: 201]
+      - "80:80"
+    depends_on:
+      - api
     networks:
       - uc-api
 
 volumes:
-  [cite_start]postgres_data: [cite: 204]
+  postgres_data:
 
 networks:
   uc-backend:
