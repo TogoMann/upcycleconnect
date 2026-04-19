@@ -1,7 +1,6 @@
-package course
+package advertisement
 
 import (
-	"backend/internal/modules/users"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -10,83 +9,76 @@ import (
 )
 
 type Handler struct {
-	service     *Service
-	userService *users.Service
+	service *Service
 }
 
-func NewHandler(service *Service, userService *users.Service) *Handler {
-	return &Handler{service: service, userService: userService}
+func NewHandler(service *Service) *Handler {
+	return &Handler{service: service}
 }
 
-func (h *Handler) GetAllCatalogue(w http.ResponseWriter, r *http.Request) {
-	offres, err := h.service.GetAllCatalogue()
+func (h *Handler) GetAllPubs(w http.ResponseWriter, r *http.Request) {
+	pubs, err := h.service.GetAllPubs()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(offres)
+	json.NewEncoder(w).Encode(pubs)
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
-	courses, err := h.service.GetAll()
+	ads, err := h.service.GetAll()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(courses)
+	json.NewEncoder(w).Encode(ads)
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	course, err := h.service.GetById(pgtype.Int8{Int64: id, Valid: true})
+	ad, err := h.service.GetById(pgtype.Int8{Int64: id, Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(course)
-}
-
-func (h *Handler) GetUserCourses(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("user_id")
-	id, _ := strconv.ParseInt(idStr, 10, 64)
-	courses, err := h.service.GetUserCourses(pgtype.Int8{Int64: id, Valid: true})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(courses)
+	json.NewEncoder(w).Encode(ad)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var c Course
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+	var ad Advertisement
+	if err := json.NewDecoder(r.Body).Decode(&ad); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id, err := h.service.Create(c)
+	id, err := h.service.Create(ad)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.Id = id
+	ad.Id = id
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(c)
+	json.NewEncoder(w).Encode(ad)
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	var c Course
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+	var body struct {
+		Statut string `json:"statut"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.service.Update(pgtype.Int8{Int64: id, Valid: true}, c); err != nil {
+	dbStatus := "pending"
+	if body.Statut == "active" {
+		dbStatus = "validated"
+	}
+	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, dbStatus, pgtype.Int8{Int64: 1, Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -96,14 +88,24 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	if err := h.service.Approve(pgtype.Int8{Int64: id, Valid: true}, pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, "validated", pgtype.Int8{Int64: 1, Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Reject(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, "rejected", pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
 	if err := h.service.Delete(pgtype.Int8{Int64: id, Valid: true}); err != nil {

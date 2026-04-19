@@ -12,6 +12,6 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	service := NewService(userRepo)
 	handler := NewHandler(service)
 
-	r.HandleFunc("POST /login", handler.Login)
-	r.HandleFunc("POST /register", handler.Register)
+	r.HandleFunc("POST /login/", handler.Login)
+	r.HandleFunc("POST /register/", handler.Register)
 }

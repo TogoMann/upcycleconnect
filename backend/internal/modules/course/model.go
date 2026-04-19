@@ -4,6 +4,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type OffreFrontend struct {
+	Id          int64   `db:"id" json:"id"`
+	Nom         string  `db:"nom" json:"nom"`
+	Categorie   string  `db:"categorie" json:"categorie"`
+	Prix        float64 `db:"prix" json:"prix"`
+	Description string  `db:"description" json:"description"`
+	Actif       bool    `db:"actif" json:"actif"`
+}
+
 type Course struct {
 	Id          pgtype.Int8      `db:"id" json:"id"`
 	Name        string           `db:"name" json:"name"`

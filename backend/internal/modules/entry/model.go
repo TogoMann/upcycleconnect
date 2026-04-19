@@ -1,6 +1,17 @@
 package entry
 
-import "github.com/jackc/pgx/v5/pgtype"
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type DepotFrontend struct {
+	Id          int64  `db:"id" json:"id"`
+	Utilisateur string `db:"utilisateur" json:"utilisateur"`
+	Objet       string `db:"objet" json:"objet"`
+	Date        string `db:"date" json:"date"`
+	Statut      string `db:"statut" json:"statut"`
+	CodeEnvoye  bool   `db:"code_envoye" json:"code_envoye"`
+}
 
 type Entry struct {
 	Id        pgtype.Int8      `db:"id" json:"id"`

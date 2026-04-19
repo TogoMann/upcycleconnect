@@ -2,14 +2,17 @@ package router
 
 import (
 	db "backend/internal/database"
+	"backend/internal/modules/advertisement"
 	"backend/internal/modules/auth"
 	"backend/internal/modules/comments"
+	"backend/internal/modules/container"
 	"backend/internal/modules/course"
 	courseorder "backend/internal/modules/course_order"
 	"backend/internal/modules/entry"
 	entryparticipation "backend/internal/modules/entry_participation"
 	"backend/internal/modules/event"
 	eventparticipation "backend/internal/modules/event_participation"
+	"backend/internal/modules/financial"
 	"backend/internal/modules/item"
 	"backend/internal/modules/listing"
 	listingorder "backend/internal/modules/listing_order"
@@ -21,7 +24,6 @@ import (
 	"backend/internal/modules/users"
 
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,17 +36,16 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-
-	res, _ := json.Marshal("en vie.")
-	fmt.Fprintf(w, "%s", string(res))
+	json.NewEncoder(w).Encode("en vie.")
 }
 
 func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	r := http.NewServeMux()
 
-	r.HandleFunc("GET /", healthCheck)
+	r.HandleFunc("GET /health", healthCheck)
 
 	auth.RegisterRoutes(r, db)
+	advertisement.RegisterRoutes(r, db)
 	users.RegisterRoutes(r, db)
 	item.RegisterRoutes(r, db)
 	thread.RegisterRoutes(r, db)
@@ -60,6 +61,8 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	course.RegisterRoutes(r, db)
 	subscriptions.RegisterRoutes(r, db)
 	comments.RegisterRoutes(r, db)
+	container.RegisterRoutes(r, db)
+	financial.RegisterRoutes(r, db)
 	project.RegisterRoutes(r, db)
 
 	return r

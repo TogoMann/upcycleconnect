@@ -4,9 +4,8 @@ import (
 	db "backend/internal/database"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,19 +17,13 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetAll() ([]News, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, created_at, upvotes, downvotes FROM news")
+func (r *Repository) GetAll() ([]NewsFrontend, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, upvotes, downvotes FROM news")
 	if err != nil {
 		return nil, fmt.Errorf("package news/repo GetAll query: %w", err)
 	}
 
-	news, err := pgx.CollectRows(rows, pgx.RowToStructByName[News])
-
-	if err != nil {
-		return nil, fmt.Errorf("package news/repo GetAll: %v", err.Error())
-	}
-
-	return news, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByName[NewsFrontend])
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*News, error) {

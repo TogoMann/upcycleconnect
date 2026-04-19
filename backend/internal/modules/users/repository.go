@@ -18,19 +18,19 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetAll() ([]User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at FROM users")
+func (r *Repository) GetAll() ([]UserFrontend, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			id, username, first_name, last_name, email, role, language_preference, has_seen_tutorial, 
+			TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = users.id) AS INTEGER) as score
+		FROM users
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetAllusers query: %w", err)
 	}
 
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[User])
-
-	if err != nil {
-		return nil, fmt.Errorf("package users/repo GetAllUsers: %v", err.Error())
-	}
-
-	return users, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByName[UserFrontend])
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*User, error) {

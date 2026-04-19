@@ -19,7 +19,10 @@ INSERT INTO site (address_id, type_site, created_at) VALUES
 INSERT INTO container (site_id, status, size, created_at) VALUES
 (1, 'Available', 'M', NOW()),
 (1, 'Occupied', 'L', NOW()),
-(2, 'HS', 'S', NOW());
+(2, 'HS', 'S', NOW()),
+(2, 'Available', 'M', NOW()),
+(3, 'Available', 'L', NOW()),
+(3, 'Occupied', 'M', NOW());
 
 -- =========================
 -- USERS
@@ -124,3 +127,10 @@ INSERT INTO project (listing_id, creator_id, title, description, final_score, st
 INSERT INTO project_steps (project_id, step_number, description, created_at) VALUES
 (1, 1, 'Achat du matériel', NOW()),
 (1, 2, 'Ponçage de la structure', NOW());
+
+-- =========================
+-- ADVERTISEMENTS
+-- =========================
+INSERT INTO advertisement (announcer_id, target_id, target_type, ad_type, budget, status, start_date, end_date, created_at) VALUES
+(2, 1, 'listing', 'partnership', 150.00, 'validated', CURRENT_DATE, CURRENT_DATE + 30, NOW()),
+(2, 1, 'project', 'partnership', 200.00, 'pending', CURRENT_DATE + 1, CURRENT_DATE + 15, NOW());

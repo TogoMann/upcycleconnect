@@ -37,9 +37,9 @@ func (s *Service) Delete(id pgtype.Int8) error {
 }
 
 func (s *Service) RequestDeposit(dto Item) error {
-	// Logic to save item with status 'deposited'
-	// TODO: Create method
-	// (Implementation depends on repository Create)
+	
+	
+	
 	return nil
 }
 
@@ -62,6 +62,6 @@ func (s *Service) Collect(itemId pgtype.Int8, proId pgtype.Int8, code string) er
 		return err
 	}
 
-	// L'objet appartient maintenant au pro
+	
 	return s.repo.Collect(itemId, proId)
 }

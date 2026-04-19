@@ -16,7 +16,7 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetAll() ([]User, error) {
+func (s *Service) GetAll() ([]UserFrontend, error) {
 	return s.repo.GetAll()
 }
 

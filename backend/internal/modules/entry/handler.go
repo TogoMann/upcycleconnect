@@ -1,11 +1,12 @@
 package entry
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -16,73 +17,76 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	items, err := h.service.GetAll()
+func (h *Handler) GetAllDepots(w http.ResponseWriter, r *http.Request) {
+	depots, err := h.service.GetAllDepots()
 	if err != nil {
-		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	fmt.Printf("%#v\n", depots)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(depots)
+}
 
-	res, _ := json.Marshal(items)
-	fmt.Fprintf(w, "%s", string(res))
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+	entries, err := h.service.GetAll()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(entries)
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
-	idInt, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	item, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	entry, err := h.service.GetById(pgtype.Int8{Int64: id, Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	res, _ := json.Marshal(item)
-	fmt.Fprintf(w, "%s", string(res))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(entry)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var dto Entry
-	err := json.NewDecoder(r.Body).Decode(&dto)
-	if err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
-		return
-	}
-
-	id, err := h.service.Create(dto)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	dto.Id = id
-	res, _ := json.Marshal(dto)
-	fmt.Fprintf(w, "%s", string(res))
-}
-
-func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	idStr := r.PathValue("id")
-	idInt, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+	var e Entry
+	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	err = h.service.Delete(pgtype.Int8{Int64: idInt, Valid: true})
+	id, err := h.service.Create(e)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	e.Id = id
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(e)
+}
 
+func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	if err := h.service.Delete(pgtype.Int8{Int64: id, Valid: true}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"message": "entry deleted successfully"}`)
+}
+
+func (h *Handler) ValiderDepot(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	if err := h.service.ValidateDepot(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) EnvoyerCode(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"message": "Code envoyé"}`)
 }

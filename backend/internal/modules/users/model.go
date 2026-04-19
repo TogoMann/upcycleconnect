@@ -11,6 +11,19 @@ const (
 	Admin   UserRole = "admin"
 )
 
+type UserFrontend struct {
+	Id                 int64    `db:"id" json:"id"`
+	Username           string   `db:"username" json:"username"`
+	FirstName          string   `db:"first_name" json:"first_name"`
+	LastName           string   `db:"last_name" json:"last_name"`
+	Email              string   `db:"email" json:"email"`
+	Role               UserRole `db:"role" json:"role"`
+	LanguagePreference string   `db:"language_preference" json:"language_preference"`
+	HasSeenTutorial    bool     `db:"has_seen_tutorial" json:"has_seen_tutorial"`
+	CreatedAt          string   `db:"created_at" json:"created_at"`
+	Score              int32    `db:"score" json:"score"`
+}
+
 type User struct {
 	Id                 pgtype.Int8      `db:"id" json:"id"`
 	Username           string           `db:"username" json:"username"`

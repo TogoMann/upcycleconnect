@@ -108,7 +108,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	userId := pgtype.Int8{Int64: idInt, Valid: true}
 
-	// Permission check
+	
 	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -136,7 +136,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Merge logic
+	
 	if val, ok := updateData["username"].(string); ok {
 		existingUser.Username = val
 	}
@@ -156,20 +156,20 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		existingUser.LanguagePreference = val
 	}
 
-	// If not admin, prevent role change and username change
+	
 	if role != string(Admin) {
-		// We already checked that existingUser.Username == claimsUsername if not admin
-		// but let's re-enforce the role and username from the database
-		// We actually need to fetch the original user role again to be sure
-		// or just use what we got from GetById
 		
-		// Actually, I should probably re-read the original user to be safe if I want to be super strict,
-		// but since I just did GetById, existingUser is correct.
+		
+		
+		
+		
+		
+		
 	}
 	
-	// Re-fetch original values for restricted fields if not admin
+	
 	if role != string(Admin) {
-		// Get original user to restore sensitive fields
+		
 		originalUser, _ := h.service.GetById(userId)
 		existingUser.Role = originalUser.Role
 		existingUser.Username = originalUser.Username
