@@ -54,6 +54,8 @@ import AdminLangues from '@/pages/admin/Langues.vue'
 import AdminLogs from '@/pages/admin/Logs.vue'
 import AdminParametres from '@/pages/admin/Parametres.vue'
 import AdminUsers from '@/pages/admin/Users.vue'
+import AdminAnnonces from '@/pages/admin/Annonces.vue'
+import AdminPlans from '@/pages/admin/Plans.vue'
 
 import ClientDashboard from '@/pages/client/Dashboard.vue'
 import MesAnnonces from '@/pages/client/MesAnnonces.vue'
@@ -170,10 +172,12 @@ const router = createRouter({
             meta: { requiresAuth: true, role: 'admin' },
             children: [
                 { path: '', component: AdminDashboard },
+                { path: 'annonces', component: AdminAnnonces },
                 { path: 'annonces/:id', component: AdminAnnonceDetail },
                 { path: 'conteneurs', component: AdminConteneurs },
                 { path: 'depots', component: AdminDepots },
                 { path: 'abonnements', component: AdminAbonnements },
+                { path: 'plans', component: AdminPlans },
                 { path: 'financier', component: AdminFinancier },
                 { path: 'commissions', component: AdminCommissions },
                 { path: 'publicites', component: AdminPublicites },

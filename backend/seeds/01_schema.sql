@@ -64,6 +64,17 @@ CREATE TABLE IF NOT EXISTS site (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS plans (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(64) UNIQUE NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    billing_cycle VARCHAR(20) DEFAULT 'monthly',
+    features TEXT[] DEFAULT '{}',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS container (
     id BIGSERIAL PRIMARY KEY,
     site_id BIGINT REFERENCES site(id),

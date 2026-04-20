@@ -99,14 +99,23 @@ func (r *Repository) Update(id pgtype.Int8, l Listing) error {
 }
 
 func (r *Repository) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
-	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE listing SET approved = TRUE, approved_by = $1, approved_at = NOW() WHERE id = $2",
-		adminId, id)
+	tag, err := r.db.Exec(db.Ctx, "UPDATE listing SET approved = true, approved_by = $1, approved_at = NOW() WHERE id = $2", adminId, id)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("package listing/repo Approve: Id invalide: %d", id.Int64)
+	}
+	return nil
+}
+
+func (r *Repository) Disapprove(id pgtype.Int8) error {
+	tag, err := r.db.Exec(db.Ctx, "UPDATE listing SET approved = false, approved_by = NULL, approved_at = NULL WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package listing/repo Disapprove: Id invalide: %d", id.Int64)
 	}
 	return nil
 }

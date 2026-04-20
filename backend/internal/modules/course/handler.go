@@ -1,11 +1,14 @@
 package course
 
 import (
+	"backend/internal/middlewares"
 	"backend/internal/modules/users"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -63,40 +66,124 @@ func (h *Handler) GetUserCourses(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var c Course
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	var input struct {
+		Name        string  `json:"nom"`
+		Description string  `json:"description"`
+		Prix        float64 `json:"prix"`
+		Categorie   string  `json:"categorie"`
+		Actif       bool    `json:"actif"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	c := Course{
+		Name:        input.Name,
+		Description: input.Description,
+		Approved:    input.Actif,
+	}
+	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
+	c.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+
 	id, err := h.service.Create(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.Id = id
+	
+	res := OffreFrontend{
+		Id:          id.Int64,
+		Nom:         input.Name,
+		Categorie:   input.Categorie,
+		Description: input.Description,
+		Actif:       input.Actif,
+		Prix:        input.Prix,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(c)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	var c Course
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+
+	var input struct {
+		Name        string  `json:"nom"`
+		Description string  `json:"description"`
+		Prix        float64 `json:"prix"`
+		Categorie   string  `json:"categorie"`
+		Actif       bool    `json:"actif"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.service.Update(pgtype.Int8{Int64: id, Valid: true}, c); err != nil {
+
+	courseId := pgtype.Int8{Int64: id, Valid: true}
+	c := Course{
+		Name:        input.Name,
+		Description: input.Description,
+		Approved:    input.Actif,
+	}
+	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
+
+	if err := h.service.Update(courseId, c); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	updated, err := h.service.GetById(courseId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := OffreFrontend{
+		Id:          updated.Id.Int64,
+		Nom:         updated.Name,
+		Categorie:   input.Categorie,
+		Description: updated.Description,
+		Actif:       updated.Approved,
+	}
+	f, _ := updated.Price.Float64Value()
+	res.Prix = f.Float64
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
 	if err := h.service.Approve(pgtype.Int8{Int64: id, Valid: true}, pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Disapprove(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	if err := h.service.Disapprove(pgtype.Int8{Int64: id, Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

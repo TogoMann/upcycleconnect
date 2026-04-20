@@ -68,6 +68,32 @@ async function save() {
     loading.value = false
 }
 
+async function approuver(id: number) {
+    try {
+        const res = await fetch(`http://localhost:8081/admin/catalogue/${id}/approve`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok) {
+            const idx = offres.value.findIndex(o => o.id === id)
+            if (idx !== -1) offres.value[idx].actif = true
+        }
+    } catch {}
+}
+
+async function desapprouver(id: number) {
+    try {
+        const res = await fetch(`http://localhost:8081/admin/catalogue/${id}/disapprove`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok) {
+            const idx = offres.value.findIndex(o => o.id === id)
+            if (idx !== -1) offres.value[idx].actif = false
+        }
+    } catch {}
+}
+
 async function supprimer(id: number) {
     if (!confirm('Supprimer cette offre ?')) return
     await fetch(`http://localhost:8081/admin/catalogue/${id}`, {
@@ -154,6 +180,17 @@ async function supprimer(id: number) {
                             </span>
                         </td>
                         <td class="td-actions">
+                            <button v-if="!o.actif" class="btn-icon" title="Approuver" @click="approuver(o.id)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </button>
+                            <button v-else class="btn-icon" title="Désapprouver" @click="desapprouver(o.id)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
                             <button class="btn-icon" @click="openEdit(o)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

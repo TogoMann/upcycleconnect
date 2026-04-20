@@ -8,8 +8,9 @@ import (
 
 var JwtSecret = []byte("oubliez-pas-le-soutien")
 
-func GenerateJWT(username string, role string) (string, error) {
+func GenerateJWT(userId int64, username string, role string) (string, error) {
 	claims := jwt.MapClaims{
+		"sub":      userId,
 		"username": username,
 		"role":     role,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),

@@ -84,7 +84,17 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
 
 	var dto Event
 	err := json.NewDecoder(r.Body).Decode(&dto)
@@ -93,6 +103,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dto.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+
 	id, err := h.service.Create(dto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -100,8 +112,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dto.Id = id
-	res, _ := json.Marshal(dto)
-	fmt.Fprintf(w, "%s", string(res))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(dto)
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {

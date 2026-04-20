@@ -90,3 +90,10 @@ func (s *Service) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
 	return s.repo.Approve(id, adminId)
 }
 
+func (s *Service) Disapprove(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("listing/service Listing ID invalide")
+	}
+	return s.repo.Disapprove(id)
+}
+

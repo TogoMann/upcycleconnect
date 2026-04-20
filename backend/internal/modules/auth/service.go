@@ -31,7 +31,7 @@ func (s *Service) Login(username, password string) (*LoginResponse, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	token, err := utils.GenerateJWT(user.Username, string(user.Role))
+	token, err := utils.GenerateJWT(user.Id.Int64, user.Username, string(user.Role))
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +73,12 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 		LanguagePreference: "fr",
 	}
 
-	_, err = s.userRepo.Create(newUser)
+	id, err := s.userRepo.Create(newUser)
 	if err != nil {
 		return nil, errors.New("erreur lors de la création du compte")
 	}
 
-	token, err := utils.GenerateJWT(req.Username, string(users.Client))
+	token, err := utils.GenerateJWT(id.Int64, req.Username, string(users.Client))
 	if err != nil {
 		return nil, err
 	}

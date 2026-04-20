@@ -40,6 +40,10 @@ func (s *Service) Approve(id pgtype.Int8, approvedBy pgtype.Int8) error {
 	return s.repo.Approve(id, approvedBy)
 }
 
+func (s *Service) Disapprove(id pgtype.Int8) error {
+	return s.repo.Disapprove(id)
+}
+
 func (s *Service) Delete(id pgtype.Int8) error {
 	return s.repo.Delete(id)
 }

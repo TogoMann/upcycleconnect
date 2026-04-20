@@ -1,11 +1,14 @@
 package news
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"backend/internal/middlewares"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Handler struct {
@@ -47,24 +50,37 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
 
 	var newsDto News
-
 	err := json.NewDecoder(r.Body).Decode(&newsDto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
+	newsDto.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+
 	id, err := h.service.Create(newsDto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	newsDto.Id = id
-	res, _ := json.Marshal(newsDto)
-	fmt.Fprintf(w, "%s", string(res))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newsDto)
 }
 
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {

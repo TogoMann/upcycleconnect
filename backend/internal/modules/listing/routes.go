@@ -21,11 +21,12 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /listing", handler.GetAll)
 	r.HandleFunc("GET /listing/{id}", handler.GetById)
 
-	r.HandleFunc("POST /listing/", handler.Create)
+	r.HandleFunc("POST /listing/", middlewares.Authenticated(handler.Create))
 
 	r.HandleFunc("PUT /listing/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("PATCH /listing/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("PATCH /listing/{id}/approve", middlewares.AdminOnly(handler.Approve))
+	r.HandleFunc("PATCH /listing/{id}/disapprove", middlewares.AdminOnly(handler.Disapprove))
 
 	r.HandleFunc("DELETE /listing/{id}", handler.DeleteById)
 }

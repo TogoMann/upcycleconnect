@@ -83,6 +83,11 @@ func (r *Repository) Approve(id pgtype.Int8, approvedBy pgtype.Int8) error {
 	return err
 }
 
+func (r *Repository) Disapprove(id pgtype.Int8) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE course SET approved = false, approved_by = NULL, approved_at = NULL WHERE id = $1", id)
+	return err
+}
+
 func (r *Repository) Delete(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "DELETE FROM course WHERE id = $1", id)
 	return err
