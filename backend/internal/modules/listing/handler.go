@@ -70,6 +70,16 @@ func (h *Handler) Disapprove(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"message": "listing disapproved successfully"}`)
 }
 
+func (h *Handler) GetAllApproved(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	listings, err := h.service.GetAllApproved()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	res, _ := json.Marshal(listings)
+	fmt.Fprintf(w, "%s", string(res))
+}
+
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

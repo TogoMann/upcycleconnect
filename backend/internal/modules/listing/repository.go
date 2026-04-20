@@ -39,6 +39,21 @@ func (r *Repository) GetAll() ([]Listing, error) {
 	return listings, nil
 }
 
+func (r *Repository) GetAllApproved() ([]Listing, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			c.name as city_name
+		FROM listing l
+		LEFT JOIN city c ON l.city_id = c.id
+		WHERE l.approved = true`)
+	if err != nil {
+		return nil, fmt.Errorf("package listing/repo GetAllApproved query: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Listing])
+}
+
 func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 

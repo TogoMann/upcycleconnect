@@ -16,6 +16,10 @@ func (s *Service) GetAllCatalogue() ([]OffreFrontend, error) {
 	return s.repo.GetAllCatalogue()
 }
 
+func (s *Service) GetAllApprovedCatalogue() ([]OffreFrontend, error) {
+	return s.repo.GetAllApprovedCatalogue()
+}
+
 func (s *Service) GetAll() ([]Course, error) {
 	return s.repo.GetAll()
 }

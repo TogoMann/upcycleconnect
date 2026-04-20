@@ -19,7 +19,7 @@ const loading = ref(false)
 onMounted(async () => {
     loading.value = true
     try {
-        const res = await fetch('http://localhost:8081/listing', {
+        const res = await fetch('http://localhost:8081/admin/listings', {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) annonces.value = await res.json()

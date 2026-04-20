@@ -71,6 +71,11 @@ func (r *Repository) UpdateStatus(id pgtype.Int8, status string, approvedBy pgty
 	return err
 }
 
+func (r *Repository) Reject(id pgtype.Int8) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE advertisement SET status = 'rejected', approved_by = NULL WHERE id = $1", id)
+	return err
+}
+
 func (r *Repository) Delete(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "DELETE FROM advertisement WHERE id = $1", id)
 	return err
