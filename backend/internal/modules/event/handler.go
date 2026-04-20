@@ -52,16 +52,45 @@ func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"message": "event approved successfully"}`)
 }
 
+func (h *Handler) Disapprove(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := r.PathValue("id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.Disapprove(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, `{"message": "event disapproved successfully"}`)
+}
+
+func (h *Handler) GetAllFull(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	items, err := h.service.GetAllFull()
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(items)
+}
+
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	items, err := h.service.GetAll()
 	if err != nil {
 		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	res, _ := json.Marshal(items)
-	fmt.Fprintf(w, "%s", string(res))
+	json.NewEncoder(w).Encode(items)
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
@@ -79,8 +108,7 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := json.Marshal(item)
-	fmt.Fprintf(w, "%s", string(res))
+	json.NewEncoder(w).Encode(item)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -96,14 +124,31 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto Event
-	err := json.NewDecoder(r.Body).Decode(&dto)
+	role, _ := claims["role"].(string)
+
+	var input struct {
+		Date      string  `json:"date"`
+		StartDate string  `json:"start_date"`
+		EndDate   string  `json:"end_date"`
+		Location  string  `json:"location"`
+		Price     float64 `json:"price"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	dto.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+	dto := Event{
+		CreatedBy: pgtype.Int8{Int64: int64(sub), Valid: true},
+		Location:  input.Location,
+		Approved:  role == "admin",
+	}
+	dto.Date.UnmarshalJSON([]byte(`"` + input.Date + `"`))
+	dto.StartDate.UnmarshalJSON([]byte(`"` + input.StartDate + `"`))
+	dto.EndDate.UnmarshalJSON([]byte(`"` + input.EndDate + `"`))
+	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
 
 	id, err := h.service.Create(dto)
 	if err != nil {

@@ -9,18 +9,21 @@ interface Event {
     approved: boolean
     price: number | null
     date: string | null
+    start_date: string | null
+    end_date: string | null
+    location: string | null
     created_by: number | null
     created_at: string | null
 }
 
 const events = ref<Event[]>([])
 const showForm = ref(false)
-const form = ref({ date: '', price: '' })
+const form = ref({ date: '', start_time: '', end_time: '', location: '', price: '' })
 const saving = ref(false)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/event', {
+        const res = await fetch('http://localhost:8081/admin/events', {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) events.value = await res.json()
@@ -30,7 +33,16 @@ onMounted(async () => {
 async function creer() {
     saving.value = true
     try {
-        const body: Record<string, unknown> = { date: form.value.date }
+        // Combine date + start_time/end_time
+        const start_date = `${form.value.date}T${form.value.start_time}:00`
+        const end_date = `${form.value.date}T${form.value.end_time}:00`
+
+        const body: Record<string, unknown> = { 
+            date: start_date,
+            start_date: start_date,
+            end_date: end_date,
+            location: form.value.location
+        }
         if (form.value.price) body.price = parseFloat(form.value.price)
         const res = await fetch('http://localhost:8081/event/', {
             method: 'POST',
@@ -43,7 +55,7 @@ async function creer() {
         if (res.ok) {
             const created = await res.json()
             events.value.unshift(created)
-            form.value = { date: '', price: '' }
+            form.value = { date: '', start_time: '', end_time: '', location: '', price: '' }
             showForm.value = false
         }
     } catch {}
@@ -61,6 +73,19 @@ async function approuver(event: Event) {
             body: JSON.stringify({ approved: true }),
         })
         if (res.ok) event.approved = true
+    } catch {}
+}
+
+async function desapprouver(event: Event) {
+    try {
+        const res = await fetch(`http://localhost:8081/event/${event.id}/disapprove`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${authStore.token}`,
+            },
+        })
+        if (res.ok) event.approved = false
     } catch {}
 }
 
@@ -83,6 +108,14 @@ function fmtDate(iso: string | null): string {
         year: 'numeric',
     })
 }
+
+function fmtTime(iso: string | null): string {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
 </script>
 
 <template>
@@ -103,7 +136,19 @@ function fmtDate(iso: string | null): string {
             <form @submit.prevent="creer" class="form-grid">
                 <div class="field">
                     <label class="field-label">Date</label>
-                    <input v-model="form.date" type="datetime-local" class="field-input" required />
+                    <input v-model="form.date" type="date" class="field-input" required />
+                </div>
+                <div class="field">
+                    <label class="field-label">Début</label>
+                    <input v-model="form.start_time" type="time" class="field-input" required />
+                </div>
+                <div class="field">
+                    <label class="field-label">Fin</label>
+                    <input v-model="form.end_time" type="time" class="field-input" required />
+                </div>
+                <div class="field">
+                    <label class="field-label">Lieu</label>
+                    <input v-model="form.location" type="text" class="field-input" placeholder="ex: Salle Polyvalente" required />
                 </div>
                 <div class="field">
                     <label class="field-label">Prix (€)</label>
@@ -128,19 +173,24 @@ function fmtDate(iso: string | null): string {
                     <tr>
                         <th>ID</th>
                         <th>Date</th>
+                        <th>Début</th>
+                        <th>Fin</th>
+                        <th>Lieu</th>
                         <th>Prix</th>
                         <th>Statut</th>
-                        <th>Créé par</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="events.length === 0">
-                        <td colspan="6" class="empty">Aucun évènement.</td>
+                        <td colspan="8" class="empty">Aucun évènement.</td>
                     </tr>
                     <tr v-for="e in events" :key="e.id">
                         <td class="td-id">#{{ e.id }}</td>
-                        <td>{{ fmtDate(e.date) }}</td>
+                        <td>{{ fmtDate(e.start_date) }}</td>
+                        <td>{{ fmtTime(e.start_date) }}</td>
+                        <td>{{ fmtTime(e.end_date) }}</td>
+                        <td>{{ e.location || '—' }}</td>
                         <td>{{ e.price != null ? e.price + ' €' : 'Gratuit' }}</td>
                         <td>
                             <span
@@ -160,6 +210,13 @@ function fmtDate(iso: string | null): string {
                                 @click="approuver(e)"
                             >
                                 Approuver
+                            </button>
+                            <button
+                                v-else
+                                class="btn-sm"
+                                @click="desapprouver(e)"
+                            >
+                                Désapprouver
                             </button>
                             <button class="btn-sm btn-sm--danger" @click="supprimer(e.id)">
                                 Supprimer

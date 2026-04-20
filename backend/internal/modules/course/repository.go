@@ -32,6 +32,24 @@ func (r *Repository) GetAllCatalogue() ([]OffreFrontend, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[OffreFrontend])
 }
 
+func (r *Repository) GetAllApprovedCatalogue() ([]OffreFrontend, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			id,
+			name as nom,
+			'formation' as categorie,
+			CAST(COALESCE(price, 0) AS FLOAT8) as prix,
+			COALESCE(description, '') as description,
+			approved as actif
+		FROM course
+		WHERE approved = true
+	`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[OffreFrontend])
+}
+
 func (r *Repository) GetAll() ([]Course, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price FROM course")
 	if err != nil {

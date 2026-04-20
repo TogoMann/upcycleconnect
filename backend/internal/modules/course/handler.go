@@ -21,6 +21,16 @@ func NewHandler(service *Service, userService *users.Service) *Handler {
 	return &Handler{service: service, userService: userService}
 }
 
+func (h *Handler) GetAllApprovedCatalogue(w http.ResponseWriter, r *http.Request) {
+	offres, err := h.service.GetAllApprovedCatalogue()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(offres)
+}
+
 func (h *Handler) GetAllCatalogue(w http.ResponseWriter, r *http.Request) {
 	offres, err := h.service.GetAllCatalogue()
 	if err != nil {

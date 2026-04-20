@@ -18,6 +18,10 @@ func (s *Service) GetAll() ([]Event, error) {
 	return s.repo.GetAll()
 }
 
+func (s *Service) GetAllFull() ([]Event, error) {
+	return s.repo.GetAllFull()
+}
+
 func (s *Service) GetById(id pgtype.Int8) (*Event, error) {
 	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("event/service ID invalide: %d", id.Int64)
@@ -70,4 +74,11 @@ func (s *Service) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
 		return fmt.Errorf("event/service Admin ID invalide")
 	}
 	return s.repo.Approve(id, adminId)
+}
+
+func (s *Service) Disapprove(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("event/service Event ID invalide")
+	}
+	return s.repo.Disapprove(id)
 }

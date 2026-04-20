@@ -32,6 +32,10 @@ func (s *Service) UpdateStatus(id pgtype.Int8, status string, approvedBy pgtype.
 	return s.repo.UpdateStatus(id, status, approvedBy)
 }
 
+func (s *Service) Reject(id pgtype.Int8) error {
+	return s.repo.Reject(id)
+}
+
 func (s *Service) Delete(id pgtype.Int8) error {
 	return s.repo.Delete(id)
 }

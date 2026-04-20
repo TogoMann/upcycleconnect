@@ -144,7 +144,7 @@ export const useClientStore = defineStore('client', () => {
         try {
             const [evtRes, crsRes] = await Promise.all([
                 fetch(`${API_BASE}/event`, { headers: authHeaders() }),
-                fetch(`${API_BASE}/course`, { headers: authHeaders() }),
+                fetch(`${API_BASE}/course/catalogue`, { headers: authHeaders() }),
             ])
             events.value = evtRes.ok ? await evtRes.json() : []
             courses.value = crsRes.ok ? await crsRes.json() : []
