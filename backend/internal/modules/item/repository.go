@@ -32,6 +32,22 @@ func (r *Repository) GetAll() ([]Item, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[Item])
 }
 
+func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			i.id, i.owner_id, i.container_id, i.site_id, i.material_type, 
+			i.physical_state, i.status, i.weight, i.created_at,
+			s.type_site as site_type
+		FROM item i
+		LEFT JOIN site s ON i.site_id = s.id
+		WHERE i.owner_id = $1
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Item])
+}
+
 func (r *Repository) GetById(id pgtype.Int8) (*Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 

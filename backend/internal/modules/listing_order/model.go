@@ -22,3 +22,8 @@ type ListingOrder struct {
 	CreatedAt             pgtype.Timestamp   `db:"created_at" json:"created_at"`
 	Status                ListingOrderStatus `db:"status" json:"status"`
 }
+
+type ListingOrderWithListing struct {
+	ListingOrder
+	ListingName string `db:"listing_name" json:"listing_name"`
+}

@@ -1,6 +1,7 @@
 package comments
 
 import (
+	"backend/internal/middlewares"
 	"net/http"
 	
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,6 +14,6 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	r.HandleFunc("GET /comments", handler.GetAll)
 	r.HandleFunc("GET /comments/{id}", handler.GetById)
-	r.HandleFunc("POST /comments/", handler.Create)
-	r.HandleFunc("DELETE /comments/{id}", handler.DeleteById)
+	r.HandleFunc("POST /comments/", middlewares.Authenticated(handler.Create))
+	r.HandleFunc("DELETE /comments/{id}", middlewares.StaffOnly(handler.DeleteById))
 }

@@ -12,3 +12,8 @@ type CourseOrder struct {
 	Price                 pgtype.Numeric   `db:"price" json:"price"`
 	BookedAt              pgtype.Timestamp `db:"booked_at" json:"booked_at"`
 }
+
+type CourseOrderWithCourse struct {
+	CourseOrder
+	CourseName string `db:"course_name" json:"course_name"`
+}

@@ -24,6 +24,13 @@ func (s *Service) GetById(id pgtype.Int8) (*CourseOrder, error) {
 	return s.repo.GetById(id)
 }
 
+func (s *Service) GetByUserId(userId pgtype.Int8) ([]CourseOrderWithCourse, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return nil, fmt.Errorf("courseorder/service User ID invalide: %d", userId.Int64)
+	}
+	return s.repo.GetByUserId(userId)
+}
+
 func (s *Service) Create(dto CourseOrder) (pgtype.Int8, error) {
 	return s.repo.Create(dto)
 }

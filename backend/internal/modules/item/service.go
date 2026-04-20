@@ -24,6 +24,10 @@ func (s *Service) GetById(id pgtype.Int8) (*Item, error) {
 	return s.repo.GetById(id)
 }
 
+func (s *Service) GetByUserId(userId pgtype.Int8) ([]Item, error) {
+	return s.repo.GetByUserId(userId)
+}
+
 func (s *Service) Create(item Item) (pgtype.Int8, error) {
 	return s.repo.Create(item)
 }

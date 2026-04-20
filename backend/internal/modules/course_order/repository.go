@@ -44,6 +44,22 @@ func (r *Repository) GetById(id pgtype.Int8) (*CourseOrder, error) {
 	return &item, nil
 }
 
+func (r *Repository) GetByUserId(userId pgtype.Int8) ([]CourseOrderWithCourse, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			co.id, co.course_id, co.buyer_id, co.stripe_payment_intent_id, 
+			co.price, co.booked_at,
+			c.name as course_name
+		FROM course_order co
+		JOIN course c ON co.course_id = c.id
+		WHERE co.buyer_id = $1
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[CourseOrderWithCourse])
+}
+
 func (r *Repository) Create(dto CourseOrder) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(

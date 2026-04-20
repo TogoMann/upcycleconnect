@@ -25,6 +25,13 @@ func (s *Service) GetById(id pgtype.Int8) (*ListingOrder, error) {
 	return s.repo.GetById(id)
 }
 
+func (s *Service) GetByUserId(userId pgtype.Int8) ([]ListingOrderWithListing, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return nil, fmt.Errorf("listing_order/service User ID invalide: %d", userId.Int64)
+	}
+	return s.repo.GetByUserId(userId)
+}
+
 func (s *Service) Create(loDto ListingOrder) (pgtype.Int8, error) {
 	return s.repo.Create(loDto)
 }

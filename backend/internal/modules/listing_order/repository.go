@@ -47,6 +47,22 @@ func (r *Repository) GetById(id pgtype.Int8) (*ListingOrder, error) {
 	return &listingOrder, nil
 }
 
+func (r *Repository) GetByUserId(userId pgtype.Int8) ([]ListingOrderWithListing, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			lo.id, lo.listing_id, lo.user_id, lo.stripe_payment_intent_id, 
+			lo.price, lo.created_at, lo.status,
+			l.name as listing_name
+		FROM listing_order lo
+		JOIN listing l ON lo.listing_id = l.id
+		WHERE lo.user_id = $1
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[ListingOrderWithListing])
+}
+
 func (r *Repository) Create(listingOrderDto ListingOrder) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
