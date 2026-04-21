@@ -77,14 +77,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function fetchCurrentUser() {
         if (!token.value) return
-        const payload = parseJwt(token.value)
-        if (!payload) return
-        const res = await fetch(`${API_BASE}/users`, {
+        const res = await fetch(`${API_BASE}/users/me`, {
             headers: { Authorization: `Bearer ${token.value}` },
         })
         if (!res.ok) return
-        const users: any[] = await res.json()
-        const found = users.find(u => u.username === payload.username) ?? null
+        const found = await res.json()
         if (found) {
             const rawId = found.id
             if (rawId && typeof rawId === 'object' && 'Int64' in rawId) {

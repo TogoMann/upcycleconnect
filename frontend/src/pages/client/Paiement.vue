@@ -68,7 +68,15 @@ async function handleSubmit() {
     submitting.value = true
     errors.global = ''
     try {
-        await clientStore.createOrder(itemId.value, itemPrice.value)
+        const type = route.query.type as string
+        if (type === 'course') {
+            await clientStore.createCourseOrder(itemId.value, itemPrice.value)
+        } else if (type === 'event') {
+            await clientStore.createEventParticipation(itemId.value)
+        } else {
+            await clientStore.createOrder(itemId.value, itemPrice.value)
+        }
+        
         router.push({
             path: '/particulier/paiement/confirmation',
             query: { name: itemName.value, price: itemPrice.value },

@@ -16,7 +16,6 @@ const kpiEntries = computed(() => clientStore.entries.length)
 
 async function handleTutorialDone() {
     showTutorial.value = false
-    localStorage.setItem('tutorial_seen', '1')
     await clientStore.markTutorialSeen()
 }
 
@@ -28,7 +27,7 @@ onMounted(async () => {
         clientStore.fetchEntries(),
     ])
 
-    if (!authStore.user?.has_seen_tutorial && !localStorage.getItem('tutorial_seen')) {
+    if (!authStore.user?.has_seen_tutorial) {
         showTutorial.value = true
     }
 })

@@ -23,9 +23,11 @@ func (r *Repository) GetAll() ([]Listing, error) {
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
 			l.approved, l.approved_by, l.approved_at, l.status, l.price,
-			c.name as city_name
+			COALESCE(c.name, '') as city_name,
+			COALESCE(u.username, '') as created_by_name
 		FROM listing l
-		LEFT JOIN city c ON l.city_id = c.id`)
+		LEFT JOIN city c ON l.city_id = c.id
+		LEFT JOIN users u ON l.created_by = u.id`)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAll query: %w", err)
 	}
@@ -44,12 +46,31 @@ func (r *Repository) GetAllApproved() ([]Listing, error) {
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
 			l.approved, l.approved_by, l.approved_at, l.status, l.price,
-			c.name as city_name
+			COALESCE(c.name, '') as city_name,
+			COALESCE(u.username, '') as created_by_name
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
+		LEFT JOIN users u ON l.created_by = u.id
 		WHERE l.approved = true`)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAllApproved query: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Listing])
+}
+
+func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Listing, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			COALESCE(c.name, '') as city_name,
+			COALESCE(u.username, '') as created_by_name
+		FROM listing l
+		LEFT JOIN city c ON l.city_id = c.id
+		LEFT JOIN users u ON l.created_by = u.id
+		WHERE l.created_by = $1`, userId)
+	if err != nil {
+		return nil, fmt.Errorf("package listing/repo GetByUserId query: %w", err)
 	}
 	return pgx.CollectRows(rows, pgx.RowToStructByName[Listing])
 }
@@ -59,9 +80,11 @@ func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
 			l.approved, l.approved_by, l.approved_at, l.status, l.price,
-			c.name as city_name
+			COALESCE(c.name, '') as city_name,
+			COALESCE(u.username, '') as created_by_name
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
+		LEFT JOIN users u ON l.created_by = u.id
 		WHERE l.id = $1`, id)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetById query: %w", err)

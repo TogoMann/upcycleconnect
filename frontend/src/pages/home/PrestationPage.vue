@@ -1,4 +1,30 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+
+interface Course {
+    id: number
+    nom: string
+    description: string
+    prix: number
+    categorie: string
+}
+
+const dynamicCourses = ref<Course[]>([])
+
+onMounted(async () => {
+    try {
+        const res = await fetch('http://localhost:8081/course/catalogue')
+        if (res.ok) {
+            dynamicCourses.value = await res.json()
+        }
+    } catch (e) {
+        console.error('Failed to fetch courses:', e)
+    }
+})
+
 const prestations = [
     {
         id: 'recycler',
@@ -23,14 +49,6 @@ const prestations = [
             'Un accompagnement créatif pour vos projets de design. De la conception du croquis à la fabrication finale, nos artisans utilisent des techniques de surcyclage pour créer du mobilier ou des accessoires uniques à partir de vos anciens objets.',
         img: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&q=80',
         alt: 'Transformer — travail du bois',
-    },
-    {
-        id: 'seformer',
-        label: 'SE FORMER',
-        description:
-            "Des modules d'apprentissage concrets de 2 à 4 heures. Chaque session vous permet de manipuler les outils, d'apprendre des techniques spécifiques et de repartir avec votre propre création ou un guide méthodologique complet.",
-        img: 'https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=600&q=80',
-        alt: 'Se former — nature et écologie',
     },
 ]
 </script>
@@ -63,6 +81,25 @@ const prestations = [
                             <h2 class="prestation-label">{{ p.label }}</h2>
                             <p class="prestation-desc">{{ p.description }}</p>
                             <button class="btn-reserver">Réserver</button>
+                        </div>
+                    </div>
+
+                    <div
+                        v-for="course in dynamicCourses"
+                        :key="course.id"
+                        class="prestation-row"
+                    >
+                        <div class="prestation-img-wrap">
+                            <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=600&q=80" alt="Se former" class="prestation-img" />
+                        </div>
+                        <div class="prestation-content">
+                            <h2 class="prestation-label">SE FORMER : {{ course.nom }}</h2>
+                            <p class="prestation-desc">{{ course.description }}</p>
+                            <div class="course-meta">
+                                <span class="course-price">{{ course.prix > 0 ? course.prix + ' €' : 'Gratuit' }}</span>
+                                <span class="course-cat">{{ course.categorie }}</span>
+                            </div>
+                            <router-link to="/auth/login" class="btn-reserver">S'inscrire</router-link>
                         </div>
                     </div>
                 </div>
@@ -193,6 +230,20 @@ const prestations = [
     flex: 1;
 }
 
+.course-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.course-price {
+    color: var(--green-dark);
+}
+.course-cat {
+    opacity: 0.6;
+}
+
 .btn-reserver {
     background: var(--green-mid);
     color: var(--white);
@@ -206,6 +257,8 @@ const prestations = [
         background 0.2s,
         transform 0.15s;
     font-family: inherit;
+    text-decoration: none;
+    display: inline-block;
 }
 .btn-reserver:hover {
     background: var(--green-dark);

@@ -233,6 +233,23 @@ func (h *Handler) UpdateTutorialSeen(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	if int64(sub) != idInt {
+		http.Error(w, "Forbidden: You can only update your own tutorial status", http.StatusForbidden)
+		return
+	}
+
 	err = h.service.UpdateTutorialSeen(pgtype.Int8{Int64: idInt, Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

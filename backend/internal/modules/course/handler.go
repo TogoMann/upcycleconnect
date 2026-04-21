@@ -133,6 +133,30 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	courseId := pgtype.Int8{Int64: id, Valid: true}
+	existing, err := h.service.GetById(courseId)
+	if err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
+		return
+	}
+
+	if existing.CreatedBy.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this course", http.StatusForbidden)
+		return
+	}
+
 	var input struct {
 		Name        string  `json:"nom"`
 		Description string  `json:"description"`
@@ -146,7 +170,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courseId := pgtype.Int8{Int64: id, Valid: true}
 	c := Course{
 		Name:        input.Name,
 		Description: input.Description,
@@ -203,7 +226,32 @@ func (h *Handler) Disapprove(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	if err := h.service.Delete(pgtype.Int8{Int64: id, Valid: true}); err != nil {
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	courseId := pgtype.Int8{Int64: id, Valid: true}
+	existing, err := h.service.GetById(courseId)
+	if err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
+		return
+	}
+
+	if existing.CreatedBy.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this course", http.StatusForbidden)
+		return
+	}
+
+	if err := h.service.Delete(courseId); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

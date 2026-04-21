@@ -8,54 +8,82 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 interface Annonce {
-    id: number
-    titre: string
+    id: any
+    name: string
     description: string
-    prix: number
-    categorie: string
-    auteur: string
-    date: string
-    statut: string
-    images: string[]
+    price: any
+    category: string
+    created_by_name: string
+    created_at: any
+    approved: boolean
+    status: string
 }
 
 const annonce = ref<Annonce | null>(null)
 const loading = ref(true)
 
+function formatPrice(p: any): string {
+    if (!p) return '0.00'
+    const val = typeof p === 'object' ? p.Float64 ?? p.Int64 : p
+    return Number(val).toFixed(2)
+}
+
+function formatDate(ts: any): string {
+    if (!ts) return '—'
+    const date = new Date(ts.Time ?? ts)
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
 onMounted(async () => {
     try {
-        const res = await fetch(`http://localhost:8081/admin/annonces/${route.params.id}`, {
+        const res = await fetch(`http://localhost:8081/admin/listings/${route.params.id}`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
-        if (res.ok) annonce.value = await res.json()
-        else router.push('/admin')
-    } catch {}
-    loading.value = false
+        if (res.ok) {
+            annonce.value = await res.json()
+        } else {
+            router.push('/admin/annonces')
+        }
+    } catch (e) {
+        console.error('Fetch error:', e)
+    } finally {
+        loading.value = false
+    }
 })
 
 async function valider() {
-    await fetch(`http://localhost:8081/admin/annonces/${route.params.id}/valider`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${authStore.token}` },
-    })
-    if (annonce.value) annonce.value.statut = 'validee'
+    try {
+        const res = await fetch(`http://localhost:8081/listing/${route.params.id}/approve`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok && annonce.value) {
+            annonce.value.approved = true
+        }
+    } catch (e) {
+        console.error('Approve error:', e)
+    }
 }
 
 async function refuser() {
-    const raison = prompt('Raison du refus :')
-    if (!raison) return
-    await fetch(`http://localhost:8081/admin/annonces/${route.params.id}/refuser`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-        body: JSON.stringify({ raison }),
-    })
-    if (annonce.value) annonce.value.statut = 'refusee'
+    if (!confirm('Désapprouver cette annonce ?')) return
+    try {
+        const res = await fetch(`http://localhost:8081/listing/${route.params.id}/disapprove`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok && annonce.value) {
+            annonce.value.approved = false
+        }
+    } catch (e) {
+        console.error('Disapprove error:', e)
+    }
 }
 </script>
 
 <template>
     <div class="annonce-detail">
-        <router-link to="/admin" class="back-link">
+        <router-link to="/admin/annonces" class="back-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -67,12 +95,12 @@ async function refuser() {
         <template v-else-if="annonce">
             <div class="page-header">
                 <div class="header-row">
-                    <h1 class="page-title">{{ annonce.titre }}.</h1>
+                    <h1 class="page-title">{{ annonce.name }}.</h1>
                     <span
                         class="badge"
-                        :class="annonce.statut === 'validee' ? 'badge--active' : annonce.statut === 'refusee' ? 'badge--danger' : 'badge--pending'"
+                        :class="annonce.approved ? 'badge--active' : 'badge--pending'"
                     >
-                        {{ annonce.statut === 'validee' ? 'Validée' : annonce.statut === 'refusee' ? 'Refusée' : 'En attente' }}
+                        {{ annonce.approved ? 'Approuvée' : 'En attente' }}
                     </span>
                 </div>
             </div>
@@ -80,19 +108,19 @@ async function refuser() {
             <div class="info-grid">
                 <div class="info-card">
                     <div class="info-label">Auteur</div>
-                    <div class="info-value">{{ annonce.auteur }}</div>
+                    <div class="info-value">{{ annonce.created_by_name || 'Inconnu' }}</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Catégorie</div>
-                    <div class="info-value">{{ annonce.categorie }}</div>
+                    <div class="info-value">{{ annonce.category }}</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Prix</div>
-                    <div class="info-value">{{ annonce.prix.toFixed(2) }} €</div>
+                    <div class="info-value">{{ formatPrice(annonce.price) }} €</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Date</div>
-                    <div class="info-value">{{ annonce.date }}</div>
+                    <div class="info-value">{{ formatDate(annonce.created_at) }}</div>
                 </div>
             </div>
 
@@ -101,9 +129,9 @@ async function refuser() {
                 <p class="desc-text">{{ annonce.description }}</p>
             </div>
 
-            <div v-if="annonce.statut === 'en_attente'" class="actions-row">
-                <button class="btn-validate" @click="valider">Valider l'annonce</button>
-                <button class="btn-refuse" @click="refuser">Refuser</button>
+            <div class="actions-row">
+                <button v-if="!annonce.approved" class="btn-validate" @click="valider">Approuver l'annonce</button>
+                <button v-else class="btn-refuse" @click="refuser">Désapprouver</button>
             </div>
         </template>
     </div>

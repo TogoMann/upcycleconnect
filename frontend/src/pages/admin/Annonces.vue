@@ -8,13 +8,23 @@ interface Annonce {
     id: number
     name: string
     category: string
-    price: number
+    price: any
     description: string
     approved: boolean
 }
 
 const annonces = ref<Annonce[]>([])
 const loading = ref(false)
+
+function formatPrice(p: any): string {
+    if (!p) return '0.00'
+    if (typeof p === 'object') {
+        if (p.parsedValue !== undefined) return Number(p.parsedValue).toFixed(2)
+        if (p.Float64 !== undefined) return Number(p.Float64).toFixed(2)
+        if (p.Int64 !== undefined) return Number(p.Int64).toFixed(2)
+    }
+    return Number(p).toFixed(2)
+}
 
 onMounted(async () => {
     loading.value = true
@@ -89,7 +99,7 @@ async function disapproveAnnonce(id: number) {
                     <tr v-for="a in annonces" :key="a.id">
                         <td class="td-bold">{{ a.name }}</td>
                         <td class="td-muted">{{ a.category }}</td>
-                        <td>{{ a.price.toFixed(2) }} €</td>
+                        <td>{{ formatPrice(a.price) }} €</td>
                         <td>
                             <span class="badge" :class="a.approved ? 'badge--active' : 'badge--inactive'">
                                 {{ a.approved ? 'Approuvée' : 'En attente' }}

@@ -35,7 +35,8 @@ function formatPrice(price: any): string {
 }
 
 function getItemName(item: any): string {
-    if (item.name) return item.name
+    const name = item.name ?? item.nom
+    if (name) return name
     if (item._type === 'event') {
         const d = item.date ?? item.created_at
         return d ? `Événement du ${formatDate(d)}` : 'Événement'
@@ -44,18 +45,31 @@ function getItemName(item: any): string {
 }
 
 function getItemDesc(item: any): string {
-    if (item.description) return item.description
+    const desc = item.description ?? item.desc
+    if (desc) return desc
     if (item._type === 'event') return 'Aucune description disponible pour cet événement.'
     return 'Aucune description disponible pour cet atelier.'
 }
 
+function getItemId(item: any): number {
+    if (item.id && typeof item.id === 'object' && 'Int64' in item.id) {
+        return item.id.Int64
+    }
+    return Number(item.id)
+}
+
+function getItemPrice(item: any): any {
+    return item.price ?? item.prix
+}
+
 function handleBuy(item: any) {
+    const price = getItemPrice(item)
     router.push({
         path: '/particulier/paiement',
         query: {
-            id: item.id?.Int64,
+            id: getItemId(item),
             name: getItemName(item),
-            price: typeof item.price === 'object' ? item.price?.Float64 ?? item.price?.Int64 : item.price,
+            price: typeof price === 'object' ? price?.Float64 ?? price?.Int64 : price,
             type: item._type,
         },
     })
@@ -114,14 +128,14 @@ onMounted(() => {
         <div v-else class="catalogue-grid">
             <div
                 v-for="item in filtered"
-                :key="`${item._type}-${item.id?.Int64}`"
+                :key="`${item._type}-${getItemId(item)}`"
                 class="catalogue-card"
             >
                 <div class="card-header">
                     <span class="type-badge" :class="item._type === 'event' ? 'type-badge--event' : 'type-badge--course'">
                         {{ item._type === 'event' ? 'Événement' : 'Atelier' }}
                     </span>
-                    <span class="card-price">{{ formatPrice(item.price) }}</span>
+                    <span class="card-price">{{ formatPrice(getItemPrice(item)) }}</span>
                 </div>
 
                 <h3 class="card-name">{{ getItemName(item) }}</h3>
@@ -141,7 +155,7 @@ onMounted(() => {
                 </div>
 
                 <button class="btn-book" @click="handleBuy(item)">
-                    {{ formatPrice(item.price) === 'Gratuit' ? "S'inscrire" : "Acheter" }}
+                    {{ formatPrice(getItemPrice(item)) === 'Gratuit' ? "S'inscrire" : "Acheter" }}
                 </button>
             </div>
         </div>

@@ -171,6 +171,29 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	existing, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, "Event not found", http.StatusNotFound)
+		return
+	}
+
+	if existing.CreatedBy.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this event", http.StatusForbidden)
+		return
+	}
+
 	var dto Event
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
@@ -194,6 +217,29 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 	idInt, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	existing, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, "Event not found", http.StatusNotFound)
+		return
+	}
+
+	if existing.CreatedBy.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this event", http.StatusForbidden)
 		return
 	}
 

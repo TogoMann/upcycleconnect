@@ -4,7 +4,14 @@
 INSERT INTO city (name, zip_code) VALUES
 ('Paris', '75000'),
 ('Lyon', '69000'),
-('Marseille', '13000');
+('Marseille', '13000'),
+('Nantes', '44000'),
+('Bordeaux', '33000'),
+('Lille', '59000'),
+('Strasbourg', '67000'),
+('Montpellier', '34000'),
+('Toulouse', '31000'),
+('Nice', '06000');
 
 INSERT INTO address (city_id, street_name, street_number) VALUES
 (1, 'Rue de Rivoli', '1'),

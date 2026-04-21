@@ -19,7 +19,9 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	handler := NewHandler(service, userService)
 
 	r.HandleFunc("GET /listing", handler.GetAllApproved)
+	r.HandleFunc("GET /listing/me", middlewares.Authenticated(handler.GetByUserId))
 	r.HandleFunc("GET /admin/listings", middlewares.AdminOnly(handler.GetAll))
+	r.HandleFunc("GET /admin/listings/{id}", middlewares.AdminOnly(handler.GetById))
 	r.HandleFunc("GET /listing/{id}", handler.GetById)
 
 	r.HandleFunc("POST /listing/", middlewares.Authenticated(handler.Create))

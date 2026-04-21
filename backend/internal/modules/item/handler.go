@@ -100,13 +100,36 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	idInt, _ := strconv.ParseInt(idStr, 10, 64)
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	existing, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	if existing.OwnerId.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this item", http.StatusForbidden)
+		return
+	}
+
 	var item Item
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, item)
+	err = h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, item)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -118,7 +141,30 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	idInt, _ := strconv.ParseInt(idStr, 10, 64)
 
-	err := h.service.Delete(pgtype.Int8{Int64: idInt, Valid: true})
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	existing, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	if existing.OwnerId.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this item", http.StatusForbidden)
+		return
+	}
+
+	err = h.service.Delete(pgtype.Int8{Int64: idInt, Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

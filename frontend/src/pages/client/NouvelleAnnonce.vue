@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 
@@ -13,6 +13,7 @@ const form = reactive({
     description: '',
     price: '',
     category: '' as string,
+    city_id: '',
 })
 
 const errors = reactive({
@@ -20,17 +21,29 @@ const errors = reactive({
     description: '',
     price: '',
     category: '',
+    city_id: '',
     global: '',
 })
 
 const submitting = ref(false)
+
+onMounted(async () => {
+    console.log('NouvelleAnnonce mounted, fetching cities...')
+    try {
+        await clientStore.fetchCities()
+        console.log('Cities in store:', clientStore.cities)
+    } catch (err) {
+        console.error('Failed to fetch cities:', err)
+    }
+})
 
 function validate(): boolean {
     errors.name = form.name.trim() ? '' : 'Le titre est requis'
     errors.description = form.description.trim() ? '' : 'La description est requise'
     errors.price = form.price && Number(form.price) > 0 ? '' : 'Un prix valide est requis'
     errors.category = form.category ? '' : 'La catégorie est requise'
-    return !errors.name && !errors.description && !errors.price && !errors.category
+    errors.city_id = form.city_id ? '' : 'La ville est requise'
+    return !errors.name && !errors.description && !errors.price && !errors.category && !errors.city_id
 }
 
 async function handleSubmit() {
@@ -43,7 +56,9 @@ async function handleSubmit() {
             description: form.description.trim(),
             price: Number(form.price),
             category: form.category,
+            city_id: Number(form.city_id),
         })
+        await clientStore.fetchAnnonces()
         router.push('/particulier/annonces')
     } catch (e: any) {
         errors.global = e.message
@@ -102,6 +117,21 @@ async function handleSubmit() {
                     <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
                 <span v-if="errors.category" class="form-error">{{ errors.category }}</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ville</label>
+                <select
+                    v-model="form.city_id"
+                    class="form-input"
+                    :class="{ 'form-input--error': errors.city_id }"
+                >
+                    <option value="" disabled>Sélectionnez une ville</option>
+                    <option v-for="city in clientStore.cities" :key="city.id" :value="city.id">
+                        {{ city.name }} ({{ city.zip_code }})
+                    </option>
+                </select>
+                <span v-if="errors.city_id" class="form-error">{{ errors.city_id }}</span>
             </div>
 
             <div class="form-group">

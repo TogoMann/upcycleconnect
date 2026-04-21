@@ -22,6 +22,13 @@ func (s *Service) GetAllApproved() ([]Listing, error) {
 	return s.repo.GetAllApproved()
 }
 
+func (s *Service) GetByUserId(userId pgtype.Int8) ([]Listing, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return nil, fmt.Errorf("listing/service User ID invalide: %d", userId.Int64)
+	}
+	return s.repo.GetByUserId(userId)
+}
+
 func (s *Service) GetById(id pgtype.Int8) (*Listing, error) {
 	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("listing/service Listing ID invalide: %d", id.Int64)

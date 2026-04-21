@@ -18,7 +18,7 @@ const statusClass: Record<string, string> = {
 
 function formatPrice(price: any): string {
     if (!price) return '—'
-    const val = typeof price === 'object' ? price.Float64 ?? price.Int64 : price
+    const val = typeof price === 'object' ? (price.Float64 ?? price.Int64) : price
     return `${Number(val).toFixed(2)} €`
 }
 
@@ -62,19 +62,33 @@ onMounted(() => {
                 </svg>
             </div>
             <p class="empty-title">Aucune annonce pour l'instant</p>
-            <p class="empty-sub">Publiez votre première annonce pour proposer vos objets à la communauté.</p>
-            <router-link to="/particulier/annonces/nouvelle" class="btn-primary btn-primary--centered">
+            <p class="empty-sub">
+                Publiez votre première annonce pour proposer vos objets à la communauté.
+            </p>
+            <router-link
+                to="/particulier/annonces/nouvelle"
+                class="btn-primary btn-primary--centered"
+            >
                 Créer une annonce
             </router-link>
         </div>
 
         <div v-else class="annonces-list">
-            <div v-for="annonce in clientStore.annonces" :key="annonce.id?.Int64" class="annonce-card">
+            <div
+                v-for="annonce in clientStore.annonces"
+                :key="annonce.id?.Int64"
+                class="annonce-card"
+            >
                 <div class="annonce-main">
                     <div class="annonce-info">
-                        <span class="badge" :class="statusClass[annonce.status] ?? 'badge--active'">
-                            {{ statusLabels[annonce.status] ?? annonce.status }}
-                        </span>
+                        <div class="badge-row">
+                            <span class="badge" :class="statusClass[annonce.status] ?? 'badge--active'">
+                                {{ statusLabels[annonce.status] ?? annonce.status }}
+                            </span>
+                            <span v-if="!annonce.approved" class="badge badge--pending">
+                                En attente
+                            </span>
+                        </div>
                         <h3 class="annonce-name">{{ annonce.name }}</h3>
                         <p class="annonce-desc">{{ annonce.description }}</p>
                     </div>
@@ -84,10 +98,7 @@ onMounted(() => {
                     </div>
                 </div>
                 <div class="annonce-actions">
-                    <button
-                        class="btn-danger"
-                        @click="handleDelete(annonce.id?.Int64)"
-                    >
+                    <button class="btn-danger" @click="handleDelete(annonce.id?.Int64)">
                         Supprimer
                     </button>
                 </div>
@@ -207,6 +218,11 @@ onMounted(() => {
     flex: 1;
     min-width: 0;
 }
+.badge-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
 .badge {
     display: inline-block;
     padding: 3px 10px;
@@ -215,7 +231,6 @@ onMounted(() => {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    margin-bottom: 8px;
 }
 .badge--active {
     background: var(--green-pale);
@@ -228,6 +243,10 @@ onMounted(() => {
 .badge--cancelled {
     background: rgba(53, 53, 53, 0.08);
     color: rgba(53, 53, 53, 0.55);
+}
+.badge--pending {
+    background: rgba(246, 173, 85, 0.15);
+    color: #c05621;
 }
 .annonce-name {
     font-size: 0.95rem;
@@ -278,7 +297,10 @@ onMounted(() => {
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
-    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    transition:
+        border-color 0.2s,
+        color 0.2s,
+        background 0.2s;
 }
 .btn-danger:hover {
     border-color: #e53e3e;

@@ -1,4 +1,18 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+
+const courseCount = ref(0)
+
+onMounted(async () => {
+    try {
+        const res = await fetch('http://localhost:8081/course/catalogue')
+        if (res.ok) {
+            const courses = await res.json()
+            courseCount.value = courses.length
+        }
+    } catch {}
+})
+
 const categories = [
     {
         id: 'recycler',
@@ -22,37 +36,6 @@ const categories = [
         description: 'Métamorphosez vos anciens produits en pièces uniques et design.',
         img: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80',
         alt: 'Transformer',
-    },
-    {
-        id: 'seformer',
-        label: 'SE FORMER',
-        description:
-            'Apprenez les gestes de demain avec nos ateliers et développez vos compétences pour devenir un acteur du changement.',
-        img: 'https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=400&q=80',
-        alt: 'Se former',
-    },
-]
-
-const arguments_ = [
-    {
-        num: '01',
-        title: 'Matériaux sourcés localement',
-        text: 'Nous récupérons des objets destinés au rebut pour leur offrir une seconde vie.',
-    },
-    {
-        num: '02',
-        title: 'Design unique et artisanal',
-        text: 'Chaque pièce est fabriquée à la main, garantissant un modèle que vous ne trouverez nulle part ailleurs.',
-    },
-    {
-        num: '03',
-        title: 'Impact carbone réduit',
-        text: "En réutilisant l'existant, nous économisons les ressources naturelles et limitons les déchets.",
-    },
-    {
-        num: '04',
-        title: 'Communauté de créateurs',
-        text: "Accédez à un réseau d'artisans passionnés prêts à réaliser vos projets sur mesure.",
     },
 ]
 </script>
@@ -86,6 +69,16 @@ const arguments_ = [
                         <h3 class="category-label">{{ cat.label }}</h3>
                         <p class="category-desc">{{ cat.description }}</p>
                     </div>
+
+                    <router-link to="/prestations" class="category-card">
+                        <div class="category-img-wrap">
+                            <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=400&q=80" alt="Se former" class="category-img" />
+                        </div>
+                        <h3 class="category-label">SE FORMER</h3>
+                        <p class="category-desc">
+                            Apprenez les gestes de demain avec nos {{ courseCount }} ateliers disponibles et développez vos compétences.
+                        </p>
+                    </router-link>
                 </div>
             </div>
         </section>

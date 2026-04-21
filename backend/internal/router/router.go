@@ -4,6 +4,7 @@ import (
 	db "backend/internal/database"
 	"backend/internal/modules/advertisement"
 	"backend/internal/modules/auth"
+	"backend/internal/modules/city"
 	"backend/internal/modules/comments"
 	"backend/internal/modules/container"
 	"backend/internal/modules/course"
@@ -46,6 +47,7 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	r.HandleFunc("GET /health", healthCheck)
 
 	auth.RegisterRoutes(r, db)
+	city.RegisterRoutes(r, db)
 	advertisement.RegisterRoutes(r, db)
 	users.RegisterRoutes(r, db)
 	item.RegisterRoutes(r, db)
