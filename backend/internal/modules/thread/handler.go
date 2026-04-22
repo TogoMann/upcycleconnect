@@ -43,7 +43,21 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	threadId := pgtype.Int8{Int64: idInt, Valid: true}
+
+	var userId pgtype.Int8
+	if claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims); ok {
+		if sub, ok := claims["sub"].(float64); ok {
+			userId = pgtype.Int8{Int64: int64(sub), Valid: true}
+		}
+	}
+	h.service.IncrementViews(threadId, userId)
+
+	thread, err := h.service.GetById(threadId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	res, _ := json.Marshal(thread)
 	fmt.Fprintf(w, "%s", string(res))

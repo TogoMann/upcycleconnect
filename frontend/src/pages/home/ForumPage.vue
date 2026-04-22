@@ -8,6 +8,7 @@ interface Thread {
     content: string
     upvotes: number
     downvotes: number
+    views: number
     created_at: string | null
     last_post_at: string | null
 }
@@ -42,11 +43,19 @@ function fmtDate(iso: string | null): string {
 
 function timeAgo(iso: string | null): string {
     if (!iso) return '—'
-    const diff = Date.now() - new Date(iso).getTime()
-    const h = Math.floor(diff / 3600000)
-    if (h < 1) return "à l'instant"
-    if (h < 24) return `il y a ${h}h`
-    return `il y a ${Math.floor(h / 24)}j`
+    const now = new Date()
+    const date = new Date(iso)
+    
+    // Reset hours to compare dates only
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
+    const diffTime = today.getTime() - target.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return "Aujourd'hui"
+    if (diffDays === 1) return "Hier"
+    return `Il y a ${diffDays} jours`
 }
 
 function initials(title: string): string {
@@ -68,7 +77,7 @@ function initials(title: string): string {
                         Échangez, partagez et apprenez avec la communauté UpCycleConnect.
                     </p>
                 </div>
-                <router-link to="/auth/login" class="btn-nouveau">+ Nouveau sujet</router-link>
+                <router-link to="/forum/nouveau" class="btn-nouveau">+ Nouveau sujet</router-link>
             </div>
         </section>
 
@@ -104,6 +113,7 @@ function initials(title: string): string {
                     <div class="forum-header">
                         <span class="col-sujet">Sujet</span>
                         <span class="col-stats">Votes</span>
+                        <span class="col-stats">Vues</span>
                         <span class="col-activite">Activité</span>
                     </div>
 
@@ -124,6 +134,9 @@ function initials(title: string): string {
                         </div>
                         <div class="col-stats">
                             <span class="stat-value">{{ t.upvotes }}</span>
+                        </div>
+                        <div class="col-stats">
+                            <span class="stat-value">{{ t.views }}</span>
                         </div>
                         <div class="col-activite">
                             <span class="activite-text">{{ timeAgo(t.last_post_at) }}</span>
@@ -238,7 +251,7 @@ function initials(title: string): string {
 }
 .forum-header {
     display: grid;
-    grid-template-columns: 1fr 80px 120px;
+    grid-template-columns: 1fr 80px 80px 120px;
     gap: 16px;
     padding: 12px 20px;
     background: var(--green-pale);
@@ -250,7 +263,7 @@ function initials(title: string): string {
 }
 .forum-row {
     display: grid;
-    grid-template-columns: 1fr 80px 120px;
+    grid-template-columns: 1fr 80px 80px 120px;
     gap: 16px;
     padding: 18px 20px;
     text-decoration: none;

@@ -21,6 +21,7 @@ import AnnouncePage from '@/pages/home/AnnoucePage.vue'
 import RepairPage from '@/pages/home/RepairPage.vue'
 import ForumPage from '@/pages/home/ForumPage.vue'
 import ForumThreadPage from '@/pages/home/ForumThreadPage.vue'
+import ForumCreatePage from '@/pages/home/ForumCreatePage.vue'
 import AboutPage from '@/pages/home/AboutPage.vue'
 import ConseilsPage from '@/pages/home/ConseilsPage.vue'
 import AnnonceDetailPage from '@/pages/home/AnnonceDetailPage.vue'
@@ -104,6 +105,7 @@ const router = createRouter({
                 { path: 'annonces/:id', component: AnnonceDetailPage },
                 { path: 'reparer', component: RepairPage },
                 { path: 'forum', component: ForumPage },
+                { path: 'forum/nouveau', component: ForumCreatePage, meta: { requiresAuth: true } },
                 { path: 'forum/:id', component: ForumThreadPage },
                 { path: 'a-propos', component: AboutPage },
                 { path: 'conseils', component: ConseilsPage },
