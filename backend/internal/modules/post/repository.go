@@ -19,7 +19,12 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]Post, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, thread_id, created_by, parent_id, content, upvotes, downvotes, created_at, edited_at FROM post")
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			p.id, p.thread_id, p.created_by, p.parent_id, p.content, p.upvotes, p.downvotes, p.created_at, p.edited_at,
+			u.username, u.email
+		FROM post p
+		LEFT JOIN users u ON p.created_by = u.id`)
 	if err != nil {
 		return nil, fmt.Errorf("package post/repo GetAll query: %w", err)
 	}
@@ -34,7 +39,13 @@ func (r *Repository) GetAll() ([]Post, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Post, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, thread_id, created_by, parent_id, content, upvotes, downvotes, created_at, edited_at FROM post WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			p.id, p.thread_id, p.created_by, p.parent_id, p.content, p.upvotes, p.downvotes, p.created_at, p.edited_at,
+			u.username, u.email
+		FROM post p
+		LEFT JOIN users u ON p.created_by = u.id
+		WHERE p.id = $1`, id)
 	if err != nil {
 		return nil, fmt.Errorf("package post/repo GetById query: %w", err)
 	}
@@ -51,10 +62,11 @@ func (r *Repository) GetThreadPosts(id pgtype.Int8) ([]ThreadPosts, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT
 			p.id, p.thread_id, p.created_by, p.parent_id, p.content, p.upvotes, p.downvotes, p.created_at, p.edited_at,
+			u.username, u.email,
 			t.title, t.content AS thread_content
 		FROM post AS p
-		INNER JOIN thread AS t
-		ON p.thread_id = t.id
+		INNER JOIN thread AS t ON p.thread_id = t.id
+		LEFT JOIN users u ON p.created_by = u.id
 		WHERE t.id = $1`, id)
 
 	if err != nil {
@@ -135,4 +147,14 @@ func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (r *Repository) Upvote(id pgtype.Int8) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE post SET upvotes = upvotes + 1 WHERE id = $1", id)
+	return err
+}
+
+func (r *Repository) Downvote(id pgtype.Int8) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE post SET downvotes = downvotes + 1 WHERE id = $1", id)
+	return err
 }

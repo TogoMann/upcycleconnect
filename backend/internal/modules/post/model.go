@@ -14,6 +14,8 @@ type Post struct {
 	Downvotes int32            `db:"downvotes" json:"downvotes"`
 	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
 	EditedAt  pgtype.Timestamp `db:"edited_at" json:"edited_at"`
+	Username  string           `db:"username" json:"username"`
+	Email     string           `db:"email" json:"email"`
 }
 
 type ThreadPosts struct {

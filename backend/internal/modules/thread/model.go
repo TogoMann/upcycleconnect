@@ -22,4 +22,6 @@ type Thread struct {
 	Downvotes  int32            `db:"downvotes" json:"downvotes"`
 	CreatedAt  pgtype.Timestamp `db:"created_at" json:"created_at"`
 	LastPostAt pgtype.Timestamp `db:"last_post_at" json:"last_post_at"`
+	Username   string           `db:"username" json:"username"`
+	Email      string           `db:"email" json:"email"`
 }

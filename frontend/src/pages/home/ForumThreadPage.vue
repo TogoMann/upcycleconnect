@@ -16,6 +16,8 @@ interface Thread {
     downvotes: number
     created_at: string | null
     last_post_at: string | null
+    username?: string
+    email?: string
 }
 
 interface Post {
@@ -26,6 +28,8 @@ interface Post {
     upvotes: number
     downvotes: number
     created_at: string | null
+    username?: string
+    email?: string
 }
 
 const thread = ref<Thread | null>(null)
@@ -50,15 +54,13 @@ async function handleReply() {
     if (!replyContent.value.trim() || !authStore.isAuthenticated) return
     sending.value = true
     try {
-        const res = await fetch('http://localhost:8081/post/', {
+        const res = await fetch(`http://localhost:8081/thread/${threadId}/posts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${authStore.token}`,
             },
             body: JSON.stringify({
-                thread_id: threadId,
-                created_by: authStore.user?.id,
                 content: replyContent.value,
             }),
         })
@@ -71,13 +73,40 @@ async function handleReply() {
     sending.value = false
 }
 
+async function voteThread(dir: 'up' | 'down') {
+    if (!authStore.isAuthenticated || !thread.value) return
+    try {
+        const res = await fetch(`http://localhost:8081/thread/${threadId}/${dir}vote`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${authStore.token}` }
+        })
+        if (res.ok) {
+            if (dir === 'up') thread.value.upvotes++
+            else thread.value.downvotes++
+        }
+    } catch {}
+}
+
+async function votePost(postId: number, dir: 'up' | 'down') {
+    if (!authStore.isAuthenticated) return
+    try {
+        const res = await fetch(`http://localhost:8081/post/${postId}/${dir}vote`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${authStore.token}` }
+        })
+        if (res.ok) {
+            const p = posts.value.find(x => x.id === postId)
+            if (p) {
+                if (dir === 'up') p.upvotes++
+                else p.downvotes++
+            }
+        }
+    } catch {}
+}
+
 function fmtDate(iso: string | null): string {
     if (!iso) return '—'
     return new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-function authorLabel(id: number | null): string {
-    return id ? `Utilisateur #${id}` : 'Anonyme'
 }
 
 function avatarChars(id: number | null): string {
@@ -108,40 +137,75 @@ function avatarChars(id: number | null): string {
                         <div class="post-author">
                             <div class="post-avatar">{{ avatarChars(thread.created_by) }}</div>
                             <div class="post-author-info">
-                                <span class="post-author-name">{{ authorLabel(thread.created_by) }}</span>
+                                <span class="post-author-name">
+                                    {{ thread.username ?? 'Anonyme' }}
+                                    <small v-if="thread.email" class="post-author-email">{{ thread.email }}</small>
+                                </span>
                                 <span class="post-date">{{ fmtDate(thread.created_at) }}</span>
                             </div>
-                        </div>
-                        <div class="post-body">
+                            </div>
+                            <div class="post-body">
                             <p v-for="(para, i) in thread.content.split('\n\n')" :key="i" class="post-paragraph">
                                 {{ para }}
                             </p>
-                        </div>
-                        <div class="post-votes">
-                            <span class="vote vote--up">▲ {{ thread.upvotes }}</span>
-                            <span class="vote vote--down">▼ {{ thread.downvotes }}</span>
-                        </div>
-                    </div>
+                            </div>
+                            <div class="post-votes">
+                            <button
+                                class="vote-btn vote-btn--up"
+                                :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
+                                @click="voteThread('up')"
+                                title="Voter pour"
+                            >
+                                ▲ {{ thread.upvotes }}
+                            </button>
+                            <button
+                                class="vote-btn vote-btn--down"
+                                :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
+                                @click="voteThread('down')"
+                                title="Voter contre"
+                            >
+                                ▼ {{ thread.downvotes }}
+                            </button>
+                            </div>
+                            </div>
 
-                    <div class="replies-section">
-                        <h2 class="replies-title">{{ posts.length }} réponse{{ posts.length !== 1 ? 's' : '' }}</h2>
+                            <div class="replies-section">
+                            <h2 class="replies-title">{{ posts.length }} réponse{{ posts.length !== 1 ? 's' : '' }}</h2>
 
-                        <div v-for="p in posts" :key="p.id" class="post">
+                            <div v-for="p in posts" :key="p.id" class="post">
                             <div class="post-author">
                                 <div class="post-avatar">{{ avatarChars(p.created_by) }}</div>
                                 <div class="post-author-info">
-                                    <span class="post-author-name">{{ authorLabel(p.created_by) }}</span>
+                                    <span class="post-author-name">
+                                        {{ p.username ?? 'Anonyme' }}
+                                        <small v-if="p.email" class="post-author-email">{{ p.email }}</small>
+                                    </span>
                                     <span class="post-date">{{ fmtDate(p.created_at) }}</span>
                                 </div>
                             </div>
+
                             <div class="post-body">
                                 <p v-for="(para, i) in p.content.split('\n\n')" :key="i" class="post-paragraph">
                                     {{ para }}
                                 </p>
                             </div>
                             <div class="post-votes">
-                                <span class="vote vote--up">▲ {{ p.upvotes }}</span>
-                                <span class="vote vote--down">▼ {{ p.downvotes }}</span>
+                                <button
+                                    class="vote-btn vote-btn--up"
+                                    :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
+                                    @click="votePost(p.id, 'up')"
+                                    title="Voter pour"
+                                >
+                                    ▲ {{ p.upvotes }}
+                                </button>
+                                <button
+                                    class="vote-btn vote-btn--down"
+                                    :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
+                                    @click="votePost(p.id, 'down')"
+                                    title="Voter contre"
+                                >
+                                    ▼ {{ p.downvotes }}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -200,15 +264,19 @@ function avatarChars(id: number | null): string {
 .post-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--green-mid); color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
 .post--original .post-avatar { background: var(--green-dark); }
 .post-author-info { display: flex; flex-direction: column; gap: 2px; }
-.post-author-name { font-size: 0.9rem; font-weight: 700; color: var(--charcoal); }
+.post-author-name { font-size: 0.9rem; font-weight: 700; color: var(--charcoal); display: flex; align-items: baseline; gap: 6px; }
+.post-author-email { font-size: 0.75rem; font-weight: 400; color: var(--charcoal); opacity: 0.5; }
 .post-date { font-size: 0.78rem; color: var(--charcoal); opacity: 0.55; }
 .post-body { padding-left: 52px; }
 .post-paragraph { font-size: 0.9rem; color: var(--charcoal); line-height: 1.7; margin: 0 0 14px; opacity: 0.88; }
 .post-paragraph:last-child { margin-bottom: 0; }
-.post-votes { padding-left: 52px; margin-top: 12px; display: flex; gap: 12px; }
-.vote { font-size: 0.78rem; font-weight: 600; opacity: 0.6; }
-.vote--up { color: var(--green-dark); }
-.vote--down { color: #dc2626; }
+.post-votes { padding-left: 52px; margin-top: 12px; display: flex; gap: 8px; }
+.vote-btn { background: none; border: 1px solid rgba(53,53,53,0.1); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+.vote-btn--up { color: var(--green-dark); }
+.vote-btn--up:hover:not(.vote-btn--disabled) { background: rgba(8,106,53,0.05); border-color: var(--green-mid); }
+.vote-btn--down { color: #dc2626; }
+.vote-btn--down:hover:not(.vote-btn--disabled) { background: rgba(220,38,38,0.05); border-color: #fca5a5; }
+.vote-btn--disabled { opacity: 0.4; cursor: default; }
 .replies-section { margin-top: 40px; }
 .replies-title { font-size: 1rem; font-weight: 700; color: var(--charcoal); margin: 0 0 20px; opacity: 0.7; }
 .reply-form-section { margin-top: 48px; padding-top: 40px; border-top: 1px solid rgba(53,53,53,0.1); }

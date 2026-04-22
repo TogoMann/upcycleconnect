@@ -71,3 +71,17 @@ func (s *Service) Delete(id pgtype.Int8) error {
 
 	return s.repo.Delete(id)
 }
+
+func (s *Service) Upvote(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("thread/service Thread ID invalide: %d", id)
+	}
+	return s.repo.Upvote(id)
+}
+
+func (s *Service) Downvote(id pgtype.Int8) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("thread/service Thread ID invalide: %d", id)
+	}
+	return s.repo.Downvote(id)
+}
