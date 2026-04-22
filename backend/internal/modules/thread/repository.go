@@ -22,9 +22,12 @@ func (r *Repository) GetAll() ([]Thread, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			t.id, t.created_by, t.category, t.title, t.content, t.upvotes, t.downvotes, t.created_at, t.last_post_at,
-			u.username, u.email
+			u.username, u.email,
+			COALESCE(CAST(SUM(v.times) AS INTEGER), 0) as views
 		FROM thread t
-		LEFT JOIN users u ON t.created_by = u.id`)
+		LEFT JOIN users u ON t.created_by = u.id
+		LEFT JOIN thread_views v ON t.id = v.thread_id
+		GROUP BY t.id, u.id`)
 	if err != nil {
 		return nil, fmt.Errorf("package thread/repo GetAll query: %w", err)
 	}
@@ -42,10 +45,13 @@ func (r *Repository) GetById(id pgtype.Int8) (*Thread, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			t.id, t.created_by, t.category, t.title, t.content, t.upvotes, t.downvotes, t.created_at, t.last_post_at,
-			u.username, u.email
+			u.username, u.email,
+			COALESCE(CAST(SUM(v.times) AS INTEGER), 0) as views
 		FROM thread t
 		LEFT JOIN users u ON t.created_by = u.id
-		WHERE t.id = $1`, id)
+		LEFT JOIN thread_views v ON t.id = v.thread_id
+		WHERE t.id = $1
+		GROUP BY t.id, u.id`, id)
 	if err != nil {
 		return nil, fmt.Errorf("package thread/repo GetById query: %w", err)
 	}
@@ -118,5 +124,20 @@ func (r *Repository) Upvote(id pgtype.Int8) error {
 
 func (r *Repository) Downvote(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "UPDATE thread SET downvotes = downvotes + 1 WHERE id = $1", id)
+	return err
+}
+
+func (r *Repository) IncrementViews(threadId pgtype.Int8, userId pgtype.Int8) error {
+	var err error
+	if userId.Valid {
+		_, err = r.db.Exec(db.Ctx, `
+			INSERT INTO thread_views (user_id, thread_id, times) 
+			VALUES ($1, $2, 1)
+			ON CONFLICT (user_id, thread_id) DO UPDATE SET times = thread_views.times + 1`, userId, threadId)
+	} else {
+		_, err = r.db.Exec(db.Ctx, `
+			INSERT INTO thread_views (user_id, thread_id, times) 
+			VALUES (NULL, $1, 1)`, threadId)
+	}
 	return err
 }

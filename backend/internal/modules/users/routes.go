@@ -16,6 +16,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /users/me", middlewares.Authenticated(handler.GetMe))
 	r.HandleFunc("GET /users/{id}", middlewares.AdminOnly(handler.GetById))
 	r.HandleFunc("GET /users/{id}/score", handler.GetScore)
+	r.HandleFunc("GET /users/{id}/score/history", middlewares.Authenticated(handler.GetScoreHistory))
 	r.HandleFunc("PATCH /users/{id}/tutorial", middlewares.Authenticated(handler.UpdateTutorialSeen))
 	r.HandleFunc("POST /users", handler.Create)
 	r.HandleFunc("PUT /users/{id}", middlewares.AdminOnly(handler.Update))

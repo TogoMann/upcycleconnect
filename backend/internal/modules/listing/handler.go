@@ -214,7 +214,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing.CreatedBy.Int64 != int64(sub) {
+	role, _ := claims["role"].(string)
+
+	if role != "admin" && existing.CreatedBy.Int64 != int64(sub) {
 		http.Error(w, "Forbidden: you do not own this listing", http.StatusForbidden)
 		return
 	}
@@ -281,7 +283,9 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing.CreatedBy.Int64 != int64(sub) {
+	role, _ := claims["role"].(string)
+
+	if role != "admin" && existing.CreatedBy.Int64 != int64(sub) {
 		http.Error(w, "Forbidden: you do not own this listing", http.StatusForbidden)
 		return
 	}

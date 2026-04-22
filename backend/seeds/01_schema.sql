@@ -109,7 +109,10 @@ CREATE TABLE IF NOT EXISTS event (
     approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     approved_at TIMESTAMP,
     price DECIMAL(6,2) NOT NULL,
-    date TIMESTAMP NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    location VARCHAR(255),
     created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -130,14 +133,15 @@ CREATE TABLE IF NOT EXISTS thread (
     upvotes INTEGER NOT NULL DEFAULT 0,
     downvotes INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_post_at TIMESTAMP
+    last_post_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS thread_views (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
     thread_id BIGINT REFERENCES thread(id) ON  DELETE CASCADE,
-    times INTEGER
+    times INTEGER,
+    UNIQUE(user_id, thread_id)
 );
 
 CREATE TABLE IF NOT EXISTS post (

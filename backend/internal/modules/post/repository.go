@@ -82,12 +82,28 @@ func (r *Repository) GetThreadPosts(id pgtype.Int8) ([]ThreadPosts, error) {
 }
 
 func (r *Repository) Create(postDto Post) (pgtype.Int8, error) {
+	tx, err := r.db.Begin(db.Ctx)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+	defer tx.Rollback(db.Ctx)
+
 	var id int64
-	err := r.db.QueryRow(
+	err = tx.QueryRow(
 		db.Ctx,
 		"INSERT INTO post (thread_id, created_by, parent_id, content) VALUES ($1, $2, $3, $4) RETURNING id",
 		postDto.ThreadId, postDto.CreatedBy, postDto.ParentId, postDto.Content).Scan(&id)
 
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+
+	_, err = tx.Exec(db.Ctx, "UPDATE thread SET last_post_at = CURRENT_TIMESTAMP WHERE id = $1", postDto.ThreadId)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+
+	err = tx.Commit(db.Ctx)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}

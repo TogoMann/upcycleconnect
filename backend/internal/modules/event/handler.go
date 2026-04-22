@@ -128,8 +128,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		Date      string  `json:"date"`
-		StartDate string  `json:"start_date"`
-		EndDate   string  `json:"end_date"`
+		StartTime string  `json:"start_time"`
+		EndTime   string  `json:"end_time"`
 		Location  string  `json:"location"`
 		Price     float64 `json:"price"`
 	}
@@ -145,9 +145,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Location:  input.Location,
 		Approved:  role == "admin",
 	}
-	dto.Date.UnmarshalJSON([]byte(`"` + input.Date + `"`))
-	dto.StartDate.UnmarshalJSON([]byte(`"` + input.StartDate + `"`))
-	dto.EndDate.UnmarshalJSON([]byte(`"` + input.EndDate + `"`))
+	dto.Date.Scan(input.Date)
+	dto.StartTime.Scan(input.StartTime)
+	dto.EndTime.Scan(input.EndTime)
 	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
 
 	id, err := h.service.Create(dto)

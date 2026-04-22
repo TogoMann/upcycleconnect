@@ -36,3 +36,11 @@ type User struct {
 	HasSeenTutorial    bool             `db:"has_seen_tutorial" json:"has_seen_tutorial"`
 	CreatedAt          pgtype.Timestamp `db:"created_at" json:"created_at"`
 }
+
+type ScoreHistory struct {
+	Id          pgtype.Int8 `db:"id" json:"id"`
+	UserId      pgtype.Int8 `db:"user_id" json:"user_id"`
+	Points      int32       `db:"points" json:"points"`
+	Description string      `db:"description" json:"description"`
+	CreatedAt   string      `db:"created_at" json:"created_at"`
+}

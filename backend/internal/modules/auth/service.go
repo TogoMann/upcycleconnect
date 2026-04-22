@@ -1,20 +1,24 @@
 package auth
 
 import (
+	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"backend/internal/utils"
 	"errors"
 	"strings"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
 	userRepo *users.Repository
+	subRepo  *subscriptions.Repository
 }
 
-func NewService(userRepo *users.Repository) *Service {
-	return &Service{userRepo: userRepo}
+func NewService(userRepo *users.Repository, subRepo *subscriptions.Repository) *Service {
+	return &Service{userRepo: userRepo, subRepo: subRepo}
 }
 
 func (s *Service) Login(username, password string) (*LoginResponse, error) {
@@ -77,6 +81,15 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 	if err != nil {
 		return nil, errors.New("erreur lors de la création du compte")
 	}
+
+	// Auto-subscribe to Free plan
+	until := time.Now().AddDate(1, 0, 0) // 1 year
+	s.subRepo.Create(subscriptions.Subscription{
+		SubscriberId: id,
+		Tier:         "Free",
+		Price:        0.00,
+		Until:        pgtype.Date{Time: until, Valid: true},
+	})
 
 	token, err := utils.GenerateJWT(id.Int64, req.Username, string(users.Client))
 	if err != nil {

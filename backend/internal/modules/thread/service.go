@@ -85,3 +85,7 @@ func (s *Service) Downvote(id pgtype.Int8) error {
 	}
 	return s.repo.Downvote(id)
 }
+
+func (s *Service) IncrementViews(threadId pgtype.Int8, userId pgtype.Int8) error {
+	return s.repo.IncrementViews(threadId, userId)
+}

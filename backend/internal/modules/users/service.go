@@ -96,6 +96,20 @@ func (s *Service) GetScore(userId pgtype.Int8) (int32, error) {
 	return s.repo.GetScore(userId)
 }
 
+func (s *Service) GetScoreHistory(userId pgtype.Int8) ([]ScoreHistory, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return nil, fmt.Errorf("users/service User ID invalide: %d", userId.Int64)
+	}
+	return s.repo.GetScoreHistory(userId)
+}
+
+func (s *Service) AddScore(userId pgtype.Int8, points int32, description string) error {
+	if !userId.Valid || userId.Int64 < 1 {
+		return fmt.Errorf("users/service User ID invalide: %d", userId.Int64)
+	}
+	return s.repo.AddScore(userId, points, description)
+}
+
 func (s *Service) UpdateTutorialSeen(id pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("users/service User ID invalide")

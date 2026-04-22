@@ -24,4 +24,5 @@ type Thread struct {
 	LastPostAt pgtype.Timestamp `db:"last_post_at" json:"last_post_at"`
 	Username   string           `db:"username" json:"username"`
 	Email      string           `db:"email" json:"email"`
+	Views      int32            `db:"views" json:"views"`
 }

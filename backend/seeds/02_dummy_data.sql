@@ -23,6 +23,11 @@ INSERT INTO site (address_id, type_site, created_at) VALUES
 (2, 'Atelier de réparation', NOW()),
 (3, 'Centre de tri', NOW());
 
+INSERT INTO plans (name, description, price, billing_cycle, features, is_active) VALUES
+('Free', 'Accès limité aux fonctionnalités de base', 0.00, 'monthly', '{"Vente d''objets", "Dépôt d''objets"}', true),
+('Premium', 'Accès complet à toutes les fonctionnalités', 9.99, 'monthly', '{"Vente d''objets", "Dépôt d''objets", "Ateliers gratuits", "Événements VIP"}', true),
+('Pro', 'Pour les professionnels de l''upcycling', 29.99, 'monthly', '{"Fonctionnalités Premium", "Statistiques avancées", "Publicité prioritaire"}', true);
+
 INSERT INTO container (site_id, status, size, created_at) VALUES
 (1, 'Available', 'M', NOW()),
 (1, 'Occupied', 'L', NOW()),
@@ -42,12 +47,17 @@ INSERT INTO users (username, first_name, last_name, email, password_hash, role, 
 ('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW());
 
 -- =========================
--- SCORE HISTORY
+-- SCORE HISTORY (Normalized)
 -- =========================
 INSERT INTO score_history (user_id, points, description, created_at) VALUES
-(1, 10, 'Premier don d''objet', NOW()),
-(1, 5, 'Commentaire utile', NOW()),
-(2, 50, 'Vente finalisée', NOW());
+(1, 10, 'Inscription plateforme', NOW() - INTERVAL '30 days'),
+(1, 5, 'Commentaire utile', NOW() - INTERVAL '25 days'),
+(1, 20, 'Dépôt validé', NOW() - INTERVAL '10 days'),
+(2, 50, 'Vente finalisée', NOW() - INTERVAL '15 days'),
+(2, 15, 'Participation atelier', NOW() - INTERVAL '5 days'),
+(3, 100, 'Bonus administrateur', NOW() - INTERVAL '1 year'),
+(4, 25, 'Collecte matériaux', NOW() - INTERVAL '2 days'),
+(5, 10, 'Inscription plateforme', NOW() - INTERVAL '20 days');
 
 -- =========================
 -- ITEMS
@@ -59,9 +69,9 @@ INSERT INTO item (owner_id, container_id, site_id, material_type, physical_state
 -- =========================
 -- EVENTS
 -- =========================
-INSERT INTO event (approved, approved_by, approved_at, price, date, created_by, created_at) VALUES
-(true, 3, NOW(), 29.99, NOW() + INTERVAL '7 days', 2, NOW()),
-(false, NULL, NULL, 0.00, NOW() + INTERVAL '14 days', 1, NOW());
+INSERT INTO event (approved, approved_by, approved_at, price, date, start_time, end_time, location, created_by, created_at) VALUES
+(true, 3, NOW(), 29.99, CURRENT_DATE + 7, '14:00:00', '18:00:00', 'Paris, Atelier Central', 2, NOW()),
+(false, NULL, NULL, 0.00, CURRENT_DATE + 14, '10:00:00', '12:00:00', 'Lyon, Espace Créatif', 1, NOW());
 
 -- Participation events
 INSERT INTO event_participation (event_id, user_id, stripe_payment_intent_id) VALUES
@@ -112,7 +122,11 @@ INSERT INTO course_order (course_id, buyer_id, price, booked_at, stripe_payment_
 -- SUBSCRIPTIONS
 -- =========================
 INSERT INTO subscriptions (subscriber_id, price, tier, created_at, until) VALUES
-(2, 49.99, 'Premium', CURRENT_DATE, CURRENT_DATE + 30);
+(1, 0.00, 'Free', CURRENT_DATE, CURRENT_DATE + 365),
+(2, 29.99, 'Pro', CURRENT_DATE, CURRENT_DATE + 30),
+(3, 0.00, 'Free', CURRENT_DATE, CURRENT_DATE + 365),
+(4, 0.00, 'Free', CURRENT_DATE, CURRENT_DATE + 365),
+(5, 0.00, 'Free', CURRENT_DATE, CURRENT_DATE + 365);
 
 -- =========================
 -- LISTINGS & ORDERS

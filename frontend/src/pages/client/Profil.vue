@@ -9,11 +9,16 @@ const clientStore = useClientStore()
 const editing = ref(false)
 const saved = ref(false)
 const saveError = ref('')
+const showHistory = ref(false)
 
 const form = reactive({
     first_name: authStore.user?.first_name ?? '',
     last_name: authStore.user?.last_name ?? '',
     email: authStore.user?.email ?? '',
+})
+
+watch(showHistory, (val) => {
+    if (val) clientStore.fetchScoreHistory()
 })
 
 watch(
@@ -159,7 +164,10 @@ async function handleSave() {
                         <p class="side-card-label">Score upcycling</p>
                         <p class="side-card-value">{{ clientStore.score }} pts</p>
                     </div>
-                    <router-link to="/particulier/score" class="side-card-link">Voir →</router-link>
+                    <div class="side-card-actions">
+                        <router-link to="/particulier/score" class="side-card-link">Voir →</router-link>
+                        <button class="btn-history-small" @click="showHistory = true">Historique</button>
+                    </div>
                 </div>
 
                 <div class="side-card">
@@ -187,6 +195,37 @@ async function handleSave() {
                         <p class="side-card-value">{{ clientStore.depots.length }}</p>
                     </div>
                     <router-link to="/particulier/conteneurs" class="side-card-link">Voir →</router-link>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Historique Points -->
+        <div v-if="showHistory" class="modal-overlay" @click.self="showHistory = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Mon historique de points</h3>
+                    <button class="btn-close" @click="showHistory = false">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="modal-body history-modal-body">
+                    <div v-if="clientStore.isLoading" class="history-loading">Chargement...</div>
+                    <div v-else-if="clientStore.scoreHistory.length === 0" class="history-empty">Aucun historique trouvé.</div>
+                    <div v-else class="history-list">
+                        <div v-for="item in clientStore.scoreHistory" :key="item.id" class="history-item">
+                            <div class="history-item-main">
+                                <span class="history-points" :class="item.points >= 0 ? 'pos' : 'neg'">
+                                    {{ item.points >= 0 ? '+' : '' }}{{ item.points }}
+                                </span>
+                                <span class="history-desc">{{ item.description }}</span>
+                            </div>
+                            <span class="history-date">{{ new Date(item.created_at).toLocaleDateString() }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -474,6 +513,113 @@ async function handleSave() {
 }
 .side-card-link:hover {
     color: var(--green-dark);
+}
+
+.side-card-actions {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+.btn-history-small {
+    font-size: 0.7rem;
+    color: var(--green-mid);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+    font-family: inherit;
+    text-decoration: underline;
+}
+.btn-history-small:hover {
+    color: var(--green-dark);
+}
+
+/* Modal Historique */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    background: var(--white);
+    width: 100%;
+    max-width: 450px;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(53, 53, 53, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.btn-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(53, 53, 53, 0.4);
+}
+.history-modal-body {
+    padding: 24px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.history-loading, .history-empty {
+    padding: 40px;
+    text-align: center;
+    color: rgba(53, 53, 53, 0.5);
+    font-size: 0.9rem;
+}
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--cream);
+    border-radius: 8px;
+}
+.history-item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.history-points {
+    font-weight: 800;
+    font-size: 0.95rem;
+    min-width: 40px;
+}
+.history-points.pos { color: var(--green-dark); }
+.history-points.neg { color: #c53030; }
+.history-desc {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+.history-date {
+    font-size: 0.78rem;
+    color: rgba(53, 53, 53, 0.5);
+    font-weight: 500;
 }
 
 @media (max-width: 800px) {

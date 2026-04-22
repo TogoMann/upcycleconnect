@@ -31,5 +31,5 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("PATCH /listing/{id}/approve", middlewares.AdminOnly(handler.Approve))
 	r.HandleFunc("PATCH /listing/{id}/disapprove", middlewares.AdminOnly(handler.Disapprove))
 
-	r.HandleFunc("DELETE /listing/{id}", handler.DeleteById)
+	r.HandleFunc("DELETE /listing/{id}", middlewares.Authenticated(handler.DeleteById))
 }

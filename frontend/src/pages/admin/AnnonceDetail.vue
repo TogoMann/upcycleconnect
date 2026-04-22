@@ -79,6 +79,21 @@ async function refuser() {
         console.error('Disapprove error:', e)
     }
 }
+
+async function supprimer() {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement cette annonce ?')) return
+    try {
+        const res = await fetch(`http://localhost:8081/listing/${route.params.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok) {
+            router.push('/admin/annonces')
+        }
+    } catch (e) {
+        console.error('Delete error:', e)
+    }
+}
 </script>
 
 <template>
@@ -132,6 +147,7 @@ async function refuser() {
             <div class="actions-row">
                 <button v-if="!annonce.approved" class="btn-validate" @click="valider">Approuver l'annonce</button>
                 <button v-else class="btn-refuse" @click="refuser">Désapprouver</button>
+                <button class="btn-delete" @click="supprimer">Supprimer définitivement</button>
             </div>
         </template>
     </div>
@@ -160,6 +176,8 @@ async function refuser() {
 .btn-validate:hover { background: var(--green-mid); }
 .btn-refuse { padding: 12px 28px; background: transparent; color: #dc2626; border: 1.5px solid #dc2626; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
 .btn-refuse:hover { background: #fee2e2; }
+.btn-delete { padding: 12px 28px; background: #dc2626; color: var(--white); border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.btn-delete:hover { background: #b91c1c; }
 .loading { opacity: 0.5; font-size: 0.9rem; padding: 40px 0; }
 @media (max-width: 700px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

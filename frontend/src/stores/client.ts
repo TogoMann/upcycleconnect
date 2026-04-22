@@ -9,6 +9,7 @@ export const useClientStore = defineStore('client', () => {
     const depots = ref<any[]>([])
     const entries = ref<any[]>([])
     const score = ref<number>(0)
+    const scoreHistory = ref<any[]>([])
     const events = ref<any[]>([])
     const courses = ref<any[]>([])
     const cities = ref<any[]>([])
@@ -90,6 +91,21 @@ export const useClientStore = defineStore('client', () => {
             const data = await res.json()
             score.value = data.score
         } catch {}
+    }
+
+    async function fetchScoreHistory() {
+        const authStore = useAuthStore()
+        if (!authStore.user) return
+        isLoading.value = true
+        try {
+            const res = await fetch(`${API_BASE}/users/${authStore.user.id}/score/history`, { headers: authHeaders() })
+            if (!res.ok) throw new Error('Erreur chargement historique points')
+            scoreHistory.value = await res.json()
+        } catch (e: any) {
+            error.value = e.message
+        } finally {
+            isLoading.value = false
+        }
     }
 
     async function fetchEntries() {
@@ -253,6 +269,7 @@ export const useClientStore = defineStore('client', () => {
         depots,
         entries,
         score,
+        scoreHistory,
         events,
         courses,
         cities,
@@ -264,6 +281,7 @@ export const useClientStore = defineStore('client', () => {
         createAnnonce,
         fetchDepots,
         fetchScore,
+        fetchScoreHistory,
         fetchEntries,
         createEntry,
         deleteEntry,

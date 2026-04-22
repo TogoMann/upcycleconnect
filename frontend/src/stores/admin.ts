@@ -47,6 +47,47 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  const updateUser = async (id: number, data: any) => {
+    try {
+      const res = await fetch(`${API_BASE}/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      if (!res.ok) throw new Error('Failed to update user')
+      
+      const updatedUser = await res.json()
+      const index = users.value.findIndex(u => u.id === id)
+      if (index !== -1) {
+        // If the backend returns a message instead of the full user object, 
+        // we might need to fetch users again or update the local object manually.
+        // The current backend handler returns `{"message": "user updated successfully"}`
+        await fetchUsers()
+      }
+    } catch (err: any) {
+      error.value = err.message
+      throw err
+    }
+  }
+
+  const getScoreHistory = async (id: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/users/${id}/score/history`, {
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      })
+      if (!res.ok) throw new Error('Failed to fetch score history')
+      return await res.json()
+    } catch (err: any) {
+      error.value = err.message
+      throw err
+    }
+  }
+
   const fetchCourses = async () => {
     isLoading.value = true
     error.value = null
@@ -123,6 +164,8 @@ export const useAdminStore = defineStore('admin', () => {
     error,
     fetchUsers,
     deleteUser,
+    updateUser,
+    getScoreHistory,
     fetchCourses,
     deleteCourse,
     fetchEvents,

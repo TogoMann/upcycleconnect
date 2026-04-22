@@ -2,6 +2,7 @@ package users
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -90,7 +91,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	id, err := h.service.Create(userDto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	// Award registration points
+	h.service.AddScore(id, utils.ActionRegistration.Points, utils.ActionRegistration.Description)
 
 	userDto.Id = id
 	res, _ := json.Marshal(userDto)
@@ -222,6 +227,43 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, `{"score": %d}`, score)
+}
+
+func (h *Handler) GetScoreHistory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := r.PathValue("id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	role, _ := claims["role"].(string)
+
+	if !ok {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	if int64(sub) != idInt && role != string(Admin) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	history, err := h.service.GetScoreHistory(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(history)
 }
 
 func (h *Handler) UpdateTutorialSeen(w http.ResponseWriter, r *http.Request) {

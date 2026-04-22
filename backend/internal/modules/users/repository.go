@@ -135,3 +135,19 @@ func (r *Repository) GetScore(userId pgtype.Int8) (int32, error) {
 	}
 	return totalScore, nil
 }
+
+func (r *Repository) GetScoreHistory(userId pgtype.Int8) ([]ScoreHistory, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, user_id, points, description, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at FROM score_history WHERE user_id = $1 ORDER BY created_at DESC", userId)
+	if err != nil {
+		return nil, fmt.Errorf("package users/repo GetScoreHistory query: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[ScoreHistory])
+}
+
+func (r *Repository) AddScore(userId pgtype.Int8, points int32, description string) error {
+	_, err := r.db.Exec(db.Ctx, "INSERT INTO score_history (user_id, points, description) VALUES ($1, $2, $3)", userId, points, description)
+	if err != nil {
+		return fmt.Errorf("package users/repo AddScore: %w", err)
+	}
+	return nil
+}
