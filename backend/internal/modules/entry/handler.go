@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -56,6 +57,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Validation: schedule date must not be in the past
+	if e.Schedule.Valid && e.Schedule.Time.Before(time.Now().Truncate(24*time.Hour)) {
+		http.Error(w, "La date de dépôt ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
+
 	id, err := h.service.Create(e)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

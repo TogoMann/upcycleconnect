@@ -136,7 +136,7 @@ function fmtTime(iso: string | null): string {
             <form @submit.prevent="creer" class="form-grid">
                 <div class="field">
                     <label class="field-label">Date</label>
-                    <input v-model="form.date" type="date" class="field-input" required />
+                    <input v-model="form.date" type="date" class="field-input" required :min="new Date().toISOString().split('T')[0]" />
                 </div>
                 <div class="field">
                     <label class="field-label">Début</label>

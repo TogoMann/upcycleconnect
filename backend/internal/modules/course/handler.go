@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 type Handler struct {
@@ -94,6 +95,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Prix        float64 `json:"prix"`
 		Categorie   string  `json:"categorie"`
 		Actif       bool    `json:"actif"`
+		Date        string  `json:"date"`
+		StartTime   string  `json:"start_time"`
+		EndTime     string  `json:"end_time"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -108,6 +112,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
 	c.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+	c.Date.Scan(input.Date)
+	c.StartTime.Scan(input.StartTime)
+	c.EndTime.Scan(input.EndTime)
+
+	// Validation: date must not be in the past
+	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
+		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
 
 	id, err := h.service.Create(c)
 	if err != nil {
@@ -165,6 +178,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Prix        float64 `json:"prix"`
 		Categorie   string  `json:"categorie"`
 		Actif       bool    `json:"actif"`
+		Date        string  `json:"date"`
+		StartTime   string  `json:"start_time"`
+		EndTime     string  `json:"end_time"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -178,6 +194,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Approved:    input.Actif,
 	}
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
+	c.Date.Scan(input.Date)
+	c.StartTime.Scan(input.StartTime)
+	c.EndTime.Scan(input.EndTime)
+
+	// Validation: date must not be in the past
+	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
+		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
 
 	if err := h.service.Update(courseId, c); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -204,7 +204,10 @@ CREATE TABLE IF NOT EXISTS course (
     approved BOOLEAN NOT NULL DEFAULT FALSE,
     approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     approved_at TIMESTAMP,
-    price DECIMAL(6,2)
+    price DECIMAL(6,2),
+    date DATE,
+    start_time TIME,
+    end_time TIME
 );
 
 CREATE TABLE IF NOT EXISTS course_order (
@@ -306,4 +309,15 @@ CREATE TABLE IF NOT EXISTS advertisement (
     end_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS personal_event (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

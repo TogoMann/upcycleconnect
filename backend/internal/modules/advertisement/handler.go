@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -54,6 +55,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Validation: start_date must not be in the past
+	if ad.StartDate.Valid && ad.StartDate.Time.Before(time.Now().Truncate(24*time.Hour)) {
+		http.Error(w, "La date de début de la publicité ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
+
 	id, err := h.service.Create(ad)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

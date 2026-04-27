@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 type Handler struct {
@@ -146,6 +147,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Approved:  role == "admin",
 	}
 	dto.Date.Scan(input.Date)
+
+	// Validation: date must not be in the past
+	if dto.Date.Valid && dto.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
+		http.Error(w, "La date de l'événement ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
+
 	dto.StartTime.Scan(input.StartTime)
 	dto.EndTime.Scan(input.EndTime)
 	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
@@ -198,6 +206,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	// Validation: date must not be in the past
+	if dto.Date.Valid && dto.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
+		http.Error(w, "La date de l'événement ne peut pas être dans le passé", http.StatusBadRequest)
 		return
 	}
 

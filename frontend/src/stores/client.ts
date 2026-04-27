@@ -8,6 +8,7 @@ export const useClientStore = defineStore('client', () => {
     const annonces = ref<any[]>([])
     const depots = ref<any[]>([])
     const entries = ref<any[]>([])
+    const planning = ref<any[]>([])
     const score = ref<number>(0)
     const scoreHistory = ref<any[]>([])
     const events = ref<any[]>([])
@@ -121,6 +122,38 @@ export const useClientStore = defineStore('client', () => {
         } finally {
             isLoading.value = false
         }
+    }
+
+    async function fetchPlanning() {
+        isLoading.value = true
+        try {
+            const res = await fetch(`${API_BASE}/planning/me`, { headers: authHeaders() })
+            if (!res.ok) throw new Error('Erreur chargement planning')
+            planning.value = await res.json()
+        } catch (e: any) {
+            error.value = e.message
+        } finally {
+            isLoading.value = false
+        }
+    }
+
+    async function createPersonalEvent(data: { title: string; description: string; date: string; start_time: string; end_time: string }) {
+        const res = await fetch(`${API_BASE}/planning/personal`, {
+            method: 'POST',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Erreur création événement')
+        await fetchPlanning()
+    }
+
+    async function deletePersonalEvent(id: number) {
+        const res = await fetch(`${API_BASE}/planning/personal/${id}`, {
+            method: 'DELETE',
+            headers: authHeaders(),
+        })
+        if (!res.ok) throw new Error('Erreur suppression événement')
+        await fetchPlanning()
     }
 
     async function createEntry(data: { schedule: string; start: string; ending: string }) {
@@ -268,6 +301,7 @@ export const useClientStore = defineStore('client', () => {
         allAnnonces,
         depots,
         entries,
+        planning,
         score,
         scoreHistory,
         events,
@@ -283,6 +317,9 @@ export const useClientStore = defineStore('client', () => {
         fetchScore,
         fetchScoreHistory,
         fetchEntries,
+        fetchPlanning,
+        createPersonalEvent,
+        deletePersonalEvent,
         createEntry,
         deleteEntry,
         fetchCatalogue,
