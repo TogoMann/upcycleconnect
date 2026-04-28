@@ -13,6 +13,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	handler := NewHandler(service)
 
 	r.HandleFunc("GET /planning/me", middlewares.Authenticated(handler.GetMyPlanning))
+	r.HandleFunc("GET /admin/plannings", middlewares.AdminOnly(handler.GetAllPlannings))
 	r.HandleFunc("POST /planning/personal", middlewares.Authenticated(handler.CreatePersonalEvent))
 	r.HandleFunc("DELETE /planning/personal/{id}", middlewares.Authenticated(handler.DeletePersonalEvent))
 }

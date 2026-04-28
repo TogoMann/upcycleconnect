@@ -47,6 +47,9 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 
 	r.HandleFunc("GET /health", healthCheck)
 
+	fs := http.FileServer(http.Dir("./uploads"))
+	r.Handle("GET /uploads/", http.StripPrefix("/uploads/", fs))
+
 	auth.RegisterRoutes(r, db)
 	city.RegisterRoutes(r, db)
 	advertisement.RegisterRoutes(r, db)

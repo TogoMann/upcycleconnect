@@ -3,6 +3,7 @@ package listing
 import (
 	"backend/internal/middlewares"
 	"backend/internal/modules/users"
+	"backend/internal/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+func (h *Handler) UploadImage(w http.ResponseWriter, r *http.Request) {
+	filename, err := utils.SaveImage(r, "image")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": "/uploads/" + filename,
+	})
+}
 
 type Handler struct {
 	service     *Service
@@ -156,6 +170,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Price       float64 `json:"price"`
 		Category    string  `json:"category"`
 		CityId      int64   `json:"city_id"`
+		ImageUrl    string  `json:"image_url"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -172,6 +187,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		CreatedBy:   pgtype.Int8{Int64: int64(sub), Valid: true},
 		Status:      Active,
 		Approved:    false,
+		ImageUrl:    input.ImageUrl,
 	}
 	listingDto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
 
@@ -228,6 +244,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Category    string  `json:"category"`
 		Status      string  `json:"status"`
 		CityId      int64   `json:"city_id"`
+		ImageUrl    string  `json:"image_url"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&input)
@@ -242,6 +259,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Category:    ListingCategory(input.Category),
 		Status:      ListingStatus(input.Status),
 		CityId:      pgtype.Int8{Int64: input.CityId, Valid: input.CityId > 0},
+		ImageUrl:    input.ImageUrl,
 	}
 	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
 

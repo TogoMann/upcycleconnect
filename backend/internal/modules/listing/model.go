@@ -39,4 +39,5 @@ type Listing struct {
 	ApprovedAt  pgtype.Timestamp `db:"approved_at" json:"approved_at"`
 	Status      ListingStatus    `db:"status" json:"status"`
 	Price       pgtype.Numeric   `db:"price" json:"price"`
+	ImageUrl    string           `db:"image_url" json:"image_url"`
 }

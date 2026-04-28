@@ -5,19 +5,20 @@ import { useClientStore } from '@/stores/client'
 
 const clientStore = useClientStore()
 const router = useRouter()
-
-type Tab = 'all' | 'events' | 'courses'
+type Tab = 'all' | 'events' | 'courses' | 'annonces'
 const activeTab = ref<Tab>('all')
 
 const allItems = computed(() => {
     const evts = clientStore.events.map((e: any) => ({ ...e, _type: 'event' }))
     const crs = clientStore.courses.map((c: any) => ({ ...c, _type: 'course' }))
-    return [...evts, ...crs]
+    const ans = clientStore.allAnnonces.map((a: any) => ({ ...a, _type: 'annonce' }))
+    return [...evts, ...crs, ...ans]
 })
 
 const filtered = computed(() => {
     if (activeTab.value === 'events') return allItems.value.filter(i => i._type === 'event')
     if (activeTab.value === 'courses') return allItems.value.filter(i => i._type === 'course')
+    if (activeTab.value === 'annonces') return allItems.value.filter(i => i._type === 'annonce')
     return allItems.value
 })
 
@@ -47,8 +48,8 @@ function getItemName(item: any): string {
 function getItemDesc(item: any): string {
     const desc = item.description ?? item.desc
     if (desc) return desc
-    if (item._type === 'event') return 'Aucune description disponible pour cet événement.'
-    return 'Aucune description disponible pour cet atelier.'
+    if (item._type === 'event') return 'Aucune description disponible for cet événement.'
+    return 'Aucune description disponible for cet atelier.'
 }
 
 function getItemId(item: any): number {
@@ -77,6 +78,7 @@ function handleBuy(item: any) {
 
 onMounted(() => {
     clientStore.fetchCatalogue()
+    clientStore.fetchAllAnnonces()
 })
 </script>
 
@@ -106,6 +108,13 @@ onMounted(() => {
             >
                 Ateliers ({{ clientStore.courses.length }})
             </button>
+            <button
+                class="tab-btn"
+                :class="{ 'tab-btn--active': activeTab === 'annonces' }"
+                @click="activeTab = 'annonces'"
+            >
+                Annonces ({{ clientStore.allAnnonces.length }})
+            </button>
         </div>
 
         <div v-if="clientStore.isLoading" class="state-empty">
@@ -122,7 +131,7 @@ onMounted(() => {
                 </svg>
             </div>
             <p class="empty-title">Aucun élément disponible</p>
-            <p class="empty-sub">Revenez bientôt pour découvrir nos prochains événements et ateliers.</p>
+            <p class="empty-sub">Revenez bientôt for découvrir nos prochains événements et ateliers.</p>
         </div>
 
         <div v-else class="catalogue-grid">
@@ -131,9 +140,16 @@ onMounted(() => {
                 :key="`${item._type}-${getItemId(item)}`"
                 class="catalogue-card"
             >
+                <div v-if="item.image_url" class="card-img-wrap">
+                    <img :src="'http://localhost:8081' + item.image_url" alt="" class="card-img" />
+                </div>
                 <div class="card-header">
-                    <span class="type-badge" :class="item._type === 'event' ? 'type-badge--event' : 'type-badge--course'">
-                        {{ item._type === 'event' ? 'Événement' : 'Atelier' }}
+                    <span class="type-badge" :class="{
+                        'type-badge--event': item._type === 'event',
+                        'type-badge--course': item._type === 'course',
+                        'type-badge--annonce': item._type === 'annonce'
+                    }">
+                        {{ item._type === 'event' ? 'Événement' : item._type === 'course' ? 'Atelier' : 'Annonce' }}
                     </span>
                     <span class="card-price">{{ formatPrice(getItemPrice(item)) }}</span>
                 </div>
@@ -278,6 +294,21 @@ onMounted(() => {
 .type-badge--course {
     background: var(--green-pale);
     color: var(--green-mid);
+}
+.type-badge--annonce {
+    background: #fef3c7;
+    color: #92400e;
+}
+.card-img-wrap {
+    width: calc(100% + 40px);
+    margin: -20px -20px 12px;
+    height: 160px;
+    overflow: hidden;
+}
+.card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 .card-price {
     font-size: 0.9rem;

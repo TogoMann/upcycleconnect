@@ -59,7 +59,24 @@ export const useClientStore = defineStore('client', () => {
         }
     }
 
-    async function createAnnonce(data: { name: string; description: string; price: number; category?: string; city_id?: number }) {
+    async function uploadImage(file: File): Promise<string> {
+        const formData = new FormData()
+        formData.append('image', file)
+
+        const res = await fetch(`${API_BASE}/listing/upload`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: formData,
+        })
+        if (!res.ok) {
+            const errData = await res.text()
+            throw new Error(errData || 'Erreur lors de l\'envoi de l\'image')
+        }
+        const data = await res.json()
+        return data.url
+    }
+
+    async function createAnnonce(data: { name: string; description: string; price: number; category?: string; city_id?: number; image_url?: string }) {
         const res = await fetch(`${API_BASE}/listing/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },

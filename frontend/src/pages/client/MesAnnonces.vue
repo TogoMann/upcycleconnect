@@ -80,6 +80,9 @@ onMounted(() => {
                 class="annonce-card"
             >
                 <div class="annonce-main">
+                    <div v-if="annonce.image_url" class="annonce-thumb">
+                        <img :src="'http://localhost:8081' + annonce.image_url" alt="" />
+                    </div>
                     <div class="annonce-info">
                         <div class="badge-row">
                             <span class="badge" :class="statusClass[annonce.status] ?? 'badge--active'">
@@ -209,10 +212,23 @@ onMounted(() => {
 }
 .annonce-main {
     display: flex;
-    align-items: flex-start;
-    gap: 24px;
+    align-items: center;
+    gap: 20px;
     flex: 1;
     min-width: 0;
+}
+.annonce-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: var(--cream);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.annonce-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 .annonce-info {
     flex: 1;

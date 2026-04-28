@@ -25,6 +25,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /listing/{id}", handler.GetById)
 
 	r.HandleFunc("POST /listing/", middlewares.Authenticated(handler.Create))
+	r.HandleFunc("POST /listing/upload", middlewares.Authenticated(handler.UploadImage))
 
 	r.HandleFunc("PUT /listing/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("PATCH /listing/{id}", middlewares.AdminOnly(handler.Update))

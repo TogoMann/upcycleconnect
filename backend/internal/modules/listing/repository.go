@@ -22,7 +22,7 @@ func (r *Repository) GetAll() ([]Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
-			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name
 		FROM listing l
@@ -45,7 +45,7 @@ func (r *Repository) GetAllApproved() ([]Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
-			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name
 		FROM listing l
@@ -62,7 +62,7 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
-			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name
 		FROM listing l
@@ -79,7 +79,7 @@ func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
-			l.approved, l.approved_by, l.approved_at, l.status, l.price,
+			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name
 		FROM listing l
@@ -102,8 +102,8 @@ func (r *Repository) Create(listingDto Listing) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO listing (name, description, category, item_id, city_id, created_by, price) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		listingDto.Name, listingDto.Description, listingDto.Category, listingDto.ItemId, listingDto.CityId, listingDto.CreatedBy, listingDto.Price).Scan(&id)
+		"INSERT INTO listing (name, description, category, item_id, city_id, created_by, price, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		listingDto.Name, listingDto.Description, listingDto.Category, listingDto.ItemId, listingDto.CityId, listingDto.CreatedBy, listingDto.Price, listingDto.ImageUrl).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -125,8 +125,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 
 func (r *Repository) Update(id pgtype.Int8, l Listing) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE listing SET name=$1, description=$2, category=$3, item_id=$4, city_id=$5, created_by=$6, approved=$7, approved_by=$8, approved_at=$9, status=$10, price=$11 WHERE id=$12",
-		l.Name, l.Description, l.Category, l.ItemId, l.CityId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, id)
+		"UPDATE listing SET name=$1, description=$2, category=$3, item_id=$4, city_id=$5, created_by=$6, approved=$7, approved_by=$8, approved_at=$9, status=$10, price=$11, image_url=$12 WHERE id=$13",
+		l.Name, l.Description, l.Category, l.ItemId, l.CityId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, l.ImageUrl, id)
 	if err != nil {
 		return err
 	}

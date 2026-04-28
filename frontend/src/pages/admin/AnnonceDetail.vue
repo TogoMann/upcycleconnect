@@ -17,6 +17,7 @@ interface Annonce {
     created_at: any
     approved: boolean
     status: string
+    image_url: string
 }
 
 const annonce = ref<Annonce | null>(null)
@@ -120,6 +121,13 @@ async function supprimer() {
                 </div>
             </div>
 
+            <div class="annonce-image-wrap">
+                <img v-if="annonce.image_url && annonce.image_url !== ''" :src="'http://localhost:8081' + annonce.image_url" alt="" class="annonce-image" />
+                <div v-else class="image-placeholder">
+                    <img src="https://placehold.co/600x400?text=Pas+d'image" alt="Pas d'image" class="placeholder-img" />
+                </div>
+            </div>
+
             <div class="info-grid">
                 <div class="info-card">
                     <div class="info-label">Auteur</div>
@@ -160,6 +168,10 @@ async function supprimer() {
 .page-header { margin-bottom: 28px; }
 .header-row { display: flex; align-items: flex-start; gap: 16px; }
 .page-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; color: var(--charcoal); letter-spacing: -0.03em; margin: 0; line-height: 1.08; flex: 1; }
+.annonce-image-wrap { width: 100%; height: 350px; border-radius: 16px; overflow: hidden; margin-bottom: 28px; background: var(--white); border: 1.5px solid rgba(53,53,53,0.08); }
+.annonce-image { width: 100%; height: 100%; object-fit: cover; }
+.image-placeholder { width: 100%; height: 100%; background: var(--cream); }
+.placeholder-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
 .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; align-self: center; }
 .badge--active { background: var(--green-pale); color: var(--green-dark); }
 .badge--danger { background: #fee2e2; color: #991b1b; }

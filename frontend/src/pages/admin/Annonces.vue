@@ -11,6 +11,7 @@ interface Annonce {
     price: any
     description: string
     approved: boolean
+    image_url: string
 }
 
 const annonces = ref<Annonce[]>([])

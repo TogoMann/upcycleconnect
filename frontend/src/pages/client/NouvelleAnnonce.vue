@@ -14,7 +14,23 @@ const form = reactive({
     price: '',
     category: '' as string,
     city_id: '',
+    image_url: '',
 })
+
+const imageFile = ref<File | null>(null)
+const imagePreview = ref<string | null>(null)
+
+function onFileChange(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            errors.global = 'L\'image ne doit pas dépasser 5 Mo'
+            return
+        }
+        imageFile.value = file
+        imagePreview.value = URL.createObjectURL(file)
+    }
+}
 
 const errors = reactive({
     name: '',
@@ -51,12 +67,17 @@ async function handleSubmit() {
     submitting.value = true
     errors.global = ''
     try {
+        if (imageFile.value) {
+            form.image_url = await clientStore.uploadImage(imageFile.value)
+        }
+
         await clientStore.createAnnonce({
             name: form.name.trim(),
             description: form.description.trim(),
             price: Number(form.price),
             category: form.category,
             city_id: Number(form.city_id),
+            image_url: form.image_url,
         })
         await clientStore.fetchAnnonces()
         router.push('/particulier/annonces')
@@ -132,6 +153,23 @@ async function handleSubmit() {
                     </option>
                 </select>
                 <span v-if="errors.city_id" class="form-error">{{ errors.city_id }}</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Photo de l'objet (max 5 Mo)</label>
+                <div class="image-upload-zone" :class="{ 'has-image': imagePreview }">
+                    <input type="file" accept="image/*" class="file-input" @change="onFileChange" />
+                    <div v-if="!imagePreview" class="upload-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                        <span>Cliquez pour ajouter une photo</span>
+                    </div>
+                    <img v-else :src="imagePreview" class="preview-img" />
+                    <button v-if="imagePreview" type="button" class="btn-remove-img" @click="imagePreview = null; imageFile = null">×</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -262,6 +300,69 @@ async function handleSubmit() {
 }
 .form-input--prefixed {
     padding-left: 30px;
+}
+.image-upload-zone {
+    position: relative;
+    height: 180px;
+    background: var(--cream);
+    border: 1.5px dashed rgba(53, 53, 53, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+.image-upload-zone:hover {
+    border-color: var(--green-mid);
+}
+.image-upload-zone.has-image {
+    border-style: solid;
+}
+.file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: rgba(53, 53, 53, 0.4);
+}
+.upload-placeholder svg {
+    width: 40px;
+    height: 40px;
+}
+.upload-placeholder span {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.btn-remove-img {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: rgba(229, 62, 62, 0.9);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .form-error {
     font-size: 0.78rem;

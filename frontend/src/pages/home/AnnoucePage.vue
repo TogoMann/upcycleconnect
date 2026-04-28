@@ -14,21 +14,28 @@ onMounted(async () => {
 })
 
 const annonces = computed(() => {
-    return clientStore.allAnnonces.map((a: any) => ({
-        id: a.id.Int64,
-        titre: a.name,
-        description: a.description,
-        type: a.price?.Exp === 0 && a.price?.Int === 0 ? 'Don' : 'Vente',
-        prix: a.price?.Exp === 0 && a.price?.Int === 0 ? null : parseFloat(a.price?.Int) / 100, // Very simple parsing for Numeric
-        localisation: a.city_name || 'Inconnue',
-        date: new Date(a.created_at).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'short',
-        }),
-        vendeur: 'Utilisateur', // We don't have the seller name in the listing model yet
-        categorie: a.category || 'Non classé',
-        img: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80', // Placeholder
-    }))
+    return clientStore.allAnnonces.map((a: any) => {
+        let priceVal = 0
+        if (a.price) {
+            priceVal = typeof a.price === 'object' ? (a.price.Float64 ?? a.price.Int64) : Number(a.price)
+        }
+        
+        return {
+            id: a.id.Int64 || a.id,
+            titre: a.name,
+            description: a.description,
+            type: priceVal === 0 ? 'Don' : 'Vente',
+            prix: priceVal === 0 ? null : priceVal,
+            localisation: a.city_name || 'Inconnue',
+            date: new Date(a.created_at?.Time ?? a.created_at).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+            }),
+            vendeur: a.created_by_name || 'Utilisateur',
+            categorie: a.category || 'Non classé',
+            img: a.image_url ? 'http://localhost:8081' + a.image_url : 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
+        }
+    })
 })
 
 const annoncesFiltrees = computed(() => {

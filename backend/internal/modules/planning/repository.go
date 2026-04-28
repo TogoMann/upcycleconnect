@@ -49,6 +49,56 @@ func (r *Repository) GetUserPlanning(userId pgtype.Int8) ([]PlanningItem, error)
 	return pgx.CollectRows(rows, pgx.RowToStructByName[PlanningItem])
 }
 
+func (r *Repository) GetAllPlannings() ([]AdminPlanningItem, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			c.id, 
+			c.name as titre, 
+			'formation' as type, 
+			u.first_name || ' ' || u.last_name as responsable, 
+			COALESCE(TO_CHAR(c.date, 'YYYY-MM-DD'), '') as date, 
+			COALESCE(TO_CHAR(c.start_time, 'HH24:MI'), '') as heure_debut, 
+			COALESCE(TO_CHAR(c.end_time, 'HH24:MI'), '') as heure_fin,
+			(SELECT COUNT(*) FROM course_order WHERE course_id = c.id)::int as participants
+		FROM course c
+		JOIN users u ON c.created_by = u.id
+
+		UNION ALL
+
+		SELECT 
+			e.id, 
+			'Dépôt d''objet #' || e.id as titre, 
+			'depot' as type, 
+			u.first_name || ' ' || u.last_name as responsable, 
+			COALESCE(TO_CHAR(e.schedule, 'YYYY-MM-DD'), '') as date, 
+			COALESCE(TO_CHAR(e.start, 'HH24:MI'), '') as heure_debut, 
+			COALESCE(TO_CHAR(e.ending, 'HH24:MI'), '') as heure_fin,
+			(SELECT COUNT(*) FROM entry_participation WHERE entry_id = e.id)::int as participants
+		FROM entry e
+		JOIN users u ON e.created_by = u.id
+
+		UNION ALL
+
+		SELECT 
+			ev.id, 
+			'Collecte ' || ev.location as titre, 
+			'collecte' as type, 
+			u.first_name || ' ' || u.last_name as responsable, 
+			COALESCE(TO_CHAR(ev.date, 'YYYY-MM-DD'), '') as date, 
+			COALESCE(TO_CHAR(ev.start_time, 'HH24:MI'), '') as heure_debut, 
+			COALESCE(TO_CHAR(ev.end_time, 'HH24:MI'), '') as heure_fin,
+			(SELECT COUNT(*) FROM event_participation WHERE event_id = ev.id)::int as participants
+		FROM event ev
+		JOIN users u ON ev.created_by = u.id
+		
+		ORDER BY date ASC, heure_debut ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[AdminPlanningItem])
+}
+
 func (r *Repository) CreatePersonalEvent(e PersonalEvent) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(db.Ctx, "INSERT INTO personal_event (user_id, title, description, date, start_time, end_time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", e.UserId, e.Title, e.Description, e.Date, e.StartTime, e.EndTime).Scan(&id)

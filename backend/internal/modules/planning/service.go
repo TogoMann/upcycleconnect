@@ -14,6 +14,10 @@ func (s *Service) GetUserPlanning(userId pgtype.Int8) ([]PlanningItem, error) {
 	return s.repo.GetUserPlanning(userId)
 }
 
+func (s *Service) GetAllPlannings() ([]AdminPlanningItem, error) {
+	return s.repo.GetAllPlannings()
+}
+
 func (s *Service) CreatePersonalEvent(e PersonalEvent) (pgtype.Int8, error) {
 	return s.repo.CreatePersonalEvent(e)
 }

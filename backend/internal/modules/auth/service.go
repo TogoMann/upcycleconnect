@@ -96,6 +96,9 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 		return nil, err
 	}
 
+	// Send confirmation email asynchronously
+	go utils.SendConfirmationEmail(req.Email, req.Username)
+
 	return &LoginResponse{
 		Token: token,
 		Role:  string(users.Client),

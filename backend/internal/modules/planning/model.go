@@ -13,6 +13,17 @@ type PlanningItem struct {
 	Location    string `json:"location"`
 }
 
+type AdminPlanningItem struct {
+	Id           int64  `db:"id" json:"id"`
+	Titre        string `db:"titre" json:"titre"`
+	Type         string `db:"type" json:"type"`
+	Responsable  string `db:"responsable" json:"responsable"`
+	Date         string `db:"date" json:"date"`
+	HeureDebut   string `db:"heure_debut" json:"heure_debut"`
+	HeureFin     string `db:"heure_fin" json:"heure_fin"`
+	Participants int    `db:"participants" json:"participants"`
+}
+
 type PersonalEvent struct {
 	Id          pgtype.Int8      `db:"id" json:"id"`
 	UserId      pgtype.Int8      `db:"user_id" json:"user_id"`

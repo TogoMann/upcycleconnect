@@ -42,6 +42,17 @@ func (h *Handler) GetMyPlanning(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(items)
 }
 
+func (h *Handler) GetAllPlannings(w http.ResponseWriter, r *http.Request) {
+	items, err := h.service.GetAllPlannings()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
 func (h *Handler) CreatePersonalEvent(w http.ResponseWriter, r *http.Request) {
 	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
 	if !ok {

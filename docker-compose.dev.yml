@@ -25,6 +25,11 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASS=
+      - FROM_EMAIL=contact@upcycleconnect.fr
     volumes:
       - ./backend:/app
       - go_mod_cache:/root/go/pkg/mod
@@ -50,6 +55,15 @@ services:
       - api
     networks:
       - uc-api
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: uc-mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - uc-backend
 
 volumes:
   postgres_data_dev:
