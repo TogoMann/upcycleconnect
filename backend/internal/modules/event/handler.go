@@ -146,9 +146,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Location:  input.Location,
 		Approved:  role == "admin",
 	}
+	if role == "admin" {
+		dto.ApprovedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+		dto.ApprovedAt = pgtype.Timestamp{Time: time.Now(), Valid: true}
+	}
 	dto.Date.Scan(input.Date)
 
-	// Validation: date must not be in the past
 	if dto.Date.Valid && dto.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de l'événement ne peut pas être dans le passé", http.StatusBadRequest)
 		return
@@ -157,6 +160,18 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	dto.StartTime.Scan(input.StartTime)
 	dto.EndTime.Scan(input.EndTime)
 	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
+
+	if dto.Date.Valid && dto.StartTime.Valid {
+		now := time.Now()
+		today := now.Truncate(24 * time.Hour)
+		if dto.Date.Time.Equal(today) {
+			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+			if dto.StartTime.Microseconds < nowMicros {
+				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
+				return
+			}
+		}
+	}
 
 	id, err := h.service.Create(dto)
 	if err != nil {
@@ -209,10 +224,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validation: date must not be in the past
 	if dto.Date.Valid && dto.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de l'événement ne peut pas être dans le passé", http.StatusBadRequest)
 		return
+	}
+
+	if dto.Date.Valid && dto.StartTime.Valid {
+		now := time.Now()
+		today := now.Truncate(24 * time.Hour)
+		if dto.Date.Time.Equal(today) {
+			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+			if dto.StartTime.Microseconds < nowMicros {
+				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
+				return
+			}
+		}
 	}
 
 	err = h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, dto)

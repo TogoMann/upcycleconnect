@@ -18,7 +18,7 @@ func (s *Service) GetAll() ([]Event, error) {
 	return s.repo.GetAll()
 }
 
-func (s *Service) GetAllFull() ([]Event, error) {
+func (s *Service) GetAllFull() ([]EventFull, error) {
 	return s.repo.GetAllFull()
 }
 

@@ -69,9 +69,9 @@ INSERT INTO item (owner_id, container_id, site_id, material_type, physical_state
 -- =========================
 -- EVENTS
 -- =========================
-INSERT INTO event (approved, approved_by, approved_at, price, date, start_time, end_time, location, created_by, created_at) VALUES
-(true, 3, NOW(), 29.99, CURRENT_DATE + 7, '14:00:00', '18:00:00', 'Paris, Atelier Central', 2, NOW()),
-(false, NULL, NULL, 0.00, CURRENT_DATE + 14, '10:00:00', '12:00:00', 'Lyon, Espace Créatif', 1, NOW());
+INSERT INTO event (approved, approved_by, approved_at, price, date, start_time, end_time, location, created_by) VALUES
+(true, 3, NOW(), 29.99, CURRENT_DATE + 7, '14:00:00', '18:00:00', 'Paris, Atelier Central', 2),
+(false, NULL, NULL, 0.00, CURRENT_DATE + 14, '10:00:00', '12:00:00', 'Lyon, Espace Créatif', 1);
 
 -- Participation events
 INSERT INTO event_participation (event_id, user_id, stripe_payment_intent_id) VALUES

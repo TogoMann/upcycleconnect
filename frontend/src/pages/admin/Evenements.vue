@@ -4,22 +4,34 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
+interface PgtypeTime {
+    Microseconds: number
+    Valid: boolean
+}
+
 interface Event {
     id: number
     approved: boolean
+    approved_by: number | null
+    approved_at: string | null
     price: number | null
     date: string | null
-    start_date: string | null
-    end_date: string | null
+    start_time: PgtypeTime | null
+    end_time: PgtypeTime | null
     location: string | null
     created_by: number | null
     created_at: string | null
+    creator_username: string | null
+    creator_email: string | null
+    approver_username: string | null
+    approver_email: string | null
 }
 
 const events = ref<Event[]>([])
 const showForm = ref(false)
 const form = ref({ date: '', start_time: '', end_time: '', location: '', price: '' })
 const saving = ref(false)
+const selectedEvent = ref<Event | null>(null)
 
 onMounted(async () => {
     try {
@@ -33,14 +45,10 @@ onMounted(async () => {
 async function creer() {
     saving.value = true
     try {
-        // Combine date + start_time/end_time
-        const start_date = `${form.value.date}T${form.value.start_time}:00`
-        const end_date = `${form.value.date}T${form.value.end_time}:00`
-
-        const body: Record<string, unknown> = { 
-            date: start_date,
-            start_date: start_date,
-            end_date: end_date,
+        const body: Record<string, unknown> = {
+            date: form.value.date,
+            start_time: form.value.start_time + ':00',
+            end_time: form.value.end_time + ':00',
             location: form.value.location
         }
         if (form.value.price) body.price = parseFloat(form.value.price)
@@ -109,9 +117,20 @@ function fmtDate(iso: string | null): string {
     })
 }
 
-function fmtTime(iso: string | null): string {
-    if (!iso) return '—'
-    return new Date(iso).toLocaleTimeString('fr-FR', {
+function fmtTime(t: PgtypeTime | null): string {
+    if (!t || !t.Valid) return '—'
+    const totalSeconds = Math.floor(t.Microseconds / 1_000_000)
+    const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0')
+    const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')
+    return `${h}:${m}`
+}
+
+function fmtTimestamp(ts: string | null): string {
+    if (!ts) return '—'
+    return new Date(ts).toLocaleString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
     })
@@ -167,6 +186,39 @@ function fmtTime(iso: string | null): string {
             </form>
         </div>
 
+        <Teleport to="body">
+            <div v-if="selectedEvent" class="modal-overlay" @click.self="selectedEvent = null">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Détails — Évènement #{{ selectedEvent.id }}</h3>
+                        <button class="modal-close" @click="selectedEvent = null">✕</button>
+                    </div>
+                    <dl class="modal-dl">
+                        <dt>Créé par</dt>
+                        <dd>
+                            <template v-if="selectedEvent.creator_username">
+                                {{ selectedEvent.creator_username }}
+                                <span class="modal-email">{{ selectedEvent.creator_email }}</span>
+                            </template>
+                            <template v-else>—</template>
+                        </dd>
+                        <dt>Créé le</dt>
+                        <dd>{{ fmtTimestamp(selectedEvent.created_at) }}</dd>
+                        <dt>Approuvé par</dt>
+                        <dd>
+                            <template v-if="selectedEvent.approver_username">
+                                {{ selectedEvent.approver_username }}
+                                <span class="modal-email">{{ selectedEvent.approver_email }}</span>
+                            </template>
+                            <template v-else>—</template>
+                        </dd>
+                        <dt>Approuvé le</dt>
+                        <dd>{{ fmtTimestamp(selectedEvent.approved_at) }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </Teleport>
+
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
@@ -187,9 +239,9 @@ function fmtTime(iso: string | null): string {
                     </tr>
                     <tr v-for="e in events" :key="e.id">
                         <td class="td-id">#{{ e.id }}</td>
-                        <td>{{ fmtDate(e.start_date) }}</td>
-                        <td>{{ fmtTime(e.start_date) }}</td>
-                        <td>{{ fmtTime(e.end_date) }}</td>
+                        <td>{{ fmtDate(e.date) }}</td>
+                        <td>{{ fmtTime(e.start_time) }}</td>
+                        <td>{{ fmtTime(e.end_time) }}</td>
                         <td>{{ e.location || '—' }}</td>
                         <td>{{ e.price != null ? e.price + ' €' : 'Gratuit' }}</td>
                         <td>
@@ -200,27 +252,11 @@ function fmtTime(iso: string | null): string {
                                 {{ e.approved ? 'Approuvé' : 'En attente' }}
                             </span>
                         </td>
-                        <td class="td-muted">
-                            {{ e.created_by != null ? `#${e.created_by}` : '—' }}
-                        </td>
                         <td class="td-actions">
-                            <button
-                                v-if="!e.approved"
-                                class="btn-sm btn-sm--approve"
-                                @click="approuver(e)"
-                            >
-                                Approuver
-                            </button>
-                            <button
-                                v-else
-                                class="btn-sm"
-                                @click="desapprouver(e)"
-                            >
-                                Désapprouver
-                            </button>
-                            <button class="btn-sm btn-sm--danger" @click="supprimer(e.id)">
-                                Supprimer
-                            </button>
+                            <button class="btn-sm btn-sm--info" @click="selectedEvent = e">Détails</button>
+                            <button v-if="!e.approved" class="btn-sm btn-sm--approve" @click="approuver(e)">Approuver</button>
+                            <button v-else class="btn-sm" @click="desapprouver(e)">Désapprouver</button>
+                            <button class="btn-sm btn-sm--danger" @click="supprimer(e.id)">Supprimer</button>
                         </td>
                     </tr>
                 </tbody>
@@ -423,5 +459,80 @@ function fmtTime(iso: string | null): string {
 .btn-sm--danger:hover {
     border-color: #dc2626;
     background: #fee2e2;
+}
+.btn-sm--info {
+    border-color: rgba(37, 99, 235, 0.25);
+    color: #2563eb;
+}
+.btn-sm--info:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px 32px;
+    min-width: 320px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    color: rgba(53, 53, 53, 0.5);
+    padding: 4px;
+    line-height: 1;
+}
+.modal-close:hover {
+    color: var(--charcoal);
+}
+.modal-dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 16px;
+    margin: 0;
+}
+.modal-dl dt {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(53, 53, 53, 0.5);
+    align-self: center;
+}
+.modal-dl dd {
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    margin: 0;
+}
+.modal-email {
+    display: block;
+    font-size: 0.78rem;
+    color: rgba(53, 53, 53, 0.5);
 }
 </style>

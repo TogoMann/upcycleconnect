@@ -62,9 +62,6 @@ export const useAdminStore = defineStore('admin', () => {
       const updatedUser = await res.json()
       const index = users.value.findIndex(u => u.id === id)
       if (index !== -1) {
-        // If the backend returns a message instead of the full user object, 
-        // we might need to fetch users again or update the local object manually.
-        // The current backend handler returns `{"message": "user updated successfully"}`
         await fetchUsers()
       }
     } catch (err: any) {
@@ -126,7 +123,7 @@ export const useAdminStore = defineStore('admin', () => {
     isLoading.value = true
     error.value = null
     try {
-      const res = await fetch(`${API_BASE}/event`, {
+      const res = await fetch(`${API_BASE}/admin/events`, {
         headers: {
           'Authorization': `Bearer ${authStore.token}`
         }
@@ -156,6 +153,38 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  const approveEvent = async (id: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/event/${id}/approve`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      })
+      if (!res.ok) throw new Error('Failed to approve event')
+      const ev = events.value.find(e => e.id === id)
+      if (ev) ev.approved = true
+    } catch (err: any) {
+      error.value = err.message
+    }
+  }
+
+  const disapproveEvent = async (id: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/event/${id}/disapprove`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      })
+      if (!res.ok) throw new Error('Failed to disapprove event')
+      const ev = events.value.find(e => e.id === id)
+      if (ev) ev.approved = false
+    } catch (err: any) {
+      error.value = err.message
+    }
+  }
+
   return {
     users,
     courses,
@@ -169,6 +198,8 @@ export const useAdminStore = defineStore('admin', () => {
     fetchCourses,
     deleteCourse,
     fetchEvents,
-    deleteEvent
+    deleteEvent,
+    approveEvent,
+    disapproveEvent
   }
 })

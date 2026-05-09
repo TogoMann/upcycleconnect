@@ -31,13 +31,22 @@ func (r *Repository) GetAll() ([]Event, error) {
 	return items, nil
 }
 
-func (r *Repository) GetAllFull() ([]Event, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, approved, approved_by, approved_at, price, date, start_time, end_time, COALESCE(location, '') as location, created_by, created_at FROM event")
+func (r *Repository) GetAllFull() ([]EventFull, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT
+			e.id, e.approved, e.approved_by, e.approved_at, e.price, e.date, e.start_time, e.end_time,
+			COALESCE(e.location, '') AS location, e.created_by, e.created_at,
+			c.username AS creator_username, c.email AS creator_email,
+			a.username AS approver_username, a.email AS approver_email
+		FROM event e
+		LEFT JOIN users c ON c.id = e.created_by
+		LEFT JOIN users a ON a.id = e.approved_by
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("package event/repo GetAllFull query: %w", err)
 	}
 
-	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[Event])
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[EventFull])
 	if err != nil {
 		return nil, fmt.Errorf("package event/repo GetAllFull: %v", err.Error())
 	}
@@ -62,8 +71,8 @@ func (r *Repository) Create(dto Event) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO event (approved, price, date, start_time, end_time, location, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		dto.Approved, dto.Price, dto.Date, dto.StartTime, dto.EndTime, dto.Location, dto.CreatedBy).Scan(&id)
+		"INSERT INTO event (approved, approved_by, approved_at, price, date, start_time, end_time, location, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
+		dto.Approved, dto.ApprovedBy, dto.ApprovedAt, dto.Price, dto.Date, dto.StartTime, dto.EndTime, dto.Location, dto.CreatedBy).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
