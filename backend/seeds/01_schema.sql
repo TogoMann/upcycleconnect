@@ -21,11 +21,11 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'item_status') THEN
         CREATE TYPE ITEM_STATUS AS ENUM ('deposited', 'validated', 'collected');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'container_status') THEN
-        CREATE TYPE CONTAINER_STATUS AS ENUM ('Available', 'Occupied', 'HS');
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'locker_status') THEN
+        CREATE TYPE LOCKER_STATUS AS ENUM ('Available', 'Occupied', 'HS');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'container_size') THEN
-        CREATE TYPE CONTAINER_SIZE AS ENUM ('S', 'M', 'L');
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'locker_size') THEN
+        CREATE TYPE LOCKER_SIZE AS ENUM ('S', 'M', 'L');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'thread_categories') THEN
         CREATE TYPE THREAD_CATEGORIES AS ENUM ('Bricolage', 'Textile', 'Ressources', 'Débutants', 'Communauté');
@@ -78,8 +78,16 @@ CREATE TABLE IF NOT EXISTS plans (
 CREATE TABLE IF NOT EXISTS container (
     id BIGSERIAL PRIMARY KEY,
     site_id BIGINT REFERENCES site(id),
-    status CONTAINER_STATUS DEFAULT 'Available',
-    size CONTAINER_SIZE DEFAULT 'M',
+    status VARCHAR(20) DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS locker (
+    id BIGSERIAL PRIMARY KEY,
+    container_id BIGINT REFERENCES container(id) ON DELETE CASCADE,
+    label VARCHAR(32),
+    status LOCKER_STATUS DEFAULT 'Available',
+    size LOCKER_SIZE DEFAULT 'M',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS users (
@@ -231,7 +239,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 CREATE TABLE IF NOT EXISTS item (
     id BIGSERIAL PRIMARY KEY,
     owner_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-    container_id BIGINT REFERENCES container(id) ON DELETE SET NULL,
+    locker_id BIGINT REFERENCES locker(id) ON DELETE SET NULL,
     site_id BIGINT REFERENCES site(id) ON DELETE SET NULL,
     material_type VARCHAR(64),
     physical_state ITEM_STATE,
@@ -240,8 +248,9 @@ CREATE TABLE IF NOT EXISTS item (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS container_access (
+CREATE TABLE IF NOT EXISTS locker_access (
     id BIGSERIAL PRIMARY KEY,
+    locker_id BIGINT REFERENCES locker(id) ON DELETE CASCADE,
     item_id BIGINT REFERENCES item(id) ON DELETE CASCADE,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     access_code VARCHAR(16) NOT NULL,
@@ -320,5 +329,13 @@ CREATE TABLE IF NOT EXISTS personal_event (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cart_item (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    listing_id BIGINT REFERENCES listing(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, listing_id)
 );
 ALTER TABLE listing ADD COLUMN IF NOT EXISTS image_url VARCHAR(255);

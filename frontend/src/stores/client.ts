@@ -14,6 +14,7 @@ export const useClientStore = defineStore('client', () => {
     const events = ref<any[]>([])
     const courses = ref<any[]>([])
     const cities = ref<any[]>([])
+    const cart = ref<any[]>([])
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
@@ -22,23 +23,93 @@ export const useClientStore = defineStore('client', () => {
         return { Authorization: `Bearer ${authStore.token}` }
     }
 
+    async function fetchCart() {
+        isLoading.value = true
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/cart`, { headers: authHeaders() })
+            if (!res.ok) throw new Error('Erreur chargement panier')
+            const data = await res.json()
+            cart.value = Array.isArray(data) ? data : []
+        } catch (e: any) {
+            console.error('Fetch Cart Error:', e)
+            error.value = e.message
+        } finally {
+            isLoading.value = false
+        }
+    }
+
+    async function addToCart(listingId: number) {
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/cart`, {
+                method: 'POST',
+                headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ listing_id: listingId }),
+            })
+            if (!res.ok) throw new Error('Erreur ajout au panier')
+            await fetchCart()
+        } catch (e: any) {
+            console.error('Add To Cart Error:', e)
+            error.value = e.message
+            throw e
+        }
+    }
+
+    async function removeFromCart(listingId: number) {
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/cart/${listingId}`, {
+                method: 'DELETE',
+                headers: authHeaders(),
+            })
+            if (!res.ok) throw new Error('Erreur retrait du panier')
+            await fetchCart()
+        } catch (e: any) {
+            console.error('Remove From Cart Error:', e)
+            error.value = e.message
+            throw e
+        }
+    }
+
+    async function checkoutCart() {
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/cart/checkout`, {
+                method: 'POST',
+                headers: authHeaders(),
+            })
+            if (!res.ok) throw new Error('Erreur paiement panier')
+            cart.value = []
+            return await res.json()
+        } catch (e: any) {
+            console.error('Checkout Error:', e)
+            error.value = e.message
+            throw e
+        }
+    }
+
     async function fetchCities() {
+        error.value = null
         try {
             const res = await fetch(`${API_BASE}/city`)
             if (!res.ok) return
             cities.value = await res.json()
-        } catch {
+        } catch (e: any) {
+            console.error('Fetch Cities Error:', e)
             cities.value = []
         }
     }
 
     async function fetchAnnonces() {
         isLoading.value = true
+        error.value = null
         try {
             const res = await fetch(`${API_BASE}/listing/me`, { headers: authHeaders() })
             if (!res.ok) throw new Error('Erreur chargement annonces')
             annonces.value = await res.json()
         } catch (e: any) {
+            console.error('Fetch Annonces Error:', e)
             error.value = e.message
         } finally {
             isLoading.value = false
@@ -48,11 +119,13 @@ export const useClientStore = defineStore('client', () => {
     const allAnnonces = ref<any[]>([])
     async function fetchAllAnnonces() {
         isLoading.value = true
+        error.value = null
         try {
             const res = await fetch(`${API_BASE}/listing`, { headers: authHeaders() })
             if (!res.ok) throw new Error('Erreur chargement annonces')
             allAnnonces.value = await res.json()
         } catch (e: any) {
+            console.error('Fetch All Annonces Error:', e)
             error.value = e.message
         } finally {
             isLoading.value = false
@@ -325,6 +398,7 @@ export const useClientStore = defineStore('client', () => {
         courses,
         cities,
         sites,
+        cart,
         isLoading,
         error,
         fetchAnnonces,
@@ -348,5 +422,9 @@ export const useClientStore = defineStore('client', () => {
         fetchCities,
         createItem,
         updateProfile,
+        fetchCart,
+        addToCart,
+        removeFromCart,
+        checkoutCart,
     }
 })

@@ -20,7 +20,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) GetAll() ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.container_id, i.site_id, i.material_type, 
+			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type, 
 			i.physical_state, i.status, i.weight, i.created_at,
 			s.type_site as site_type
 		FROM item i
@@ -35,7 +35,7 @@ func (r *Repository) GetAll() ([]Item, error) {
 func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.container_id, i.site_id, i.material_type, 
+			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type, 
 			i.physical_state, i.status, i.weight, i.created_at,
 			s.type_site as site_type
 		FROM item i
@@ -51,7 +51,7 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 func (r *Repository) GetById(id pgtype.Int8) (*Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.container_id, i.site_id, i.material_type, 
+			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type, 
 			i.physical_state, i.status, i.weight, i.created_at,
 			s.type_site as site_type
 		FROM item i
@@ -71,8 +71,8 @@ func (r *Repository) GetById(id pgtype.Int8) (*Item, error) {
 func (r *Repository) Create(item Item) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(db.Ctx,
-		"INSERT INTO item (owner_id, container_id, site_id, material_type, physical_state, status, weight) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		item.OwnerId, item.ContainerId, item.SiteId, item.MaterialType, item.PhysicalState, item.Status, item.Weight).Scan(&id)
+		"INSERT INTO item (owner_id, locker_id, site_id, material_type, physical_state, status, weight) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, item.Status, item.Weight).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
@@ -81,8 +81,8 @@ func (r *Repository) Create(item Item) (pgtype.Int8, error) {
 
 func (r *Repository) Update(id pgtype.Int8, item Item) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE item SET owner_id=$1, container_id=$2, site_id=$3, material_type=$4, physical_state=$5, status=$6, weight=$7 WHERE id=$8",
-		item.OwnerId, item.ContainerId, item.SiteId, item.MaterialType, item.PhysicalState, item.Status, item.Weight, id)
+		"UPDATE item SET owner_id=$1, locker_id=$2, site_id=$3, material_type=$4, physical_state=$5, status=$6, weight=$7 WHERE id=$8",
+		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, item.Status, item.Weight, id)
 	if err != nil {
 		return err
 	}
@@ -114,16 +114,21 @@ func (r *Repository) UpdateStatus(id pgtype.Int8, status ItemStatus) error {
 	return nil
 }
 
-func (r *Repository) CreateAccessCode(itemId pgtype.Int8, userId pgtype.Int8, code string) error {
+func (r *Repository) UpdateLockerStatus(lockerId pgtype.Int8, status string) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE locker SET status = $1 WHERE id = $2", status, lockerId)
+	return err
+}
+
+func (r *Repository) CreateAccessCode(lockerId pgtype.Int8, itemId pgtype.Int8, userId pgtype.Int8, code string) error {
 	_, err := r.db.Exec(db.Ctx,
-		"INSERT INTO container_access (item_id, user_id, access_code, expires_at) VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')",
-		itemId, userId, code)
+		"INSERT INTO locker_access (locker_id, item_id, user_id, access_code, expires_at) VALUES ($1, $2, $3, $4, NOW() + INTERVAL '24 hours')",
+		lockerId, itemId, userId, code)
 	return err
 }
 
 func (r *Repository) GetAccessCode(itemId pgtype.Int8) (string, error) {
 	var code string
-	err := r.db.QueryRow(db.Ctx, "SELECT access_code FROM container_access WHERE item_id = $1 AND used_at IS NULL ORDER BY created_at DESC LIMIT 1", itemId).Scan(&code)
+	err := r.db.QueryRow(db.Ctx, "SELECT access_code FROM locker_access WHERE item_id = $1 AND used_at IS NULL ORDER BY created_at DESC LIMIT 1", itemId).Scan(&code)
 	return code, err
 }
 
@@ -139,7 +144,7 @@ func (r *Repository) Collect(id pgtype.Int8, proId pgtype.Int8) error {
 }
 
 func (r *Repository) MarkCodeUsed(code string) error {
-	tag, err := r.db.Exec(db.Ctx, "UPDATE container_access SET used_at = NOW() WHERE access_code = $1", code)
+	tag, err := r.db.Exec(db.Ctx, "UPDATE locker_access SET used_at = NOW() WHERE access_code = $1", code)
 	if err != nil {
 		return err
 	}

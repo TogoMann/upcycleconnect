@@ -66,6 +66,7 @@ import DeposerObjet from '@/pages/client/DeposerObjet.vue'
 import UpcyclingScore from '@/pages/client/UpcyclingScore.vue'
 import Planning from '@/pages/client/Planning.vue'
 import Catalogue from '@/pages/client/Catalogue.vue'
+import Panier from '@/pages/client/Panier.vue'
 import Paiement from '@/pages/client/Paiement.vue'
 import ConfirmationPaiement from '@/pages/client/ConfirmationPaiement.vue'
 import ClientProfil from '@/pages/client/Profil.vue'
@@ -130,8 +131,9 @@ const router = createRouter({
                 { path: 'score', component: UpcyclingScore },
                 { path: 'planning', component: Planning },
                 { path: 'catalogue', component: Catalogue },
+                { path: 'panier', component: Panier, name: 'Panier' },
                 { path: 'paiement', component: Paiement },
-                { path: 'paiement/confirmation', component: ConfirmationPaiement },
+                { path: 'paiement/confirmation', component: ConfirmationPaiement, name: 'ConfirmationPaiement' },
                 { path: 'profil', component: ClientProfil },
             ],
         },

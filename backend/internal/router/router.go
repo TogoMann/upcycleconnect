@@ -4,6 +4,7 @@ import (
 	db "backend/internal/database"
 	"backend/internal/modules/advertisement"
 	"backend/internal/modules/auth"
+	"backend/internal/modules/cart"
 	"backend/internal/modules/city"
 	"backend/internal/modules/comments"
 	"backend/internal/modules/container"
@@ -60,6 +61,7 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	news.RegisterRoutes(r, db)
 	listingorder.RegisterRoutes(r, db)
 	listing.RegisterRoutes(r, db)
+	cart.RegisterRoutes(r, db)
 	planning.RegisterRoutes(r, db)
 	plans.RegisterRoutes(r, db)
 	eventparticipation.RegisterRoutes(r, db)

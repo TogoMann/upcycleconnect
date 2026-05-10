@@ -187,7 +187,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		CreatedBy:   pgtype.Int8{Int64: int64(sub), Valid: true},
 		Status:      Active,
 		Approved:    false,
-		ImageUrl:    input.ImageUrl,
+		ImageUrl:    pgtype.Text{String: input.ImageUrl, Valid: input.ImageUrl != ""},
 	}
 	listingDto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
 
@@ -259,7 +259,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Category:    ListingCategory(input.Category),
 		Status:      ListingStatus(input.Status),
 		CityId:      pgtype.Int8{Int64: input.CityId, Valid: input.CityId > 0},
-		ImageUrl:    input.ImageUrl,
+		ImageUrl:    pgtype.Text{String: input.ImageUrl, Valid: input.ImageUrl != ""},
 	}
 	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
 

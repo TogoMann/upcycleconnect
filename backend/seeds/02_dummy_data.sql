@@ -28,13 +28,24 @@ INSERT INTO plans (name, description, price, billing_cycle, features, is_active)
 ('Premium', 'Accès complet à toutes les fonctionnalités', 9.99, 'monthly', '{"Vente d''objets", "Dépôt d''objets", "Ateliers gratuits", "Événements VIP"}', true),
 ('Pro', 'Pour les professionnels de l''upcycling', 29.99, 'monthly', '{"Fonctionnalités Premium", "Statistiques avancées", "Publicité prioritaire"}', true);
 
-INSERT INTO container (site_id, status, size, created_at) VALUES
-(1, 'Available', 'M', NOW()),
-(1, 'Occupied', 'L', NOW()),
-(2, 'HS', 'S', NOW()),
-(2, 'Available', 'M', NOW()),
-(3, 'Available', 'L', NOW()),
-(3, 'Occupied', 'M', NOW());
+INSERT INTO container (site_id, status, created_at) VALUES
+(1, 'Active', NOW()),
+(1, 'Active', NOW()),
+(2, 'Active', NOW()),
+(2, 'Active', NOW()),
+(3, 'Active', NOW()),
+(3, 'Active', NOW());
+
+INSERT INTO locker (container_id, label, status, size, created_at) VALUES
+(1, 'A1', 'Available', 'S', NOW()),
+(1, 'A2', 'Occupied', 'M', NOW()),
+(1, 'A3', 'Available', 'L', NOW()),
+(2, 'B1', 'Occupied', 'L', NOW()),
+(2, 'B2', 'Available', 'M', NOW()),
+(3, 'C1', 'HS', 'S', NOW()),
+(4, 'D1', 'Available', 'M', NOW()),
+(5, 'E1', 'Available', 'L', NOW()),
+(6, 'F1', 'Occupied', 'M', NOW());
 
 -- =========================
 -- USERS
@@ -62,9 +73,9 @@ INSERT INTO score_history (user_id, points, description, created_at) VALUES
 -- =========================
 -- ITEMS
 -- =========================
-INSERT INTO item (owner_id, container_id, site_id, material_type, physical_state, status, weight, created_at) VALUES
-(1, 1, 1, 'Bois', 'bon etat', 'deposited', 5.5, NOW()),
-(2, 2, 1, 'Metal', 'neuf', 'validated', 12.0, NOW());
+INSERT INTO item (owner_id, locker_id, site_id, material_type, physical_state, status, weight, created_at) VALUES
+(1, 2, 1, 'Bois', 'bon etat', 'deposited', 5.5, NOW()),
+(2, 4, 1, 'Metal', 'neuf', 'validated', 12.0, NOW());
 
 -- =========================
 -- EVENTS

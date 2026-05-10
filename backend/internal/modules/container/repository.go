@@ -22,17 +22,20 @@ func (r *Repository) GetAll() ([]ConteneurFrontend, error) {
 			'CONT-' || c.id as code_barres,
 			a.street_number || ' ' || a.street_name || ', ' || ci.name as localisation,
 			CASE 
-				WHEN c.status = 'Available' THEN 'actif'
-				WHEN c.status = 'Occupied' THEN 'plein'
-				ELSE 'hs'
+				WHEN c.status = 'HS' THEN 'hs'
+				WHEN NOT EXISTS (SELECT 1 FROM locker l WHERE l.container_id = c.id AND l.status = 'Available') THEN 'plein'
+				ELSE 'actif'
 			END as etat,
-			CASE 
-				WHEN c.size = 'S' THEN 10
-				WHEN c.size = 'M' THEN 20
-				WHEN c.size = 'L' THEN 50
-				ELSE 20
-			END as capacite,
-			CAST((SELECT COUNT(*) FROM item i WHERE i.container_id = c.id) AS INTEGER) as objets
+			CAST((
+				SELECT COUNT(*)
+				FROM locker l 
+				WHERE l.container_id = c.id
+			) AS INTEGER) as capacite,
+			CAST((
+				SELECT COUNT(*) 
+				FROM locker l 
+				WHERE l.container_id = c.id AND l.status != 'Available'
+			) AS INTEGER) as objets
 		FROM container c
 		JOIN site s ON c.site_id = s.id
 		JOIN address a ON s.address_id = a.id
@@ -45,7 +48,7 @@ func (r *Repository) GetAll() ([]ConteneurFrontend, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*Container, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, site_id, status, size, created_at FROM container WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, site_id, status, created_at FROM container WHERE id = $1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +61,7 @@ func (r *Repository) GetById(id pgtype.Int8) (*Container, error) {
 
 func (r *Repository) Create(c Container) (pgtype.Int8, error) {
 	var id int64
-	err := r.db.QueryRow(db.Ctx, "INSERT INTO container (site_id, status, size) VALUES ($1, $2, $3) RETURNING id", c.SiteId, c.Status, c.Size).Scan(&id)
+	err := r.db.QueryRow(db.Ctx, "INSERT INTO container (site_id, status) VALUES ($1, $2) RETURNING id", c.SiteId, c.Status).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
@@ -66,7 +69,34 @@ func (r *Repository) Create(c Container) (pgtype.Int8, error) {
 }
 
 func (r *Repository) Update(id pgtype.Int8, c Container) error {
-	_, err := r.db.Exec(db.Ctx, "UPDATE container SET site_id = $1, status = $2, size = $3 WHERE id = $4", c.SiteId, c.Status, c.Size, id)
+	_, err := r.db.Exec(db.Ctx, "UPDATE container SET site_id = $1, status = $2 WHERE id = $3", c.SiteId, c.Status, id)
+	return err
+}
+
+func (r *Repository) GetLockersByContainerId(containerId pgtype.Int8) ([]Locker, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, container_id, label, status, size, created_at FROM locker WHERE container_id = $1 ORDER BY label", containerId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Locker])
+}
+
+func (r *Repository) CreateLocker(l Locker) (pgtype.Int8, error) {
+	var id int64
+	err := r.db.QueryRow(db.Ctx, "INSERT INTO locker (container_id, label, status, size) VALUES ($1, $2, $3, $4) RETURNING id", l.ContainerId, l.Label, l.Status, l.Size).Scan(&id)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+	return pgtype.Int8{Int64: id, Valid: true}, nil
+}
+
+func (r *Repository) UpdateLocker(id pgtype.Int8, l Locker) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE locker SET label = $1, status = $2, size = $3 WHERE id = $4", l.Label, l.Status, l.Size, id)
+	return err
+}
+
+func (r *Repository) DeleteLocker(id pgtype.Int8) error {
+	_, err := r.db.Exec(db.Ctx, "DELETE FROM locker WHERE id = $1", id)
 	return err
 }
 

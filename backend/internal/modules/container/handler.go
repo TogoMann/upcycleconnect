@@ -38,6 +38,59 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(container)
 }
 
+func (h *Handler) GetLockers(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	lockers, err := h.service.GetLockersByContainerId(pgtype.Int8{Int64: id, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(lockers)
+}
+
+func (h *Handler) CreateLocker(w http.ResponseWriter, r *http.Request) {
+	var l Locker
+	if err := json.NewDecoder(r.Body).Decode(&l); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	id, err := h.service.CreateLocker(l)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	l.Id = id
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(l)
+}
+
+func (h *Handler) UpdateLocker(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	var l Locker
+	if err := json.NewDecoder(r.Body).Decode(&l); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := h.service.UpdateLocker(pgtype.Int8{Int64: id, Valid: true}, l); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) DeleteLocker(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	if err := h.service.DeleteLocker(pgtype.Int8{Int64: id, Valid: true}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var c Container
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {

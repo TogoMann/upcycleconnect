@@ -8,6 +8,9 @@ const router = useRouter()
 type Tab = 'all' | 'events' | 'courses' | 'annonces'
 const activeTab = ref<Tab>('all')
 
+const showToast = ref(false)
+const toastMessage = ref('')
+
 const allItems = computed(() => {
     const evts = clientStore.events.map((e: any) => ({ ...e, _type: 'event' }))
     const crs = clientStore.courses.map((c: any) => ({ ...c, _type: 'course' }))
@@ -76,6 +79,19 @@ function handleBuy(item: any) {
     })
 }
 
+async function handleAddToCart(item: any) {
+    try {
+        await clientStore.addToCart(getItemId(item))
+        toastMessage.value = `"${getItemName(item)}" ajouté au panier !`
+        showToast.value = true
+        setTimeout(() => { showToast.value = false }, 3000)
+    } catch (e: any) {
+        toastMessage.value = "Erreur lors de l'ajout"
+        showToast.value = true
+        setTimeout(() => { showToast.value = false }, 3000)
+    }
+}
+
 onMounted(() => {
     clientStore.fetchCatalogue()
     clientStore.fetchAllAnnonces()
@@ -140,7 +156,10 @@ onMounted(() => {
                 :key="`${item._type}-${getItemId(item)}`"
                 class="catalogue-card"
             >
-                <div v-if="item.image_url" class="card-img-wrap">
+                <div v-if="item.image_url?.String" class="card-img-wrap">
+                    <img :src="'http://localhost:8081' + item.image_url.String" alt="" class="card-img" />
+                </div>
+                <div v-else-if="item.image_url && typeof item.image_url === 'string'" class="card-img-wrap">
                     <img :src="'http://localhost:8081' + item.image_url" alt="" class="card-img" />
                 </div>
                 <div class="card-header">
@@ -170,11 +189,27 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <button class="btn-book" @click="handleBuy(item)">
-                    {{ formatPrice(getItemPrice(item)) === 'Gratuit' ? "S'inscrire" : "Acheter" }}
-                </button>
+                <div class="card-actions">
+                    <button v-if="item._type === 'annonce'" class="btn-cart btn-cart--full" @click="handleAddToCart(item)">
+                        🛒 Ajouter au panier
+                    </button>
+                    <button v-else class="btn-book" @click="handleBuy(item)">
+                        {{ formatPrice(getItemPrice(item)) === 'Gratuit' ? "S'inscrire" : "Acheter" }}
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Toast Notification -->
+        <Transition name="toast">
+            <div v-if="showToast" class="toast-card">
+                <div class="toast-content">
+                    <span class="toast-icon">✅</span>
+                    <span class="toast-text">{{ toastMessage }}</span>
+                </div>
+                <router-link to="/particulier/panier" class="toast-link">Voir panier</router-link>
+            </div>
+        </Transition>
     </div>
 </template>
 
@@ -375,5 +410,75 @@ onMounted(() => {
 .btn-book:hover {
     background: var(--green-dark);
     color: var(--white);
+}
+.card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+.btn-cart {
+    width: 100%;
+    padding: 11px;
+    background: #f3f4f6;
+    color: var(--charcoal);
+    border: 1.5px solid rgba(53, 53, 53, 0.1);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.btn-cart:hover {
+    background: #e5e7eb;
+}
+.btn-cart--full {
+    background: var(--green-pale);
+    color: var(--green-dark);
+    border-color: rgba(8, 106, 53, 0.1);
+}
+.btn-cart--full:hover {
+    background: var(--green-mid);
+    color: var(--white);
+}
+
+/* Toast Styles */
+.toast-card {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--white);
+    border: 1.5px solid var(--green-mid);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 2000;
+}
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.toast-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.toast-link {
+    color: var(--green-dark);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: underline;
+}
+
+.toast-enter-active, .toast-leave-active {
+    transition: all 0.3s ease;
+}
+.toast-enter-from, .toast-leave-to {
+    opacity: 0;
+    transform: translate(-50%, 20px);
 }
 </style>

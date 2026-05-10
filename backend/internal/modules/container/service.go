@@ -20,6 +20,22 @@ func (s *Service) GetById(id pgtype.Int8) (*Container, error) {
 	return s.repo.GetById(id)
 }
 
+func (s *Service) GetLockersByContainerId(containerId pgtype.Int8) ([]Locker, error) {
+	return s.repo.GetLockersByContainerId(containerId)
+}
+
+func (s *Service) CreateLocker(l Locker) (pgtype.Int8, error) {
+	return s.repo.CreateLocker(l)
+}
+
+func (s *Service) UpdateLocker(id pgtype.Int8, l Locker) error {
+	return s.repo.UpdateLocker(id, l)
+}
+
+func (s *Service) DeleteLocker(id pgtype.Int8) error {
+	return s.repo.DeleteLocker(id)
+}
+
 func (s *Service) Create(c Container) (pgtype.Int8, error) {
 	return s.repo.Create(c)
 }

@@ -22,7 +22,7 @@ const (
 type Item struct {
 	Id            pgtype.Int8      `db:"id" json:"id"`
 	OwnerId       pgtype.Int8      `db:"owner_id" json:"owner_id"`
-	ContainerId   pgtype.Int8      `db:"container_id" json:"container_id"`
+	LockerId      pgtype.Int8      `db:"locker_id" json:"locker_id"`
 	SiteId        pgtype.Int8      `db:"site_id" json:"site_id"`
 	MaterialType  string           `db:"material_type" json:"material_type"`
 	PhysicalState ItemState        `db:"physical_state" json:"physical_state"`
