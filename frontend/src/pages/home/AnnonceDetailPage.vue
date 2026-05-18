@@ -53,20 +53,26 @@ function handleAction() {
         return
     }
 
-    if (isFree.value) {
-        // Contact seller logic (placeholder)
-        alert('Contacting seller for this free item...')
+    if (!listing.value) return
+
+    // Safely extract listing ID
+    let listingId = ''
+    if (typeof listing.value.id === 'object' && listing.value.id !== null) {
+        listingId = listing.value.id.Int64?.toString() || listing.value.id.id?.toString() || ''
     } else {
-        router.push({
-            path: '/particulier/paiement',
-            query: {
-                id: listing.value.id?.Int64,
-                name: listing.value.name,
-                price: typeof listing.value.price === 'object' ? listing.value.price?.Float64 ?? listing.value.price?.Int64 : listing.value.price,
-                type: 'listing'
-            }
-        })
+        listingId = listing.value.id?.toString() || ''
     }
+
+    if (!listingId) {
+        console.error('No listing ID found')
+        return
+    }
+
+    // Redirect to chat with the listing ID to initiate contact
+    router.push({
+        path: '/particulier/chat',
+        query: { listingId }
+    })
 }
 </script>
 
@@ -138,7 +144,7 @@ function handleAction() {
 
                             <div class="detail-actions">
                                 <button class="btn-contact" @click="handleAction">
-                                    {{ isFree ? 'Contacter le vendeur' : 'Acheter l\'objet' }}
+                                    Contacter le vendeur
                                 </button>
                                 <button class="btn-save">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">

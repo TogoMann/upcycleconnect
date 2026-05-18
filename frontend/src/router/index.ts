@@ -57,6 +57,7 @@ import AdminParametres from '@/pages/admin/Parametres.vue'
 import AdminUsers from '@/pages/admin/Users.vue'
 import AdminAnnonces from '@/pages/admin/Annonces.vue'
 import AdminPlans from '@/pages/admin/Plans.vue'
+import AdminChatReview from '@/pages/admin/ChatReview.vue'
 
 import ClientDashboard from '@/pages/client/Dashboard.vue'
 import MesAnnonces from '@/pages/client/MesAnnonces.vue'
@@ -70,6 +71,7 @@ import Panier from '@/pages/client/Panier.vue'
 import Paiement from '@/pages/client/Paiement.vue'
 import ConfirmationPaiement from '@/pages/client/ConfirmationPaiement.vue'
 import ClientProfil from '@/pages/client/Profil.vue'
+import ClientChat from '@/pages/client/Chat.vue'
 
 import ProDashboard from '@/pages/pro/Dashboard.vue'
 import ProAbonnements from '@/pages/pro/Abonnements.vue'
@@ -135,6 +137,7 @@ const router = createRouter({
                 { path: 'paiement', component: Paiement },
                 { path: 'paiement/confirmation', component: ConfirmationPaiement, name: 'ConfirmationPaiement' },
                 { path: 'profil', component: ClientProfil },
+                { path: 'chat', component: ClientChat },
             ],
         },
         {
@@ -197,6 +200,7 @@ const router = createRouter({
                 { path: 'logs', component: AdminLogs },
                 { path: 'parametres', component: AdminParametres },
                 { path: 'utilisateurs', component: AdminUsers },
+                { path: 'chat', component: AdminChatReview },
             ],
         },
         {

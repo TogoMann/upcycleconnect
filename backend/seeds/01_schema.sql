@@ -42,6 +42,12 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ad_status') THEN
         CREATE TYPE AD_STATUS AS ENUM ('pending', 'validated', 'rejected', 'expired');
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'message_type') THEN
+        CREATE TYPE MESSAGE_TYPE AS ENUM ('text', 'price_proposal');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'proposal_status') THEN
+        CREATE TYPE PROPOSAL_STATUS AS ENUM ('pending', 'accepted', 'declined');
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS city (
@@ -338,4 +344,34 @@ CREATE TABLE IF NOT EXISTS cart_item (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, listing_id)
 );
+
+CREATE TABLE IF NOT EXISTS chat_conversation (
+    id BIGSERIAL PRIMARY KEY,
+    listing_id BIGINT NOT NULL REFERENCES listing(id) ON DELETE CASCADE,
+    buyer_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    seller_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(listing_id, buyer_id, seller_id)
+);
+
+CREATE TABLE IF NOT EXISTS chat_message (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES chat_conversation(id) ON DELETE CASCADE,
+    sender_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT,
+    message_type MESSAGE_TYPE NOT NULL DEFAULT 'text',
+    proposed_price DECIMAL(10, 2),
+    proposal_status PROPOSAL_STATUS,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS chat_message_edit_history (
+    id BIGSERIAL PRIMARY KEY,
+    message_id BIGINT NOT NULL REFERENCES chat_message(id) ON DELETE CASCADE,
+    old_content TEXT,
+    old_proposed_price DECIMAL(10, 2),
+    edited_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 ALTER TABLE listing ADD COLUMN IF NOT EXISTS image_url VARCHAR(255);

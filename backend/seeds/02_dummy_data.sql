@@ -166,3 +166,17 @@ INSERT INTO project_steps (project_id, step_number, description, created_at) VAL
 INSERT INTO advertisement (announcer_id, target_id, target_type, ad_type, budget, status, start_date, end_date, created_at) VALUES
 (2, 1, 'listing', 'partnership', 150.00, 'validated', CURRENT_DATE, CURRENT_DATE + 30, NOW()),
 (2, 1, 'project', 'partnership', 200.00, 'pending', CURRENT_DATE + 1, CURRENT_DATE + 15, NOW());
+
+-- =========================
+-- CHAT CONVERSATIONS & MESSAGES
+-- =========================
+INSERT INTO chat_conversation (listing_id, buyer_id, seller_id, created_at, updated_at) VALUES
+(1, 1, 2, NOW() - INTERVAL '2 days', NOW());
+
+INSERT INTO chat_message (conversation_id, sender_id, content, message_type, proposed_price, proposal_status, created_at) VALUES
+(1, 1, 'Bonjour, est-ce que la chaise est toujours disponible ?', 'text', NULL, NULL, NOW() - INTERVAL '2 days'),
+(1, 2, 'Bonjour Alice, oui elle est toujours disponible.', 'text', NULL, NULL, NOW() - INTERVAL '1 day'),
+(1, 1, 'Je suis très intéressée. Est-il possible de négocier le prix ?', 'text', NULL, NULL, NOW() - INTERVAL '12 hours'),
+(1, 1, 'Je vous propose 130€ au lieu de 150€.', 'price_proposal', 130.00, 'pending', NOW() - INTERVAL '10 hours'),
+(1, 2, 'C''est un peu bas, je peux descendre à 140€.', 'text', NULL, NULL, NOW() - INTERVAL '5 hours');
+

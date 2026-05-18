@@ -60,6 +60,12 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                             </svg>
                             Mon profil
                         </router-link>
+                        <router-link to="/particulier/chat" class="dropdown-item" @click="dropdownOpen = false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                            </svg>
+                            Mes conversations
+                        </router-link>
                         <div class="dropdown-divider"></div>
                         <button class="dropdown-item dropdown-item--danger" @click="logout">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -179,6 +185,17 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                         </svg>
                         <span>Mon Panier</span>
+                    </router-link>
+
+                    <router-link
+                        to="/particulier/chat"
+                        class="sidebar-item"
+                        active-class="sidebar-item--active"
+                    >
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span>Mes Conversations</span>
                     </router-link>
 
                     <router-link
