@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -19,7 +20,7 @@ const abonnements = ref<Abonnement[]>([])
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/abonnements', {
+        const res = await fetch(`${API_BASE}/admin/abonnements`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) abonnements.value = await res.json()

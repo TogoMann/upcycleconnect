@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/internal/config"
 	db "backend/internal/database"
 	"backend/internal/middlewares"
 	"backend/internal/router"
@@ -9,11 +10,17 @@ import (
 )
 
 func main() {
+	cfg := config.Load()
 	db.Pool = db.NewDB()
 
 	r := router.NewRouter(db.Pool)
 	handlerWithCors := middlewares.CorsMiddleware(r)
 
-	fmt.Println("Listening at http://localhost:8081")
-	http.ListenAndServe(":8081", handlerWithCors)
+	port := cfg.AppPort
+	if port == "" {
+		port = "8081"
+	}
+
+	fmt.Printf("Listening at http://localhost:%s\n", port)
+	http.ListenAndServe(":"+port, handlerWithCors)
 }

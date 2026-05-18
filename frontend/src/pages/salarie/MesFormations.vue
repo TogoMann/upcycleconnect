@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -19,7 +20,7 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch('http://localhost:8081/salarie/formations', {
+        const res = await fetch(`${API_BASE}/salarie/formations`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) formations.value = await res.json()
@@ -28,7 +29,7 @@ onMounted(async () => {
 
 async function supprimer(id: number) {
     if (!confirm('Supprimer cette formation ?')) return
-    await fetch(`http://localhost:8081/salarie/formations/${id}`, {
+    await fetch(`${API_BASE}/salarie/formations/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })

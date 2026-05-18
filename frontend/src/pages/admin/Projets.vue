@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -18,7 +19,7 @@ const projets = ref<Projet[]>([])
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/projets', {
+        const res = await fetch(`${API_BASE}/admin/projets`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) projets.value = await res.json()
@@ -26,7 +27,7 @@ onMounted(async () => {
 })
 
 async function toggleMisEnAvant(p: Projet) {
-    await fetch(`http://localhost:8081/admin/projets/${p.id}/mise-en-avant`, {
+    await fetch(`${API_BASE}/admin/projets/${p.id}/mise-en-avant`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
         body: JSON.stringify({ mis_en_avant: !p.mis_en_avant }),

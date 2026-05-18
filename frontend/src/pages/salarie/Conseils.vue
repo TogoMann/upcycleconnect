@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -22,7 +23,7 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch('http://localhost:8081/salarie/conseils', {
+        const res = await fetch(`${API_BASE}/salarie/conseils`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) articles.value = await res.json()
@@ -45,7 +46,7 @@ async function save() {
     loading.value = true
     try {
         if (editId.value) {
-            const res = await fetch(`http://localhost:8081/salarie/conseils/${editId.value}`, {
+            const res = await fetch(`${API_BASE}/salarie/conseils/${editId.value}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
                 body: JSON.stringify(form.value),
@@ -56,7 +57,7 @@ async function save() {
                 if (idx !== -1) articles.value[idx] = updated
             }
         } else {
-            const res = await fetch('http://localhost:8081/salarie/conseils', {
+            const res = await fetch(`${API_BASE}/salarie/conseils`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
                 body: JSON.stringify(form.value),
@@ -70,7 +71,7 @@ async function save() {
 
 async function supprimer(id: number) {
     if (!confirm('Supprimer cet article ?')) return
-    await fetch(`http://localhost:8081/salarie/conseils/${id}`, {
+    await fetch(`${API_BASE}/salarie/conseils/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })

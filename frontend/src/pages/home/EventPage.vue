@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 
 interface Event {
@@ -15,7 +16,7 @@ const loading = ref(true)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/event')
+        const res = await fetch(`${API_BASE}/event`)
         if (res.ok) events.value = await res.json()
     } catch {}
     loading.value = false

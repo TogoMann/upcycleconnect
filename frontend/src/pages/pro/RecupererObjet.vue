@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -14,7 +15,7 @@ async function recuperer() {
     error.value = ''
     result.value = null
     try {
-        const res = await fetch('http://localhost:8081/pro/conteneurs/recuperer', {
+        const res = await fetch(`${API_BASE}/pro/conteneurs/recuperer`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

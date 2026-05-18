@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 
 const courseCount = ref(0)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/course/catalogue')
+        const res = await fetch(`${API_BASE}/course/catalogue`)
         if (res.ok) {
             const courses = await res.json()
             courseCount.value = courses.length

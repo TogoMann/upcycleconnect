@@ -1,8 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
-
-const API_BASE = 'http://localhost:8081'
+import { API_BASE } from '@/config'
 
 export const useClientStore = defineStore('client', () => {
     const annonces = ref<any[]>([])

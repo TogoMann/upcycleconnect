@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -17,7 +18,7 @@ const depots = ref<Depot[]>([])
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/depots', {
+        const res = await fetch(`${API_BASE}/admin/depots`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) depots.value = await res.json()
@@ -25,7 +26,7 @@ onMounted(async () => {
 })
 
 async function valider(d: Depot) {
-    await fetch(`http://localhost:8081/admin/depots/${d.id}/valider`, {
+    await fetch(`${API_BASE}/admin/depots/${d.id}/valider`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })
@@ -33,7 +34,7 @@ async function valider(d: Depot) {
 }
 
 async function envoyerCode(d: Depot) {
-    await fetch(`http://localhost:8081/admin/depots/${d.id}/code`, {
+    await fetch(`${API_BASE}/admin/depots/${d.id}/code`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })

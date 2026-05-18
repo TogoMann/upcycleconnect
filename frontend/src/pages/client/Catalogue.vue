@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
@@ -157,10 +158,10 @@ onMounted(() => {
                 class="catalogue-card"
             >
                 <div v-if="item.image_url?.String" class="card-img-wrap">
-                    <img :src="'http://localhost:8081' + item.image_url.String" alt="" class="card-img" />
+                    <img :src="`${API_BASE}` + item.image_url.String" alt="" class="card-img" />
                 </div>
                 <div v-else-if="item.image_url && typeof item.image_url === 'string'" class="card-img-wrap">
-                    <img :src="'http://localhost:8081' + item.image_url" alt="" class="card-img" />
+                    <img :src="`${API_BASE}` + item.image_url" alt="" class="card-img" />
                 </div>
                 <div class="card-header">
                     <span class="type-badge" :class="{

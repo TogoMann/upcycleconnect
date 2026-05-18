@@ -172,3 +172,12 @@ func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 
 	return true, nil
 }
+
+func (r *Repository) CountByUserId(userId pgtype.Int8) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM listing WHERE created_by = $1", userId).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("package listing/repo CountByUserId query: %w", err)
+	}
+	return count, nil
+}

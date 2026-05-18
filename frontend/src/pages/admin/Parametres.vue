@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -20,7 +21,7 @@ const loading = ref(false)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/parametres', {
+        const res = await fetch(`${API_BASE}/admin/parametres`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) {
@@ -35,7 +36,7 @@ async function save() {
     error.value = ''
     success.value = false
     try {
-        const res = await fetch('http://localhost:8081/admin/parametres', {
+        const res = await fetch(`${API_BASE}/admin/parametres`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
             body: JSON.stringify({ ...form.value, commission_taux: parseFloat(form.value.commission_taux) || 0 }),

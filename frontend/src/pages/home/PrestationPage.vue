@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -16,7 +17,7 @@ const dynamicCourses = ref<Course[]>([])
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/course/catalogue')
+        const res = await fetch(`${API_BASE}/course/catalogue`)
         if (res.ok) {
             dynamicCourses.value = await res.json()
         }

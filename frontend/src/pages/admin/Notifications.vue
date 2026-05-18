@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -20,7 +21,7 @@ const success = ref(false)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/notifications', {
+        const res = await fetch(`${API_BASE}/admin/notifications`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) historique.value = await res.json()
@@ -32,7 +33,7 @@ async function envoyer() {
     loading.value = true
     success.value = false
     try {
-        const res = await fetch('http://localhost:8081/admin/notifications', {
+        const res = await fetch(`${API_BASE}/admin/notifications`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
             body: JSON.stringify(form.value),

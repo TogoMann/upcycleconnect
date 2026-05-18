@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -10,7 +11,7 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch('http://localhost:8081/pro', {
+        const res = await fetch(`${API_BASE}/pro`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {

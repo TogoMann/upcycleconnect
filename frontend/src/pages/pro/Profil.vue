@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -30,7 +31,7 @@ async function save() {
     error.value = ''
     success.value = false
     try {
-        const res = await fetch('http://localhost:8081/pro/profil', {
+        const res = await fetch(`${API_BASE}/pro/profil`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

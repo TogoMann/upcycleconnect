@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -19,7 +20,7 @@ const pubs = ref<Pub[]>([])
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/publicites', {
+        const res = await fetch(`${API_BASE}/admin/publicites`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) pubs.value = await res.json()
@@ -28,7 +29,7 @@ onMounted(async () => {
 
 async function toggleStatut(p: Pub) {
     const newStatut = p.statut === 'active' ? 'inactive' : 'active'
-    await fetch(`http://localhost:8081/admin/publicites/${p.id}`, {
+    await fetch(`${API_BASE}/admin/publicites/${p.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
         body: JSON.stringify({ statut: newStatut }),
@@ -38,7 +39,7 @@ async function toggleStatut(p: Pub) {
 
 async function supprimer(id: number) {
     if (!confirm('Supprimer cette publicité ?')) return
-    await fetch(`http://localhost:8081/admin/publicites/${id}`, {
+    await fetch(`${API_BASE}/admin/publicites/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })

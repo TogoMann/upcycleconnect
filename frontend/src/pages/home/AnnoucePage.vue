@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useClientStore } from '@/stores/client'
 
@@ -33,7 +34,7 @@ const annonces = computed(() => {
             }),
             vendeur: a.created_by_name || 'Utilisateur',
             categorie: a.category || 'Non classé',
-            img: a.image_url ? 'http://localhost:8081' + a.image_url : 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
+            img: a.image_url ? `${API_BASE}` + a.image_url : 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
         }
     })
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 
 interface Thread {
@@ -19,7 +20,7 @@ const loading = ref(true)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/thread')
+        const res = await fetch(`${API_BASE}/thread`)
         if (res.ok) threads.value = await res.json()
     } catch {}
     loading.value = false

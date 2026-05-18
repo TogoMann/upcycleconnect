@@ -7,17 +7,18 @@ import (
 )
 
 type Config struct {
-	AppPort  string
-	DBHost   string
-	DBPort   string
-	DBUser   string
-	DBPass   string
-	DBName   string
-	SMTPHost string
-	SMTPPort string
-	SMTPUser string
-	SMTPPass string
+	AppPort   string
+	DBHost    string
+	DBPort    string
+	DBUser    string
+	DBPass    string
+	DBName    string
+	SMTPHost  string
+	SMTPPort  string
+	SMTPUser  string
+	SMTPPass  string
 	FromEmail string
+	JWTSecret string
 }
 
 func Load() *Config {
@@ -34,5 +35,6 @@ func Load() *Config {
 		SMTPUser:  os.Getenv("SMTP_USER"),
 		SMTPPass:  os.Getenv("SMTP_PASS"),
 		FromEmail: os.Getenv("FROM_EMAIL"),
+		JWTSecret: os.Getenv("JWT_SECRET"),
 	}
 }

@@ -21,10 +21,13 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) GetAll() ([]UserFrontend, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			id, username, first_name, last_name, email, role, language_preference, has_seen_tutorial, 
-			TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
-			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = users.id) AS INTEGER) as score
-		FROM users
+			u.id, u.username, u.first_name, u.last_name, u.email, u.role, u.language_preference, u.has_seen_tutorial, 
+			TO_CHAR(u.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = u.id) AS INTEGER) as score,
+			COALESCE(c.siret, '') as siret,
+			COALESCE(u.company_id, 0) as company_id
+		FROM users u
+		LEFT JOIN companies c ON u.company_id = c.id
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetAllusers query: %w", err)
@@ -34,7 +37,7 @@ func (r *Repository) GetAll() ([]UserFrontend, error) {
 }
 
 func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at FROM users WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetUserById query: %w", err)
 	}
@@ -48,7 +51,7 @@ func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
 }
 
 func (r *Repository) GetByUsername(username string) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at FROM users WHERE username = $1", username)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE username = $1", username)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetByUsername query: %w", err)
 	}
@@ -61,6 +64,30 @@ func (r *Repository) GetByUsername(username string) (*User, error) {
 		return nil, fmt.Errorf("package users/repo GetByUsername: %v", err.Error())
 	}
 	return &user, nil
+}
+
+func (r *Repository) GetMe(username string) (*UserFrontend, error) {
+	var u UserFrontend
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT 
+			u.id, u.username, u.first_name, u.last_name, u.email, u.role, u.language_preference, u.has_seen_tutorial, 
+			TO_CHAR(u.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = u.id) AS INTEGER) as score,
+			COALESCE(c.siret, '') as siret,
+			COALESCE(u.company_id, 0) as company_id,
+			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan
+		FROM users u
+		LEFT JOIN companies c ON u.company_id = c.id
+		WHERE u.username = $1
+	`, username).Scan(&u.Id, &u.Username, &u.FirstName, &u.LastName, &u.Email, &u.Role, &u.LanguagePreference, &u.HasSeenTutorial, &u.CreatedAt, &u.Score, &u.Siret, &u.CompanyId, &u.Plan)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("package users/repo GetMe: %w", err)
+	}
+	return &u, nil
 }
 
 func (r *Repository) UpdateTutorialSeen(id pgtype.Int8) error {
@@ -78,8 +105,8 @@ func (r *Repository) Create(userDto User) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO users (username, first_name, last_name, email, password_hash, role, language_preference) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		userDto.Username, userDto.FirstName, userDto.LastName, userDto.Email, userDto.PasswordHash, userDto.Role, userDto.LanguagePreference).Scan(&id)
+		"INSERT INTO users (username, first_name, last_name, email, password_hash, role, language_preference, company_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		userDto.Username, userDto.FirstName, userDto.LastName, userDto.Email, userDto.PasswordHash, userDto.Role, userDto.LanguagePreference, userDto.CompanyId).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -101,8 +128,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 
 func (r *Repository) Update(id pgtype.Int8, user User) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE users SET username=$1, first_name=$2, last_name=$3, email=$4, role=$5, language_preference=$6 WHERE id=$7",
-		user.Username, user.FirstName, user.LastName, user.Email, user.Role, user.LanguagePreference, id)
+		"UPDATE users SET username=$1, first_name=$2, last_name=$3, email=$4, role=$5, language_preference=$6, company_id=$7 WHERE id=$8",
+		user.Username, user.FirstName, user.LastName, user.Email, user.Role, user.LanguagePreference, user.CompanyId, id)
 	if err != nil {
 		return err
 	}

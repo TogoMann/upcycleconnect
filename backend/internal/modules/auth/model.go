@@ -16,4 +16,6 @@ type RegisterRequest struct {
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
+	PlanId    int64  `json:"plan_id"`
+	Siret     string `json:"siret"`
 }

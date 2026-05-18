@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -37,7 +38,7 @@ function formatDate(ts: any): string {
 
 onMounted(async () => {
     try {
-        const res = await fetch(`http://localhost:8081/admin/listings/${route.params.id}`, {
+        const res = await fetch(`${API_BASE}/admin/listings/${route.params.id}`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) {
@@ -54,7 +55,7 @@ onMounted(async () => {
 
 async function valider() {
     try {
-        const res = await fetch(`http://localhost:8081/listing/${route.params.id}/approve`, {
+        const res = await fetch(`${API_BASE}/listing/${route.params.id}/approve`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -69,7 +70,7 @@ async function valider() {
 async function refuser() {
     if (!confirm('Désapprouver cette annonce ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/listing/${route.params.id}/disapprove`, {
+        const res = await fetch(`${API_BASE}/listing/${route.params.id}/disapprove`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -84,7 +85,7 @@ async function refuser() {
 async function supprimer() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement cette annonce ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/listing/${route.params.id}`, {
+        const res = await fetch(`${API_BASE}/listing/${route.params.id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -122,7 +123,7 @@ async function supprimer() {
             </div>
 
             <div class="annonce-image-wrap">
-                <img v-if="annonce.image_url && annonce.image_url !== ''" :src="'http://localhost:8081' + annonce.image_url" alt="" class="annonce-image" />
+                <img v-if="annonce.image_url && annonce.image_url !== ''" :src="`${API_BASE}` + annonce.image_url" alt="" class="annonce-image" />
                 <div v-else class="image-placeholder">
                     <img src="https://placehold.co/600x400?text=Pas+d'image" alt="Pas d'image" class="placeholder-img" />
                 </div>

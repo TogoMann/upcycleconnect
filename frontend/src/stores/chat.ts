@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { useAuthStore } from './auth';
-
-const API_BASE = 'http://localhost:8081';
+import { API_BASE } from '@/config';
 
 export interface Conversation {
     id: number;

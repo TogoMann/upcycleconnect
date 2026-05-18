@@ -35,6 +35,13 @@ func (s *Service) GetByUsername(username string) (*User, error) {
 	return s.repo.GetByUsername(username)
 }
 
+func (s *Service) GetMe(username string) (*UserFrontend, error) {
+	if strings.TrimSpace(username) == "" {
+		return nil, fmt.Errorf("username cannot be empty")
+	}
+	return s.repo.GetMe(username)
+}
+
 func (s *Service) Create(userDto User) (pgtype.Int8, error) {
 	if strings.TrimSpace(userDto.Username) == "" || strings.TrimSpace(userDto.FirstName) == "" || strings.TrimSpace(userDto.LastName) == "" || strings.TrimSpace(userDto.Email) == "" {
 		return pgtype.Int8{}, fmt.Errorf("users/service Invalid string(s): Missing values.")

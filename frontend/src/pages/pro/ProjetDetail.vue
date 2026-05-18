@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -25,7 +26,7 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch(`http://localhost:8081/pro/projets/${route.params.id}`, {
+        const res = await fetch(`${API_BASE}/pro/projets/${route.params.id}`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) projet.value = await res.json()

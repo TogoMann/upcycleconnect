@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -30,7 +31,7 @@ function formatPrice(p: any): string {
 onMounted(async () => {
     loading.value = true
     try {
-        const res = await fetch('http://localhost:8081/admin/listings', {
+        const res = await fetch(`${API_BASE}/admin/listings`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) annonces.value = await res.json()
@@ -41,7 +42,7 @@ onMounted(async () => {
 async function deleteAnnonce(id: number) {
     if (!confirm('Supprimer cette annonce ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/listing/${id}`, {
+        const res = await fetch(`${API_BASE}/listing/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -51,7 +52,7 @@ async function deleteAnnonce(id: number) {
 
 async function approveAnnonce(id: number) {
     try {
-        const res = await fetch(`http://localhost:8081/listing/${id}/approve`, {
+        const res = await fetch(`${API_BASE}/listing/${id}/approve`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -64,7 +65,7 @@ async function approveAnnonce(id: number) {
 
 async function disapproveAnnonce(id: number) {
     try {
-        const res = await fetch(`http://localhost:8081/listing/${id}/disapprove`, {
+        const res = await fetch(`${API_BASE}/listing/${id}/disapprove`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })

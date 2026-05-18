@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { onMounted, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
 import { useRouter } from 'vue-router'
@@ -54,8 +55,8 @@ async function handleRemove(listingId: number) {
         <div v-else class="cart-content">
             <div class="items-list">
                 <div v-for="item in clientStore.cart" :key="item.id" class="cart-item">
-                    <img v-if="item.listing.image_url?.String" :src="'http://localhost:8081' + item.listing.image_url.String" :alt="item.listing.name" class="item-img">
-                    <img v-else-if="item.listing.image_url && typeof item.listing.image_url === 'string'" :src="'http://localhost:8081' + item.listing.image_url" :alt="item.listing.name" class="item-img">
+                    <img v-if="item.listing.image_url?.String" :src="`${API_BASE}` + item.listing.image_url.String" :alt="item.listing.name" class="item-img">
+                    <img v-else-if="item.listing.image_url && typeof item.listing.image_url === 'string'" :src="`${API_BASE}` + item.listing.image_url" :alt="item.listing.name" class="item-img">
                     <img v-else src="https://via.placeholder.com/100" :alt="item.listing.name" class="item-img">
                     <div class="item-details">
                         <h3 class="item-name">{{ item.listing.name }}</h3>

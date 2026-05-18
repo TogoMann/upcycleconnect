@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -24,7 +25,7 @@ async function submit() {
     loading.value = true
     error.value = ''
     try {
-        const res = await fetch('http://localhost:8081/pro/projets', {
+        const res = await fetch(`${API_BASE}/pro/projets`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

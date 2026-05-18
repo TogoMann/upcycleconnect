@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE } from '@/config'
 
 const authStore = useAuthStore()
 
@@ -20,7 +21,7 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch('http://localhost:8081/pro/dashboard-avance', {
+        const res = await fetch(`${API_BASE}/pro/dashboard-avance`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.status === 403) { locked.value = true; return }

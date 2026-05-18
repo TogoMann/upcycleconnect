@@ -22,6 +22,9 @@ type UserFrontend struct {
 	HasSeenTutorial    bool     `db:"has_seen_tutorial" json:"has_seen_tutorial"`
 	CreatedAt          string   `db:"created_at" json:"created_at"`
 	Score              int32    `db:"score" json:"score"`
+	Siret              string   `json:"siret"`
+	CompanyId          int64    `db:"company_id" json:"company_id"`
+	Plan               string   `json:"plan"`
 }
 
 type User struct {
@@ -35,6 +38,8 @@ type User struct {
 	LanguagePreference string           `db:"language_preference" json:"language_preference"`
 	HasSeenTutorial    bool             `db:"has_seen_tutorial" json:"has_seen_tutorial"`
 	CreatedAt          pgtype.Timestamp `db:"created_at" json:"created_at"`
+	Siret              pgtype.Text      `db:"-" json:"-"`
+	CompanyId          pgtype.Int8      `db:"company_id" json:"company_id"`
 }
 
 type ScoreHistory struct {

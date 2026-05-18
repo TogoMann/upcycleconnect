@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -17,7 +18,7 @@ const saving = ref<string | null>(null)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/langues', {
+        const res = await fetch(`${API_BASE}/admin/langues`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) traductions.value = await res.json()
@@ -31,7 +32,7 @@ const filtered = computed(() => traductions.value.filter(t =>
 async function save(t: Traduction) {
     saving.value = t.cle
     try {
-        await fetch(`http://localhost:8081/admin/langues/${t.cle}`, {
+        await fetch(`${API_BASE}/admin/langues/${t.cle}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
             body: JSON.stringify({ fr: t.fr, en: t.en }),

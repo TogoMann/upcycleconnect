@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePlansStore, type Plan } from '@/stores/plans'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const plansStore = usePlansStore()
 
 const form = reactive({
     username: '',
@@ -13,11 +15,31 @@ const form = reactive({
     email: '',
     password: '',
     confirmPassword: '',
+    planId: null as number | null,
+    siret: '',
     acceptTerms: false,
 })
 
 const error = ref('')
 const loading = ref(false)
+const plans = ref<Plan[]>([])
+
+const selectedPlanName = computed(() => {
+    const plan = plans.value.find((p) => p.id === form.planId)
+    return plan ? plan.name : ''
+})
+
+onMounted(async () => {
+    try {
+        const res = await plansStore.getPlans()
+        plans.value = res.filter((p) => p.is_active)
+        if (plans.value.length > 0) {
+            form.planId = plans.value[0].id
+        }
+    } catch (e) {
+        console.error('Failed to load plans', e)
+    }
+})
 
 async function handleRegister() {
     error.value = ''
@@ -26,21 +48,42 @@ async function handleRegister() {
         error.value = 'Les mots de passe ne correspondent pas.'
         return
     }
+
+    if (selectedPlanName.value === 'Pro') {
+        if (!form.siret) {
+            error.value = 'Le numéro SIRET est obligatoire pour le plan Pro.'
+            return
+        }
+        if (!/^\d{14}$/.test(form.siret)) {
+            error.value = 'Le numéro SIRET doit être composé de exactement 14 chiffres.'
+            return
+        }
+    }
+
     if (!form.acceptTerms) {
+
         error.value = "Vous devez accepter les conditions d'utilisation."
         return
     }
 
     loading.value = true
     try {
-        await authStore.register(form.username, form.prenom, form.nom, form.email, form.password)
+        await authStore.register(
+            form.username,
+            form.prenom,
+            form.nom,
+            form.email,
+            form.password,
+            form.planId || undefined,
+            form.siret || undefined,
+        )
         const role = authStore.userRole
         if (role === 'admin') router.push('/admin')
         else if (role === 'pro') router.push('/pro')
         else if (role === 'interne') router.push('/salarie')
         else router.push('/particulier')
     } catch (e: any) {
-        error.value = e.message || 'Erreur lors de la création du compte.'
+        error.value = e.message || 'Erreur lors de la cr�ation du compte.'
     } finally {
         loading.value = false
     }
@@ -50,7 +93,7 @@ async function handleRegister() {
 <template>
     <div class="page-content">
         <div class="container">
-            <h1 class="page-title">Créer un compte.</h1>
+            <h1 class="page-title">Cr�er un compte.</h1>
 
             <form class="register-form" @submit.prevent="handleRegister">
                 <input
@@ -66,7 +109,7 @@ async function handleRegister() {
                     <input
                         v-model="form.prenom"
                         type="text"
-                        placeholder="Prénom"
+                        placeholder="Pr�nom"
                         class="form-input"
                         autocomplete="given-name"
                         required
@@ -108,30 +151,45 @@ async function handleRegister() {
                     required
                 />
 
+                <div class="plan-select-wrap">
+                    <label class="plan-label">Choisir votre plan :</label>
+                    <select v-model="form.planId" class="form-input plan-select">
+                        <option v-for="plan in plans" :key="plan.id" :value="plan.id">
+                            {{ plan.name }} - {{ plan.price }}€ / {{ plan.billing_cycle }}
+                        </option>
+                    </select>
+                </div>
+
+                <input
+                    v-if="selectedPlanName === 'Pro'"
+                    v-model="form.siret"
+                    type="text"
+                    placeholder="Num�ro SIRET (14 chiffres)"
+                    class="form-input"
+                    maxlength="14"
+                    required
+                />
+
                 <p v-if="error" class="error-msg">{{ error }}</p>
 
                 <label class="terms-label">
-                    <input
-                        type="checkbox"
-                        v-model="form.acceptTerms"
-                        class="terms-checkbox"
-                    />
+                    <input type="checkbox" v-model="form.acceptTerms" class="terms-checkbox" />
                     <span>
                         J'accepte les
                         <a href="#" class="terms-link">conditions d'utilisation</a>
                         et la
-                        <a href="#" class="terms-link">politique de confidentialité</a>
+                        <a href="#" class="terms-link">politique de confidentialit�</a>
                     </span>
                 </label>
 
                 <button type="submit" class="btn-submit" :disabled="loading">
-                    {{ loading ? 'Création...' : 'Créer mon compte' }}
+                    {{ loading ? 'Cr�ation...' : 'Cr�er mon compte' }}
                 </button>
             </form>
 
             <div class="login-link-wrap">
                 <router-link to="/auth/login" class="login-link">
-                    J'ai déjà un compte
+                    J'ai d�jà un compte
                 </router-link>
             </div>
         </div>
@@ -196,6 +254,26 @@ async function handleRegister() {
 .form-input:focus {
     border-color: var(--green-mid);
     box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.12);
+}
+
+.plan-select-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.plan-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--green-dark);
+}
+.plan-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23353535'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    appearance: none;
+    padding-right: 40px;
 }
 
 .error-msg {

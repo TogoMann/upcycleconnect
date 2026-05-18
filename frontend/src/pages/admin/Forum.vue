@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -19,7 +20,7 @@ const threads = ref<Thread[]>([])
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/thread', {
+        const res = await fetch(`${API_BASE}/thread`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) threads.value = await res.json()
@@ -29,7 +30,7 @@ onMounted(async () => {
 async function supprimerThread(id: number) {
     if (!confirm('Supprimer cette discussion ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/thread/${id}`, {
+        const res = await fetch(`${API_BASE}/thread/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })

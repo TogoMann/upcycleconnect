@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -19,7 +20,7 @@ async function handleSubmit() {
     sending.value = true
     error.value = ''
     try {
-        const res = await fetch('http://localhost:8081/thread', {
+        const res = await fetch(`${API_BASE}/thread`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

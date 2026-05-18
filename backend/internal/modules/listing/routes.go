@@ -2,6 +2,7 @@ package listing
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"net/http"
 
@@ -11,7 +12,8 @@ import (
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	repo := NewRepository(db)
-	service := NewService(repo)
+	subRepo := subscriptions.NewRepository(db)
+	service := NewService(repo, subRepo)
 
 	userRepo := users.NewRepository(db)
 	userService := users.NewService(userRepo)

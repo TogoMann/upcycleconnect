@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -41,8 +42,8 @@ const loading = ref(true)
 onMounted(async () => {
     try {
         const [threadRes, postsRes] = await Promise.all([
-            fetch(`http://localhost:8081/thread/${threadId}`),
-            fetch(`http://localhost:8081/thread/${threadId}/posts`),
+            fetch(`${API_BASE}/thread/${threadId}`),
+            fetch(`${API_BASE}/thread/${threadId}/posts`),
         ])
         if (threadRes.ok) thread.value = await threadRes.json()
         if (postsRes.ok) posts.value = await postsRes.json()
@@ -54,7 +55,7 @@ async function handleReply() {
     if (!replyContent.value.trim() || !authStore.isAuthenticated) return
     sending.value = true
     try {
-        const res = await fetch(`http://localhost:8081/thread/${threadId}/posts`, {
+        const res = await fetch(`${API_BASE}/thread/${threadId}/posts`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ async function handleReply() {
 async function voteThread(dir: 'up' | 'down') {
     if (!authStore.isAuthenticated || !thread.value) return
     try {
-        const res = await fetch(`http://localhost:8081/thread/${threadId}/${dir}vote`, {
+        const res = await fetch(`${API_BASE}/thread/${threadId}/${dir}vote`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${authStore.token}` }
         })
@@ -90,7 +91,7 @@ async function voteThread(dir: 'up' | 'down') {
 async function votePost(postId: number, dir: 'up' | 'down') {
     if (!authStore.isAuthenticated) return
     try {
-        const res = await fetch(`http://localhost:8081/post/${postId}/${dir}vote`, {
+        const res = await fetch(`${API_BASE}/post/${postId}/${dir}vote`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${authStore.token}` }
         })

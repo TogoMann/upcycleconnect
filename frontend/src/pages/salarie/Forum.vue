@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -20,7 +21,7 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch('http://localhost:8081/salarie/forum', {
+        const res = await fetch(`${API_BASE}/salarie/forum`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) threads.value = await res.json()
@@ -28,7 +29,7 @@ onMounted(async () => {
 })
 
 async function epingler(t: Thread) {
-    await fetch(`http://localhost:8081/salarie/forum/${t.id}/epingler`, {
+    await fetch(`${API_BASE}/salarie/forum/${t.id}/epingler`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })
@@ -37,7 +38,7 @@ async function epingler(t: Thread) {
 
 async function supprimer(id: number) {
     if (!confirm('Supprimer cette discussion ?')) return
-    await fetch(`http://localhost:8081/salarie/forum/${id}`, {
+    await fetch(`${API_BASE}/salarie/forum/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })
@@ -46,7 +47,7 @@ async function supprimer(id: number) {
 
 async function bannir(auteur: string) {
     if (!confirm(`Bannir l'utilisateur "${auteur}" ?`)) return
-    await fetch(`http://localhost:8081/salarie/forum/bannir`, {
+    await fetch(`${API_BASE}/salarie/forum/bannir`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
         body: JSON.stringify({ username: auteur }),

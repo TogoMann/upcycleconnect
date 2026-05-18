@@ -55,6 +55,21 @@ func (r *Repository) GetById(id pgtype.Int8) (*Subscription, error) {
 	return &sub, nil
 }
 
+func (r *Repository) GetActiveByUserId(userId pgtype.Int8) (*Subscription, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, subscriber_id, price, tier, created_at, until FROM subscriptions WHERE subscriber_id = $1 AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1", userId)
+	if err != nil {
+		return nil, err
+	}
+	sub, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Subscription])
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &sub, nil
+}
+
 func (r *Repository) Create(s Subscription) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(db.Ctx, "INSERT INTO subscriptions (subscriber_id, price, tier, until) VALUES ($1, $2, $3, $4) RETURNING id", s.SubscriberId, s.Price, s.Tier, s.Until).Scan(&id)
@@ -72,4 +87,16 @@ func (r *Repository) Update(id pgtype.Int8, s Subscription) error {
 func (r *Repository) Delete(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "DELETE FROM subscriptions WHERE id = $1", id)
 	return err
+}
+
+func (r *Repository) GetActiveTierByUserId(userId pgtype.Int8) (string, error) {
+	var tier string
+	err := r.db.QueryRow(db.Ctx, "SELECT tier FROM subscriptions WHERE subscriber_id = $1 AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1", userId).Scan(&tier)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return "Free", nil
+		}
+		return "", err
+	}
+	return tier, nil
 }

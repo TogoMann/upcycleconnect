@@ -3,6 +3,7 @@ package chat
 import (
 	"backend/internal/middlewares"
 	"backend/internal/modules/listing"
+	"backend/internal/modules/subscriptions"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,7 +11,8 @@ import (
 
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	listingRepo := listing.NewRepository(db)
-	listingService := listing.NewService(listingRepo)
+	subRepo := subscriptions.NewRepository(db)
+	listingService := listing.NewService(listingRepo, subRepo)
 
 	repo := NewRepository(db)
 	service := NewService(repo, listingService)

@@ -54,7 +54,7 @@ function logout() {
                         <span>Abonnements</span>
                     </router-link>
 
-                    <router-link to="/pro/publicites" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link v-if="authStore.user?.plan === 'Premium' || authStore.user?.plan === 'Pro' || authStore.user?.role === 'admin'" to="/pro/publicites" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                         </svg>
@@ -95,7 +95,7 @@ function logout() {
                         <span>Mes Projets</span>
                     </router-link>
 
-                    <router-link to="/pro/dashboard-avance" class="sidebar-item" active-class="sidebar-item--active">
+                    <router-link v-if="authStore.user?.plan === 'Premium' || authStore.user?.plan === 'Pro' || authStore.user?.role === 'admin'" to="/pro/dashboard-avance" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                             <polyline points="17 6 23 6 23 12" />

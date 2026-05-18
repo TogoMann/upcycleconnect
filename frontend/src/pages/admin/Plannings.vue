@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -20,7 +21,7 @@ const filterType = ref('')
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/plannings', {
+        const res = await fetch(`${API_BASE}/admin/plannings`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) creneaux.value = await res.json()

@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-
-const API_BASE = 'http://localhost:8081'
+import { API_BASE } from '@/config'
 
 interface JwtPayload {
     username: string
@@ -18,6 +17,7 @@ interface AuthUser {
     email: string
     role: string
     has_seen_tutorial: boolean
+    plan: string
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    async function register(username: string, firstName: string, lastName: string, email: string, password: string) {
+    async function register(username: string, firstName: string, lastName: string, email: string, password: string, planId?: number, siret?: string) {
         const res = await fetch(`${API_BASE}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -50,6 +50,8 @@ export const useAuthStore = defineStore('auth', () => {
                 last_name: lastName,
                 email,
                 password,
+                plan_id: planId,
+                siret: siret,
             }),
         })
         if (!res.ok) {

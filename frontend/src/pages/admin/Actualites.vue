@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -21,7 +22,7 @@ const saving = ref(false)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/news', {
+        const res = await fetch(`${API_BASE}/news`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) news.value = await res.json()
@@ -32,7 +33,7 @@ async function creer() {
     if (!form.value.title.trim() || !form.value.content.trim()) return
     saving.value = true
     try {
-        const res = await fetch('http://localhost:8081/news/', {
+        const res = await fetch(`${API_BASE}/news/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
             body: JSON.stringify({ title: form.value.title, content: form.value.content }),
@@ -50,7 +51,7 @@ async function creer() {
 async function supprimer(id: number) {
     if (!confirm('Supprimer cette actualité ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/news/${id}`, {
+        const res = await fetch(`${API_BASE}/news/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })

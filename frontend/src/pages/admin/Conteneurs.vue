@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -36,7 +37,7 @@ const lockerForm = ref({
 
 async function fetchContainers() {
     try {
-        const res = await fetch('http://localhost:8081/admin/conteneurs', {
+        const res = await fetch(`${API_BASE}/admin/conteneurs`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) conteneurs.value = await res.json()
@@ -48,7 +49,7 @@ onMounted(fetchContainers)
 async function selectContainer(c: Conteneur) {
     selectedContainer.value = c
     try {
-        const res = await fetch(`http://localhost:8081/container/${c.id}/lockers`, {
+        const res = await fetch(`${API_BASE}/container/${c.id}/lockers`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) {
@@ -71,8 +72,8 @@ function openLockerForm(l: Locker | null = null) {
 
 async function saveLocker() {
     const url = editingLocker.value 
-        ? `http://localhost:8081/admin/lockers/${editingLocker.value.id}`
-        : 'http://localhost:8081/admin/lockers'
+        ? `${API_BASE}/admin/lockers/${editingLocker.value.id}`
+        : `${API_BASE}/admin/lockers`
     
     const method = editingLocker.value ? 'PUT' : 'POST'
     const body = editingLocker.value 
@@ -103,7 +104,7 @@ async function saveLocker() {
 async function deleteLocker(id: number) {
     if (!confirm('Supprimer ce casier ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/admin/lockers/${id}`, {
+        const res = await fetch(`${API_BASE}/admin/lockers/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })

@@ -35,14 +35,13 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.GetByUsername(username)
+	user, err := h.service.GetMe(username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res, _ := json.Marshal(user)
-	fmt.Fprintf(w, "%s", string(res))
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {

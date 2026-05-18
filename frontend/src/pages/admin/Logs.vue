@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -19,7 +20,7 @@ const filterNiveau = ref('')
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/logs', {
+        const res = await fetch(`${API_BASE}/admin/logs`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) logs.value = await res.json()

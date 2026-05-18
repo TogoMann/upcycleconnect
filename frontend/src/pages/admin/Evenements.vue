@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -35,7 +36,7 @@ const selectedEvent = ref<Event | null>(null)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/events', {
+        const res = await fetch(`${API_BASE}/admin/events`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) events.value = await res.json()
@@ -52,7 +53,7 @@ async function creer() {
             location: form.value.location
         }
         if (form.value.price) body.price = parseFloat(form.value.price)
-        const res = await fetch('http://localhost:8081/event/', {
+        const res = await fetch(`${API_BASE}/event/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ async function creer() {
 
 async function approuver(event: Event) {
     try {
-        const res = await fetch(`http://localhost:8081/event/${event.id}/approve`, {
+        const res = await fetch(`${API_BASE}/event/${event.id}/approve`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -86,7 +87,7 @@ async function approuver(event: Event) {
 
 async function desapprouver(event: Event) {
     try {
-        const res = await fetch(`http://localhost:8081/event/${event.id}/disapprove`, {
+        const res = await fetch(`${API_BASE}/event/${event.id}/disapprove`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -100,7 +101,7 @@ async function desapprouver(event: Event) {
 async function supprimer(id: number) {
     if (!confirm('Supprimer cet évènement ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/event/${id}`, {
+        const res = await fetch(`${API_BASE}/event/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })

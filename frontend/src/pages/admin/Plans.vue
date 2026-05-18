@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE } from '@/config'
 
 const authStore = useAuthStore()
 
@@ -32,7 +33,7 @@ onMounted(fetchPlans)
 
 async function fetchPlans() {
     try {
-        const res = await fetch('http://localhost:8081/plans')
+        const res = await fetch(`${API_BASE}/plans`)
         if (res.ok) plans.value = await res.json()
     } catch {}
 }
@@ -65,8 +66,8 @@ async function save() {
     
     try {
         const url = editId.value 
-            ? `http://localhost:8081/admin/plans/${editId.value}` 
-            : 'http://localhost:8081/admin/plans'
+            ? `${API_BASE}/admin/plans/${editId.value}` 
+            : `${API_BASE}/admin/plans`
         const method = editId.value ? 'PUT' : 'POST'
         
         const res = await fetch(url, {
@@ -89,7 +90,7 @@ async function save() {
 async function supprimer(id: number) {
     if (!confirm('Supprimer ce plan ?')) return
     try {
-        const res = await fetch(`http://localhost:8081/admin/plans/${id}`, {
+        const res = await fetch(`${API_BASE}/admin/plans/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })

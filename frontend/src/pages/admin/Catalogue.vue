@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -21,7 +22,7 @@ const loading = ref(false)
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/catalogue', {
+        const res = await fetch(`${API_BASE}/admin/catalogue`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) offres.value = await res.json()
@@ -45,7 +46,7 @@ async function save() {
     const body = { ...form.value, prix: parseFloat(form.value.prix) || 0 }
     try {
         if (editId.value) {
-            const res = await fetch(`http://localhost:8081/admin/catalogue/${editId.value}`, {
+            const res = await fetch(`${API_BASE}/admin/catalogue/${editId.value}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
                 body: JSON.stringify(body),
@@ -56,7 +57,7 @@ async function save() {
                 if (idx !== -1) offres.value[idx] = updated
             }
         } else {
-            const res = await fetch('http://localhost:8081/admin/catalogue', {
+            const res = await fetch(`${API_BASE}/admin/catalogue`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
                 body: JSON.stringify(body),
@@ -70,7 +71,7 @@ async function save() {
 
 async function approuver(id: number) {
     try {
-        const res = await fetch(`http://localhost:8081/admin/catalogue/${id}/approve`, {
+        const res = await fetch(`${API_BASE}/admin/catalogue/${id}/approve`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -83,7 +84,7 @@ async function approuver(id: number) {
 
 async function desapprouver(id: number) {
     try {
-        const res = await fetch(`http://localhost:8081/admin/catalogue/${id}/disapprove`, {
+        const res = await fetch(`${API_BASE}/admin/catalogue/${id}/disapprove`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
@@ -96,7 +97,7 @@ async function desapprouver(id: number) {
 
 async function supprimer(id: number) {
     if (!confirm('Supprimer cette offre ?')) return
-    await fetch(`http://localhost:8081/admin/catalogue/${id}`, {
+    await fetch(`${API_BASE}/admin/catalogue/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authStore.token}` },
     })

@@ -1,29 +1,30 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE } from '@/config'
 
 const authStore = useAuthStore()
-const currentPlan = ref('individual')
+const currentPlan = ref('Free')
 const loading = ref(false)
 
 const plans = [
     {
-        id: 'individual',
+        id: 'Free',
         name: 'Individuel',
         price: '0',
         features: ['5 annonces actives', 'Accès catalogue basique', 'Dépôt conteneurs'],
     },
     {
-        id: 'pro',
-        name: 'Pro',
-        price: '29',
-        features: ['Annonces illimitées', 'Publicités', 'Facturation PDF', 'Récupération objets'],
+        id: 'Premium',
+        name: 'Premium',
+        price: '9',
+        features: ['Ateliers gratuits', 'Événements VIP', 'Badge Premium'],
     },
     {
-        id: 'premium',
-        name: 'Premium',
-        price: '79',
-        features: ['Tout Pro inclus', 'Tableau bord avancé', 'Support prioritaire', 'Statistiques avancées'],
+        id: 'Pro',
+        name: 'Pro',
+        price: '29',
+        features: ['Annonces illimitées', 'Publicités', 'Facturation PDF', 'Récupération objets', 'Statistiques avancées'],
     },
 ]
 
@@ -31,12 +32,14 @@ onMounted(async () => {
     const token = authStore.token
     if (!token) return
     try {
-        const res = await fetch('http://localhost:8081/pro/abonnements', {
+        const res = await fetch(`${API_BASE}/subscriptions/me`, {
             headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
             const data = await res.json()
-            currentPlan.value = data.plan ?? 'individual'
+            // Map tier name to our plan ID (case-insensitive check)
+            const matchedPlan = plans.find(p => p.id.toLowerCase() === (data.tier || '').toLowerCase())
+            currentPlan.value = matchedPlan ? matchedPlan.id : 'Free'
         }
     } catch {}
 })
@@ -45,15 +48,26 @@ async function changePlan(planId: string) {
     if (planId === currentPlan.value) return
     loading.value = true
     try {
-        const res = await fetch('http://localhost:8081/pro/abonnements', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${authStore.token}`,
-            },
-            body: JSON.stringify({ plan: planId }),
-        })
-        if (res.ok) currentPlan.value = planId
+        // Find plan ID from our name if needed, but plans store getPlans() is better
+        // For now, let's keep it simple or use choosePlan from store
+        // We'll use the existing /subscriptions/choose if we have a plan numeric ID
+        // Actually, the easiest fix for UI consistency is to use ChoosePlan from store
+        // But Abonnements.vue was using a custom PUT. Let's align with ChoosePlan logic.
+        const res = await fetch(`${API_BASE}/plans`)
+        const allPlans = await res.json()
+        const targetPlan = allPlans.find((p: any) => p.name.toLowerCase() === planId.toLowerCase())
+        
+        if (targetPlan) {
+            const chooseRes = await fetch(`${API_BASE}/subscriptions/choose`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${authStore.token}`,
+                },
+                body: JSON.stringify({ plan_id: targetPlan.id }),
+            })
+            if (chooseRes.ok) currentPlan.value = planId
+        }
     } catch {}
     loading.value = false
 }

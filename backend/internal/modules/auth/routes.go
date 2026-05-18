@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"backend/internal/modules/companies"
+	"backend/internal/modules/plans"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"net/http"
@@ -11,7 +13,9 @@ import (
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	userRepo := users.NewRepository(db)
 	subRepo := subscriptions.NewRepository(db)
-	service := NewService(userRepo, subRepo)
+	planRepo := plans.NewRepository(db)
+	compRepo := companies.NewRepository(db)
+	service := NewService(userRepo, subRepo, planRepo, compRepo)
 	handler := NewHandler(service)
 
 	r.HandleFunc("POST /login/", handler.Login)

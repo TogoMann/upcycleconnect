@@ -23,6 +23,13 @@ INSERT INTO site (address_id, type_site, created_at) VALUES
 (2, 'Atelier de réparation', NOW()),
 (3, 'Centre de tri', NOW());
 
+-- =========================
+-- COMPANIES
+-- =========================
+INSERT INTO companies (siret, name, address) VALUES
+('12345678901234', 'Upcycle Pro SARL', '123 Rue de la Récup, 75001 Paris'),
+('98765432109876', 'EcoDesign SAS', '45 Avenue du Green, 69002 Lyon');
+
 INSERT INTO plans (name, description, price, billing_cycle, features, is_active) VALUES
 ('Free', 'Accès limité aux fonctionnalités de base', 0.00, 'monthly', '{"Vente d''objets", "Dépôt d''objets"}', true),
 ('Premium', 'Accès complet à toutes les fonctionnalités', 9.99, 'monthly', '{"Vente d''objets", "Dépôt d''objets", "Ateliers gratuits", "Événements VIP"}', true),
@@ -50,12 +57,12 @@ INSERT INTO locker (container_id, label, status, size, created_at) VALUES
 -- =========================
 -- USERS
 -- =========================
-INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at) VALUES
-('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW()),
-('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', NOW()),
-('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$J6Yojl6InKub07sYaA50pO8tw0XHQcBwP18Nvx/TNeXPvfAo9M4ci', 'admin', NOW()),
-('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW()),
-('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW());
+INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at, company_id) VALUES
+('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW(), NULL),
+('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', NOW(), 1),
+('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$J6Yojl6InKub07sYaA50pO8tw0XHQcBwP18Nvx/TNeXPvfAo9M4ci', 'admin', NOW(), NULL),
+('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW(), NULL),
+('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW(), NULL);
 
 -- =========================
 -- SCORE HISTORY (Normalized)
@@ -179,4 +186,3 @@ INSERT INTO chat_message (conversation_id, sender_id, content, message_type, pro
 (1, 1, 'Je suis très intéressée. Est-il possible de négocier le prix ?', 'text', NULL, NULL, NOW() - INTERVAL '12 hours'),
 (1, 1, 'Je vous propose 130€ au lieu de 150€.', 'price_proposal', 130.00, 'pending', NOW() - INTERVAL '10 hours'),
 (1, 2, 'C''est un peu bas, je peux descendre à 140€.', 'text', NULL, NULL, NOW() - INTERVAL '5 hours');
-

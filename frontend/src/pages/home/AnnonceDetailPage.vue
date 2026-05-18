@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -13,7 +14,7 @@ const loading = ref(true)
 onMounted(async () => {
     try {
         const id = route.params.id
-        const res = await fetch(`http://localhost:8081/listing/${id}`)
+        const res = await fetch(`${API_BASE}/listing/${id}`)
         if (res.ok) {
             listing.value = await res.json()
         }

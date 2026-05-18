@@ -1,17 +1,19 @@
 package listing
 
 import (
+	"backend/internal/modules/subscriptions"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
-	repo *Repository
+	repo    *Repository
+	subRepo *subscriptions.Repository
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, subRepo *subscriptions.Repository) *Service {
+	return &Service{repo: repo, subRepo: subRepo}
 }
 
 func (s *Service) GetAll() ([]Listing, error) {
@@ -40,6 +42,28 @@ func (s *Service) GetById(id pgtype.Int8) (*Listing, error) {
 func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 	if loDto.Category == "" {
 		return pgtype.Int8{}, fmt.Errorf("listing/service Listing category manquante")
+	}
+
+	// Check plan limits
+	count, err := s.repo.CountByUserId(loDto.CreatedBy)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+
+	tier, err := s.subRepo.GetActiveTierByUserId(loDto.CreatedBy)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+
+	limit := 3 // Free
+	if tier == "Premium" {
+		limit = 20
+	} else if tier == "Pro" {
+		limit = 1000000 // Unlimited
+	}
+
+	if count >= int64(limit) {
+		return pgtype.Int8{}, fmt.Errorf("limite d'annonces atteinte pour votre plan (%s: %d max)", tier, limit)
 	}
 
 	val, err := loDto.Price.Value()

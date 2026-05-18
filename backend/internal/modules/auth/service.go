@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"backend/internal/modules/companies"
+	"backend/internal/modules/plans"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"backend/internal/utils"
@@ -15,10 +17,12 @@ import (
 type Service struct {
 	userRepo *users.Repository
 	subRepo  *subscriptions.Repository
+	planRepo *plans.Repository
+	compRepo *companies.Repository
 }
 
-func NewService(userRepo *users.Repository, subRepo *subscriptions.Repository) *Service {
-	return &Service{userRepo: userRepo, subRepo: subRepo}
+func NewService(userRepo *users.Repository, subRepo *subscriptions.Repository, planRepo *plans.Repository, compRepo *companies.Repository) *Service {
+	return &Service{userRepo: userRepo, subRepo: subRepo, planRepo: planRepo, compRepo: compRepo}
 }
 
 func (s *Service) Login(username, password string) (*LoginResponse, error) {
@@ -82,16 +86,66 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 		return nil, errors.New("erreur lors de la création du compte")
 	}
 
-	// Auto-subscribe to Free plan
-	until := time.Now().AddDate(1, 0, 0) // 1 year
+	// Determine plan to subscribe to
+	tier := "Free"
+	var price float64 = 0.00
+	until := time.Now().AddDate(1, 0, 0) // 1 year default for free
+
+	if req.PlanId > 0 {
+		plan, err := s.planRepo.GetById(pgtype.Int8{Int64: req.PlanId, Valid: true})
+		if err == nil && plan != nil {
+			tier = plan.Name
+			p, _ := plan.Price.Float64Value()
+			price = p.Float64
+			if plan.BillingCycle == "monthly" {
+				until = time.Now().AddDate(0, 1, 0)
+			}
+		}
+	}
+
+	// If plan is Pro, update user role to 'pro' and require SIRET
+	if strings.EqualFold(tier, "Pro") {
+		if req.Siret == "" {
+			return nil, errors.New("le numéro SIRET est obligatoire pour le plan Pro")
+		}
+		if !utils.VerifySiret(req.Siret) {
+			return nil, errors.New("numéro SIRET invalide (doit contenir 14 chiffres)")
+		}
+
+		// Handle company creation or linking
+		company, err := s.compRepo.GetBySiret(req.Siret)
+		if err != nil {
+			return nil, err
+		}
+
+		var companyId pgtype.Int8
+		if company == nil {
+			// Create new company
+			newComp := companies.Company{
+				Siret: req.Siret,
+			}
+			companyId, err = s.compRepo.Create(newComp)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			companyId = company.Id
+		}
+
+		newUser.Id = id
+		newUser.Role = users.Pro
+		newUser.CompanyId = companyId
+		s.userRepo.Update(id, newUser)
+	}
+
 	s.subRepo.Create(subscriptions.Subscription{
 		SubscriberId: id,
-		Tier:         "Free",
-		Price:        0.00,
+		Tier:         tier,
+		Price:        price,
 		Until:        pgtype.Date{Time: until, Valid: true},
 	})
 
-	token, err := utils.GenerateJWT(id.Int64, req.Username, string(users.Client))
+	token, err := utils.GenerateJWT(id.Int64, req.Username, string(newUser.Role))
 	if err != nil {
 		return nil, err
 	}

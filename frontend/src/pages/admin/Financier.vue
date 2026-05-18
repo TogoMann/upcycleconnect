@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -17,7 +18,7 @@ const maxCa = computed(() => Math.max(...(data.value?.evolution.map(x => x.ca) ?
 
 onMounted(async () => {
     try {
-        const res = await fetch('http://localhost:8081/admin/financier', {
+        const res = await fetch(`${API_BASE}/admin/financier`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
         if (res.ok) data.value = await res.json()

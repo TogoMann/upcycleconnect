@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { API_BASE } from '@/config'
 import { onMounted } from 'vue'
 import { useClientStore } from '@/stores/client'
 
@@ -81,7 +82,7 @@ onMounted(() => {
             >
                 <div class="annonce-main">
                     <div v-if="annonce.image_url" class="annonce-thumb">
-                        <img :src="'http://localhost:8081' + annonce.image_url" alt="" />
+                        <img :src="`${API_BASE}` + annonce.image_url" alt="" />
                     </div>
                     <div class="annonce-info">
                         <div class="badge-row">

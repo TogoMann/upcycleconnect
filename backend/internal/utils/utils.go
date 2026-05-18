@@ -1,12 +1,26 @@
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
-var JwtSecret = []byte("oubliez-pas-le-soutien")
+var JwtSecret []byte
+
+func init() {
+	godotenv.Load()
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "oubliez-pas-le-soutien"
+	}
+	JwtSecret = []byte(secret)
+}
 
 func GenerateJWT(userId int64, username string, role string) (string, error) {
 	claims := jwt.MapClaims{
@@ -19,4 +33,31 @@ func GenerateJWT(userId int64, username string, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(JwtSecret)
+}
+
+func VerifySiret(siret string) bool {
+	if len(siret) != 14 {
+		return false
+	}
+
+	url := fmt.Sprintf("https://recherche-entreprises.api.gouv.fr/search?q=%s", siret)
+	resp, err := http.Get(url)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+
+	var result struct {
+		Results []interface{} `json:"results"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return false
+	}
+
+	return len(result.Results) > 0
 }

@@ -72,6 +72,7 @@ import Paiement from '@/pages/client/Paiement.vue'
 import ConfirmationPaiement from '@/pages/client/ConfirmationPaiement.vue'
 import ClientProfil from '@/pages/client/Profil.vue'
 import ClientChat from '@/pages/client/Chat.vue'
+import ClientPlans from '@/pages/client/Plans.vue'
 
 import ProDashboard from '@/pages/pro/Dashboard.vue'
 import ProAbonnements from '@/pages/pro/Abonnements.vue'
@@ -138,6 +139,7 @@ const router = createRouter({
                 { path: 'paiement/confirmation', component: ConfirmationPaiement, name: 'ConfirmationPaiement' },
                 { path: 'profil', component: ClientProfil },
                 { path: 'chat', component: ClientChat },
+                { path: 'plans', component: ClientPlans },
             ],
         },
         {
