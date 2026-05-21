@@ -283,15 +283,12 @@ export const useClientStore = defineStore('client', () => {
     }
 
     async function createOrder(listingId: number, price: number) {
-        const authStore = useAuthStore()
         const res = await fetch(`${API_BASE}/listing-order/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                listing_id: { Int64: listingId, Valid: true },
-                user_id: { Int64: authStore.user?.id, Valid: true },
+                listing_id: listingId,
                 price: price,
-                status: 'pending',
             }),
         })
         if (!res.ok) throw new Error('Erreur création commande')
@@ -299,13 +296,11 @@ export const useClientStore = defineStore('client', () => {
     }
 
     async function createCourseOrder(courseId: number, price: number) {
-        const authStore = useAuthStore()
         const res = await fetch(`${API_BASE}/course-order/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 course_id: courseId,
-                buyer_id: authStore.user?.id,
                 price: price,
             }),
         })
@@ -314,13 +309,11 @@ export const useClientStore = defineStore('client', () => {
     }
 
     async function createEventParticipation(eventId: number) {
-        const authStore = useAuthStore()
         const res = await fetch(`${API_BASE}/event-participation/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 event_id: eventId,
-                user_id: authStore.user?.id,
             }),
         })
         if (!res.ok) throw new Error('Erreur inscription événement')

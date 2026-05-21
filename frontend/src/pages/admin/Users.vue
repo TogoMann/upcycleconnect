@@ -120,6 +120,22 @@
                                 </svg>
                                 Historique
                             </button>
+                            <button class="btn-reset" @click="resetPassword(user)">
+                                <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                Réinitialiser MDP
+                            </button>
                             <button class="btn-edit" @click="openEdit(user)">
                                 <svg
                                     width="14"
@@ -164,7 +180,6 @@
             </table>
         </div>
 
-        <!-- Modal Historique Points -->
         <div v-if="showHistoryModal" class="modal-overlay" @click.self="closeHistory">
             <div class="modal-content">
                 <div class="modal-header">
@@ -195,7 +210,6 @@
             </div>
         </div>
 
-        <!-- Modal Edition User -->
         <div v-if="showEditModal" class="modal-overlay" @click.self="closeEdit">
             <div class="modal-content">
                 <div class="modal-header">
@@ -310,12 +324,10 @@ const closeEdit = () => {
 }
 
 const saveUser = async () => {
-    console.log('saveUser called', editingUser.value)
     if (!editingUser.value) return
     
     isSaving.value = true
     try {
-        console.log('updating user', editingUser.value.id, editForm)
         await adminStore.updateUser(editingUser.value.id, {
             first_name: editForm.first_name,
             last_name: editForm.last_name,
@@ -327,7 +339,6 @@ const saveUser = async () => {
         closeEdit()
     } catch (err) {
         console.error('Update failed', err)
-        // Error handled by store
     } finally {
         isSaving.value = false
     }
@@ -339,18 +350,48 @@ const deleteUser = (id: number) => {
     }
 }
 
+const resetPassword = async (user: any) => {
+    if (confirm(`Voulez-vous envoyer un email de réinitialisation de mot de passe à ${user.first_name} ${user.last_name} (${user.email}) ?`)) {
+        try {
+            await adminStore.requestPasswordReset(user.id)
+            alert('Email de réinitialisation envoyé avec succès !')
+        } catch (err: any) {
+            alert(`Erreur: ${err.message}`)
+        }
+    }
+}
+
 onMounted(() => {
     adminStore.fetchUsers()
 })
 </script>
 
 <style scoped>
-/* ... existing styles ... */
 .cell-actions {
     display: flex;
     gap: 8px;
     white-space: nowrap;
     width: 1%;
+}
+
+.btn-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: #d68910;
+    border: 1.5px solid rgba(214, 137, 16, 0.25);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, border-color 0.2s;
+}
+.btn-reset:hover {
+    background: rgba(214, 137, 16, 0.05);
+    border-color: #d68910;
 }
 
 .btn-edit {
@@ -438,7 +479,6 @@ onMounted(() => {
     font-weight: 500;
 }
 
-/* Modal Styles */
 .modal-overlay {
     position: fixed;
     top: 0;

@@ -1,218 +1,236 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { API_BASE } from '@/config'
 
-const done = ref(false)
-const form = reactive({
-    password: '',
-    confirmPassword: '',
+const route = useRoute()
+const router = useRouter()
+
+const token = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+const success = ref(false)
+
+onMounted(() => {
+    token.value = route.query.token as string || ''
+    if (!token.value) {
+        error.value = 'Lien de réinitialisation invalide ou manquant.'
+    }
 })
 
-function handleSubmit() {
-    if (form.password !== form.confirmPassword) return
-    console.log('reset password')
-    done.value = true
+const handleSubmit = async () => {
+    if (password.value !== confirmPassword.value) {
+        error.value = 'Les mots de passe ne correspondent pas.'
+        return
+    }
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+        const res = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: token.value,
+                password: password.value
+            })
+        })
+
+        if (!res.ok) {
+            const data = await res.text()
+            throw new Error(data || 'Erreur lors de la réinitialisation.')
+        }
+
+        success.value = true
+        setTimeout(() => {
+            router.push('/auth/login')
+        }, 3000)
+    } catch (err: any) {
+        error.value = err.message
+    } finally {
+        isLoading.value = false
+    }
 }
 </script>
 
 <template>
-    <div class="page-content">
-        <div class="container">
-            <h1 class="page-title">Nouveau mot de passe.</h1>
+    <div class="reset-page">
+        <div class="card">
+            <h2 class="title">Nouveau mot de passe</h2>
+            <p class="subtitle">Veuillez choisir un nouveau mot de passe pour votre compte.</p>
 
-            <div v-if="!done" class="form-wrap">
-                <p class="form-desc">Choisissez un nouveau mot de passe pour votre compte.</p>
-
-                <form class="reset-form" @submit.prevent="handleSubmit">
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        placeholder="Nouveau mot de passe"
-                        class="form-input"
-                        autocomplete="new-password"
-                        required
-                    />
-                    <input
-                        v-model="form.confirmPassword"
-                        type="password"
-                        placeholder="Confirmer le mot de passe"
-                        class="form-input"
-                        autocomplete="new-password"
-                        required
-                    />
-                    <p
-                        v-if="form.confirmPassword && form.password !== form.confirmPassword"
-                        class="error-msg"
-                    >
-                        Les mots de passe ne correspondent pas.
-                    </p>
-                    <button
-                        type="submit"
-                        class="btn-submit"
-                        :disabled="form.password !== form.confirmPassword && !!form.confirmPassword"
-                    >
-                        Réinitialiser le mot de passe
-                    </button>
-                </form>
+            <div v-if="success" class="state-success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                Mot de passe modifié avec succès ! Redirection vers la page de connexion...
             </div>
 
-            <div v-else class="success-wrap">
-                <div class="success-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                    </svg>
+            <form v-else-if="token" @submit.prevent="handleSubmit" class="form">
+                <div v-if="error" class="state-error">{{ error }}</div>
+
+                <div class="form-group">
+                    <label>Nouveau mot de passe</label>
+                    <input 
+                        type="password" 
+                        v-model="password" 
+                        required 
+                        class="form-input"
+                        placeholder="••••••••"
+                    />
                 </div>
-                <h2 class="success-title">Mot de passe mis à jour !</h2>
-                <p class="success-desc">
-                    Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous
-                    connecter.
-                </p>
-                <router-link to="/auth/login" class="btn-login">Se connecter</router-link>
+
+                <div class="form-group">
+                    <label>Confirmer le mot de passe</label>
+                    <input 
+                        type="password" 
+                        v-model="confirmPassword" 
+                        required 
+                        class="form-input"
+                        placeholder="••••••••"
+                    />
+                </div>
+
+                <button type="submit" class="btn-submit" :disabled="isLoading">
+                    {{ isLoading ? 'Modification...' : 'Changer mon mot de passe' }}
+                </button>
+            </form>
+
+            <div v-else class="state-error">
+                {{ error || 'Token manquant.' }}
             </div>
+            
+            <router-link to="/auth/login" class="back-link">Retour à la connexion</router-link>
         </div>
     </div>
 </template>
 
 <style scoped>
-.page-content {
-    flex: 1;
-    padding: 72px 0 80px;
+.reset-page {
+    min-height: 100vh;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8f5ee;
+    padding: 20px;
+    font-family: 'Inter', sans-serif;
 }
 
-.container {
-    max-width: 1060px;
-    margin: 0 auto;
-    padding: 0 32px;
+.card {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
-.page-title {
-    font-size: clamp(2.4rem, 6vw, 5rem);
+.title {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
     font-weight: 800;
-    color: var(--charcoal);
-    line-height: 1.05;
-    letter-spacing: -0.035em;
-    margin: 0 0 48px;
-    text-align: center;
+    color: #353535;
 }
 
-.form-wrap {
-    max-width: 440px;
-    margin: 0 auto;
+.subtitle {
+    margin: 0 0 32px;
+    font-size: 0.9rem;
+    color: rgba(53, 53, 53, 0.6);
 }
 
-.form-desc {
-    font-size: 0.95rem;
-    color: var(--charcoal);
-    opacity: 0.75;
-    line-height: 1.6;
-    margin: 0 0 28px;
-    text-align: center;
-}
-
-.reset-form {
+.form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #353535;
 }
 
 .form-input {
     width: 100%;
-    padding: 16px 18px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    color: var(--charcoal);
-    background: var(--cream);
-    border: 1.5px solid rgba(53, 53, 53, 0.35);
+    padding: 12px 16px;
+    border: 1.5px solid rgba(53, 53, 53, 0.15);
     border-radius: 8px;
-    outline: none;
-    transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
+    font-family: inherit;
     box-sizing: border-box;
 }
-.form-input::placeholder {
-    color: rgba(53, 53, 53, 0.45);
-}
-.form-input:focus {
-    border-color: var(--green-mid);
-    box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.12);
-}
 
-.error-msg {
-    font-size: 0.82rem;
-    color: #c0392b;
-    margin: -4px 0 0;
+.form-input:focus {
+    outline: none;
+    border-color: #34895b;
+    box-shadow: 0 0 0 3px rgba(52, 137, 91, 0.1);
 }
 
 .btn-submit {
-    width: 100%;
-    padding: 16px;
-    background: var(--green-dark);
-    color: var(--white);
+    background: #086a35;
+    color: white;
     border: none;
+    padding: 14px;
     border-radius: 8px;
-    font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    font-family: inherit;
-    transition:
-        background 0.2s,
-        transform 0.15s;
+    transition: background 0.2s;
+    margin-top: 10px;
 }
-.btn-submit:hover:not(:disabled) {
-    background: var(--green-mid);
-    transform: translateY(-1px);
+
+.btn-submit:hover {
+    background: #34895b;
 }
+
 .btn-submit:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
-.success-wrap {
-    max-width: 440px;
-    margin: 0 auto;
-    text-align: center;
-}
-.success-icon {
-    color: var(--green-mid);
-    margin-bottom: 24px;
-}
-.success-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--charcoal);
-    margin: 0 0 16px;
-}
-.success-desc {
-    font-size: 0.95rem;
-    color: var(--charcoal);
-    opacity: 0.75;
-    line-height: 1.6;
-    margin: 0 0 32px;
-}
-.btn-login {
-    display: inline-block;
-    padding: 14px 32px;
-    background: var(--green-dark);
-    color: var(--white);
+.state-error {
+    background: #fdecea;
+    color: #c0392b;
+    padding: 12px;
     border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s;
-}
-.btn-login:hover {
-    background: var(--green-mid);
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
-@media (max-width: 700px) {
-    .page-title {
-        font-size: 2.4rem;
-    }
-    .form-wrap,
-    .success-wrap {
-        max-width: 100%;
-    }
+.state-success {
+    background: #d7ece1;
+    color: #086a35;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.85rem;
+    color: #34895b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    text-decoration: underline;
 }
 </style>

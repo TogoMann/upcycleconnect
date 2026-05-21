@@ -7,3 +7,7 @@ type EventParticipation struct {
 	UserId                pgtype.Int8 `db:"user_id" json:"user_id"`
 	StripePaymentIntentId string      `db:"stripe_payment_intent_id" json:"stripe_payment_intent_id"`
 }
+
+type CreateEventParticipationRequest struct {
+	EventId int64 `json:"event_id"`
+}

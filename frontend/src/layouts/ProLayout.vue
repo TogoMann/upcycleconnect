@@ -81,6 +81,13 @@ function logout() {
                         <span>Annonces</span>
                     </router-link>
 
+                    <router-link to="/pro/chat" class="sidebar-item" active-class="sidebar-item--active">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <span>Messagerie</span>
+                    </router-link>
+
                     <router-link to="/pro/conteneurs/recuperer" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />

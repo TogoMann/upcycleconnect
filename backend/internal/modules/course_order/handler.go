@@ -86,24 +86,21 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var dto CourseOrder
-	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
+	var req CreateCourseOrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	dto.BuyerId = pgtype.Int8{Int64: int64(sub), Valid: true}
-
-	id, err := h.service.Create(dto)
+	id, err := h.service.CreateFromRequest(int64(sub), req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	dto.Id = id
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dto)
+	json.NewEncoder(w).Encode(map[string]int64{"id": id.Int64})
 }
 
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {

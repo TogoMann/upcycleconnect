@@ -1,11 +1,13 @@
 package eventparticipation
 
 import (
+	"backend/internal/middlewares"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -49,23 +51,33 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	var dto EventParticipation
-	err := json.NewDecoder(r.Body).Decode(&dto)
-	if err != nil {
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	var req CreateEventParticipationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	_, err = h.service.Create(dto)
+	_, err := h.service.CreateFromRequest(int64(sub), req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res, _ := json.Marshal(dto)
-	fmt.Fprintf(w, "%s", string(res))
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Participation enregistrée"})
 }
 
 func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {

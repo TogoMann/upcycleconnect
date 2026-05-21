@@ -115,6 +115,13 @@ func (s *Service) Delete(id pgtype.Int8) error {
 	return s.repo.Delete(id)
 }
 
+func (s *Service) UpdateStatus(id pgtype.Int8, status ListingStatus) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("listing/service ID invalide")
+	}
+	return s.repo.UpdateStatus(id, status)
+}
+
 func (s *Service) Approve(id pgtype.Int8, adminId pgtype.Int8) error {
 	if !id.Valid || id.Int64 < 1 {
 		return fmt.Errorf("listing/service Listing ID invalide")

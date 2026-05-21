@@ -17,30 +17,37 @@ func NewService(repo *Repository, listingService *listing.Service) *Service {
 }
 
 func (s *Service) SendMessage(senderId int64, req CreateMessageRequest) (*Message, error) {
-	// 1. Get listing to find seller
-	l, err := s.listingService.GetById(pgtype.Int8{Int64: req.ListingId, Valid: true})
-	if err != nil {
-		return nil, fmt.Errorf("listing not found: %w", err)
+	var conv *Conversation
+	var err error
+
+	if req.ConversationId > 0 {
+		conv, err = s.repo.GetConversationById(req.ConversationId)
+		if err != nil {
+			return nil, fmt.Errorf("conversation not found: %w", err)
+		}
+		if conv == nil {
+			return nil, fmt.Errorf("conversation not found")
+		}
+		if conv.BuyerId != senderId && conv.SellerId != senderId {
+			return nil, fmt.Errorf("unauthorized to send message to this conversation")
+		}
+	} else {
+		l, err := s.listingService.GetById(pgtype.Int8{Int64: req.ListingId, Valid: true})
+		if err != nil {
+			return nil, fmt.Errorf("listing not found: %w", err)
+		}
+		sellerId := l.CreatedBy.Int64
+
+		if senderId != sellerId {
+			conv, err = s.repo.GetOrCreateConversation(req.ListingId, senderId, sellerId)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("vendeur ne peut pas initier une conversation sans destinataire précis")
+		}
 	}
 
-	sellerId := l.CreatedBy.Int64
-	buyerId := senderId
-
-	// If sender is seller, we need to find the conversation first or ensure it exists
-	// Actually, usually the buyer starts the conversation.
-	// If seller sends a message, they must already be in a conversation.
-	// For simplicity, let's assume if it's a new conversation, the sender is the buyer.
-	if senderId == sellerId {
-		return nil, fmt.Errorf("seller cannot start a conversation with themselves")
-	}
-
-	// 2. Get or create conversation
-	conv, err := s.repo.GetOrCreateConversation(req.ListingId, buyerId, sellerId)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. Create message
 	msg := Message{
 		ConversationId: conv.Id,
 		SenderId:       senderId,
@@ -58,7 +65,6 @@ func (s *Service) SendMessage(senderId int64, req CreateMessageRequest) (*Messag
 }
 
 func (s *Service) GetConversationMessages(userId, convId int64) ([]Message, error) {
-	// Verify user belongs to conversation (omitted for brevity but recommended)
 	return s.repo.GetMessagesByConversationId(convId)
 }
 
@@ -85,9 +91,6 @@ func (s *Service) HandleProposal(userId, messageId int64, accept bool) error {
 		return fmt.Errorf("message is not a price proposal")
 	}
 
-	// Only the recipient (not the sender) can accept/decline
-	// We need to check if userId is the other party in the conversation
-	// For now, let's just update if it's pending
 	if *msg.ProposalStatus != StatusPending {
 		return fmt.Errorf("proposal already handled")
 	}

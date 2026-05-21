@@ -24,6 +24,7 @@ type Conversation struct {
 	ListingId int64            `db:"listing_id" json:"listing_id"`
 	BuyerId   int64            `db:"buyer_id" json:"buyer_id"`
 	SellerId  int64            `db:"seller_id" json:"seller_id"`
+	IsClosed  bool             `db:"is_closed" json:"is_closed"`
 	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
 	UpdatedAt pgtype.Timestamp `db:"updated_at" json:"updated_at"`
 }
@@ -49,10 +50,11 @@ type MessageEditHistory struct {
 }
 
 type CreateMessageRequest struct {
-	ListingId     int64       `json:"listing_id"`
-	Content       string      `json:"content"`
-	MessageType   MessageType `json:"message_type"`
-	ProposedPrice *float64    `json:"proposed_price"`
+	ListingId      int64       `json:"listing_id"`
+	ConversationId int64       `json:"conversation_id"` // Optional: direct reply
+	Content        string      `json:"content"`
+	MessageType    MessageType `json:"message_type"`
+	ProposedPrice  *float64    `json:"proposed_price"`
 }
 
 type EditMessageRequest struct {

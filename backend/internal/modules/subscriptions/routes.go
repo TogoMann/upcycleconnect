@@ -2,6 +2,7 @@ package subscriptions
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/financial"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/users"
 	"net/http"
@@ -12,8 +13,10 @@ import (
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	userRepo := users.NewRepository(db)
 	planRepo := plans.NewRepository(db)
+	finRepo := financial.NewRepository(db)
+	finSvc := financial.NewService(finRepo)
 	repo := NewRepository(db)
-	service := NewService(repo, userRepo, planRepo)
+	service := NewService(repo, userRepo, planRepo, finSvc)
 	handler := NewHandler(service)
 
 	r.HandleFunc("GET /admin/abonnements", middlewares.AdminOnly(handler.GetAllAbonnements))

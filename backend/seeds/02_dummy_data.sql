@@ -59,7 +59,7 @@ INSERT INTO locker (container_id, label, status, size, created_at) VALUES
 -- =========================
 INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at, company_id) VALUES
 ('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW(), NULL),
-('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'pro', NOW(), 1),
+('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2y$10$J6Yojl6InKub07sYaA50pO8tw0XHQcBwP18Nvx/TNeXPvfAo9M4ci', 'pro', NOW(), 1),
 ('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$J6Yojl6InKub07sYaA50pO8tw0XHQcBwP18Nvx/TNeXPvfAo9M4ci', 'admin', NOW(), NULL),
 ('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW(), NULL),
 ('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW(), NULL);

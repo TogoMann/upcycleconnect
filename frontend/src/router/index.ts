@@ -85,6 +85,7 @@ import ProNouveauProjet from '@/pages/pro/NouveauProjet.vue'
 import ProProjetDetail from '@/pages/pro/ProjetDetail.vue'
 import ProTableauBordAvance from '@/pages/pro/TableauBordAvance.vue'
 import ProProfil from '@/pages/pro/Profil.vue'
+import ProChat from '@/pages/pro/Chat.vue'
 
 import SalarieDashboard from '@/pages/salarie/Dashboard.vue'
 import SalarieMesFormations from '@/pages/salarie/MesFormations.vue'
@@ -140,6 +141,7 @@ const router = createRouter({
                 { path: 'profil', component: ClientProfil },
                 { path: 'chat', component: ClientChat },
                 { path: 'plans', component: ClientPlans },
+                { path: 'facturation', component: ProFacturation },
             ],
         },
         {
@@ -158,6 +160,7 @@ const router = createRouter({
                 { path: 'projets/:id', component: ProProjetDetail },
                 { path: 'dashboard-avance', component: ProTableauBordAvance },
                 { path: 'profil', component: ProProfil },
+                { path: 'chat', component: ProChat },
             ],
         },
         {

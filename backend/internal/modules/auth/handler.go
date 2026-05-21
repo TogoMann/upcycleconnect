@@ -50,3 +50,47 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(res)
 }
+
+func (h *Handler) AdminRequestReset(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserId int64 `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.AdminRequestPasswordReset(req.UserId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Email de réinitialisation envoyé"})
+}
+
+func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Token == "" || req.Password == "" {
+		http.Error(w, "Token and password are required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.ResetPassword(req.Token, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Mot de passe réinitialisé avec succès"})
+}

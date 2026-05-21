@@ -79,3 +79,51 @@ func (r *Repository) GetReport() (*FinancialReport, error) {
 
 	return &report, nil
 }
+
+func (r *Repository) CreateInvoice(inv Invoice) error {
+	_, err := r.db.Exec(db.Ctx, `
+		INSERT INTO invoices (user_id, seller_id, order_id, order_type, invoice_number, amount, vat_amount, total_amount, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`, inv.UserId, inv.SellerId, inv.OrderId, inv.OrderType, inv.InvoiceNumber, inv.Amount, inv.VatAmount, inv.TotalAmount, inv.Status)
+	return err
+}
+
+func (r *Repository) GetUserInvoices(userId int64) ([]Invoice, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT id, user_id, seller_id, order_id, order_type, invoice_number, amount, vat_amount, total_amount, status, 
+		TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM invoices
+		WHERE user_id = $1 OR seller_id = $1
+		ORDER BY created_at DESC
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Invoice])
+}
+
+func (r *Repository) GetInvoiceById(id int64) (*InvoiceDetail, error) {
+	var detail InvoiceDetail
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT i.id, i.user_id, i.seller_id, i.order_id, i.order_type, i.invoice_number, i.amount, i.vat_amount, i.total_amount, i.status,
+		TO_CHAR(i.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+		u.first_name || ' ' || u.last_name as user_name,
+		u.email as user_email,
+		COALESCE(l.name, c.name, s.tier, 'Transaction') as description
+		FROM invoices i
+		JOIN users u ON i.user_id = u.id
+		LEFT JOIN listing_order lo ON i.order_id = lo.id AND i.order_type = 'listing'
+		LEFT JOIN listing l ON lo.listing_id = l.id
+		LEFT JOIN course_order co ON i.order_id = co.id AND i.order_type = 'course'
+		LEFT JOIN course c ON co.course_id = c.id
+		LEFT JOIN subscriptions s ON i.order_id = s.id AND i.order_type = 'subscription'
+		WHERE i.id = $1
+	`, id).Scan(
+		&detail.Id, &detail.UserId, &detail.SellerId, &detail.OrderId, &detail.OrderType, &detail.InvoiceNumber, &detail.Amount, &detail.VatAmount, &detail.TotalAmount, &detail.Status, &detail.CreatedAt,
+		&detail.UserName, &detail.UserEmail, &detail.Description,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &detail, nil
+}

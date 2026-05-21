@@ -84,6 +84,27 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  const requestPasswordReset = async (userId: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/admin/reset-request`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userId })
+      })
+      if (!res.ok) {
+        const errData = await res.text()
+        throw new Error(errData || 'Failed to request password reset')
+      }
+      return await res.json()
+    } catch (err: any) {
+      error.value = err.message
+      throw err
+    }
+  }
+
   const fetchCourses = async () => {
     isLoading.value = true
     error.value = null
@@ -194,6 +215,7 @@ export const useAdminStore = defineStore('admin', () => {
     deleteUser,
     updateUser,
     getScoreHistory,
+    requestPasswordReset,
     fetchCourses,
     deleteCourse,
     fetchEvents,

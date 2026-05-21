@@ -300,6 +300,20 @@ CREATE TABLE IF NOT EXISTS listing_order (
     status LISTING_ORDER_STATUS NOT NULL DEFAULT 'pending'
 );
 
+CREATE TABLE IF NOT EXISTS invoices (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- Buyer
+    seller_id BIGINT REFERENCES users(id) ON DELETE SET NULL, -- Seller
+    order_id BIGINT,
+    order_type VARCHAR(64) NOT NULL,
+    invoice_number VARCHAR(128) UNIQUE NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    vat_amount DECIMAL(10, 2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(64) NOT NULL DEFAULT 'paid',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS project (
     id BIGSERIAL PRIMARY KEY,
     listing_id BIGINT REFERENCES listing(id) ON DELETE SET NULL,
@@ -359,6 +373,7 @@ CREATE TABLE IF NOT EXISTS chat_conversation (
     listing_id BIGINT NOT NULL REFERENCES listing(id) ON DELETE CASCADE,
     buyer_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     seller_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    is_closed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(listing_id, buyer_id, seller_id)
@@ -381,6 +396,14 @@ CREATE TABLE IF NOT EXISTS chat_message_edit_history (
     old_content TEXT,
     old_proposed_price DECIMAL(10, 2),
     edited_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE listing ADD COLUMN IF NOT EXISTS image_url VARCHAR(255);

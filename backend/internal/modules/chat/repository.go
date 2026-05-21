@@ -23,11 +23,50 @@ func (r *Repository) GetOrCreateConversation(listingId, buyerId, sellerId int64)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (listing_id, buyer_id, seller_id) DO UPDATE 
 		SET updated_at = NOW()
-		RETURNING id, listing_id, buyer_id, seller_id, created_at, updated_at
-	`, listingId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.CreatedAt, &conv.UpdatedAt)
+		RETURNING id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
+	`, listingId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt)
 
 	if err != nil {
 		return nil, fmt.Errorf("package chat/repo GetOrCreateConversation: %w", err)
+	}
+
+	return &conv, nil
+}
+
+func (r *Repository) GetConversationByListingAndUsers(listingId, userId1, userId2 int64) (*Conversation, error) {
+	var conv Conversation
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
+		FROM chat_conversation
+		WHERE listing_id = $1 AND (
+			(buyer_id = $2 AND seller_id = $3) OR
+			(buyer_id = $3 AND seller_id = $2)
+		)
+	`, listingId, userId1, userId2).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("package chat/repo GetConversationByListingAndUsers: %w", err)
+	}
+
+	return &conv, nil
+}
+
+func (r *Repository) GetConversationById(id int64) (*Conversation, error) {
+	var conv Conversation
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
+		FROM chat_conversation
+		WHERE id = $1
+	`, id).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("package chat/repo GetConversationById: %w", err)
 	}
 
 	return &conv, nil
@@ -48,7 +87,6 @@ func (r *Repository) CreateMessage(msg Message) (*Message, error) {
 		return nil, fmt.Errorf("package chat/repo CreateMessage: %w", err)
 	}
 
-	// Update conversation updated_at
 	_, _ = r.db.Exec(db.Ctx, "UPDATE chat_conversation SET updated_at = NOW() WHERE id = $1", msg.ConversationId)
 
 	return &newMsg, nil
@@ -99,7 +137,6 @@ func (r *Repository) UpdateMessage(id int64, oldContent string, oldPrice *float6
 	}
 	defer tx.Rollback(db.Ctx)
 
-	// Insert into history
 	_, err = tx.Exec(db.Ctx, `
 		INSERT INTO chat_message_edit_history (message_id, old_content, old_proposed_price)
 		VALUES ($1, $2, $3)
@@ -108,7 +145,6 @@ func (r *Repository) UpdateMessage(id int64, oldContent string, oldPrice *float6
 		return fmt.Errorf("failed to insert history: %w", err)
 	}
 
-	// Update message
 	_, err = tx.Exec(db.Ctx, `
 		UPDATE chat_message
 		SET content = $1, proposed_price = $2
@@ -123,7 +159,7 @@ func (r *Repository) UpdateMessage(id int64, oldContent string, oldPrice *float6
 
 func (r *Repository) GetConversationsByUserId(userId int64) ([]Conversation, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT id, listing_id, buyer_id, seller_id, created_at, updated_at
+		SELECT id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
 		FROM chat_conversation
 		WHERE buyer_id = $1 OR seller_id = $1
 		ORDER BY updated_at DESC
@@ -134,6 +170,11 @@ func (r *Repository) GetConversationsByUserId(userId int64) ([]Conversation, err
 	defer rows.Close()
 
 	return pgx.CollectRows(rows, pgx.RowToStructByName[Conversation])
+}
+
+func (r *Repository) CloseConversationsByListingId(listingId int64) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE chat_conversation SET is_closed = true WHERE listing_id = $1", listingId)
+	return err
 }
 
 func (r *Repository) GetAdminConversationReviews() ([]AdminConversationReview, error) {

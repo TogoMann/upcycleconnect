@@ -7,6 +7,7 @@ import (
 	"backend/internal/modules/users"
 	"backend/internal/utils"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -86,10 +87,9 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 		return nil, errors.New("erreur lors de la création du compte")
 	}
 
-	// Determine plan to subscribe to
 	tier := "Free"
 	var price float64 = 0.00
-	until := time.Now().AddDate(1, 0, 0) // 1 year default for free
+	until := time.Now().AddDate(1, 0, 0)
 
 	if req.PlanId > 0 {
 		plan, err := s.planRepo.GetById(pgtype.Int8{Int64: req.PlanId, Valid: true})
@@ -103,7 +103,6 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 		}
 	}
 
-	// If plan is Pro, update user role to 'pro' and require SIRET
 	if strings.EqualFold(tier, "Pro") {
 		if req.Siret == "" {
 			return nil, errors.New("le numéro SIRET est obligatoire pour le plan Pro")
@@ -112,7 +111,6 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 			return nil, errors.New("numéro SIRET invalide (doit contenir 14 chiffres)")
 		}
 
-		// Handle company creation or linking
 		company, err := s.compRepo.GetBySiret(req.Siret)
 		if err != nil {
 			return nil, err
@@ -120,7 +118,6 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 
 		var companyId pgtype.Int8
 		if company == nil {
-			// Create new company
 			newComp := companies.Company{
 				Siret: req.Siret,
 			}
@@ -150,11 +147,58 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	// Send confirmation email asynchronously
 	go utils.SendConfirmationEmail(req.Email, req.Username)
 
 	return &LoginResponse{
 		Token: token,
 		Role:  string(users.Client),
 	}, nil
+}
+
+func (s *Service) AdminRequestPasswordReset(userId int64) error {
+	user, err := s.userRepo.GetById(pgtype.Int8{Int64: userId, Valid: true})
+	if err != nil {
+		return err
+	}
+
+	token := utils.GenerateSecureToken()
+	expiresAt := pgtype.Timestamp{Time: time.Now().Add(time.Hour * 2), Valid: true}
+
+	err = s.userRepo.CreateResetToken(userId, token, expiresAt)
+	if err != nil {
+		return err
+	}
+
+	subject := "Réinitialisation de votre mot de passe - UpCycleConnect"
+	resetUrl := "http://localhost:5173/auth/reset-password?token=" + token
+	body := fmt.Sprintf(`
+		<h1>Bonjour %s !</h1>
+		<p>Un administrateur a initié une réinitialisation de votre mot de passe.</p>
+		<p>Veuillez cliquer sur le lien ci-dessous pour choisir un nouveau mot de passe :</p>
+		<p><a href="%s">%s</a></p>
+		<p>Ce lien expirera dans 2 heures.</p>
+		<br/>
+		<p>L'équipe UpCycleConnect</p>
+	`, user.FirstName, resetUrl, resetUrl)
+
+	return utils.SendEmail(user.Email, subject, body)
+}
+
+func (s *Service) ResetPassword(token, newPassword string) error {
+	userId, err := s.userRepo.GetUserIdByResetToken(token)
+	if err != nil {
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	err = s.userRepo.UpdatePassword(userId, string(hash))
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.DeleteResetToken(token)
 }

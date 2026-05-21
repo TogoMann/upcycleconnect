@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"backend/internal/middlewares"
 	"backend/internal/modules/companies"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/subscriptions"
@@ -20,4 +21,6 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	r.HandleFunc("POST /login/", handler.Login)
 	r.HandleFunc("POST /register/", handler.Register)
+	r.HandleFunc("POST /auth/admin/reset-request", middlewares.AdminOnly(handler.AdminRequestReset))
+	r.HandleFunc("POST /auth/reset-password", handler.ResetPassword)
 }

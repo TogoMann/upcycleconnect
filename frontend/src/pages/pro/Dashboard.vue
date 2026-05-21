@@ -111,6 +111,16 @@ onMounted(async () => {
                     <span class="action-label">Mes factures</span>
                     <span class="action-desc">Télécharger vos PDF</span>
                 </router-link>
+
+                <router-link to="/pro/chat" class="action-card">
+                    <div class="action-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                    </div>
+                    <span class="action-label">Messagerie</span>
+                    <span class="action-desc">Discutez avec vos acheteurs</span>
+                </router-link>
             </div>
         </div>
     </div>

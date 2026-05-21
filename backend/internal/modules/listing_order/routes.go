@@ -2,6 +2,10 @@ package listingorder
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/chat"
+	"backend/internal/modules/financial"
+	"backend/internal/modules/listing"
+	"backend/internal/modules/subscriptions"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,7 +14,16 @@ import (
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	repo := NewRepository(db)
-	service := NewService(repo)
+	finRepo := financial.NewRepository(db)
+	finSvc := financial.NewService(finRepo)
+
+	chatRepo := chat.NewRepository(db)
+
+	subRepo := subscriptions.NewRepository(db)
+	listingRepo := listing.NewRepository(db)
+	listingSvc := listing.NewService(listingRepo, subRepo)
+
+	service := NewService(repo, finSvc, listingSvc, chatRepo)
 	handler := NewHandler(service)
 
 	r.HandleFunc("GET /listing-order/me", middlewares.Authenticated(handler.GetByUserId))

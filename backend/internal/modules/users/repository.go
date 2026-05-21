@@ -25,7 +25,8 @@ func (r *Repository) GetAll() ([]UserFrontend, error) {
 			TO_CHAR(u.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
 			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = u.id) AS INTEGER) as score,
 			COALESCE(c.siret, '') as siret,
-			COALESCE(u.company_id, 0) as company_id
+			COALESCE(u.company_id, 0) as company_id,
+			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan
 		FROM users u
 		LEFT JOIN companies c ON u.company_id = c.id
 	`)
@@ -175,6 +176,42 @@ func (r *Repository) AddScore(userId pgtype.Int8, points int32, description stri
 	_, err := r.db.Exec(db.Ctx, "INSERT INTO score_history (user_id, points, description) VALUES ($1, $2, $3)", userId, points, description)
 	if err != nil {
 		return fmt.Errorf("package users/repo AddScore: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) CreateResetToken(userId int64, token string, expiresAt pgtype.Timestamp) error {
+	_, err := r.db.Exec(db.Ctx, "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)", userId, token, expiresAt)
+	if err != nil {
+		return fmt.Errorf("package users/repo CreateResetToken: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) GetUserIdByResetToken(token string) (int64, error) {
+	var userId int64
+	err := r.db.QueryRow(db.Ctx, "SELECT user_id FROM password_reset_tokens WHERE token = $1 AND expires_at > NOW()", token).Scan(&userId)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, fmt.Errorf("invalid or expired token")
+		}
+		return 0, fmt.Errorf("package users/repo GetUserIdByResetToken: %w", err)
+	}
+	return userId, nil
+}
+
+func (r *Repository) DeleteResetToken(token string) error {
+	_, err := r.db.Exec(db.Ctx, "DELETE FROM password_reset_tokens WHERE token = $1", token)
+	if err != nil {
+		return fmt.Errorf("package users/repo DeleteResetToken: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) UpdatePassword(userId int64, passwordHash string) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE users SET password_hash = $1 WHERE id = $2", passwordHash, userId)
+	if err != nil {
+		return fmt.Errorf("package users/repo UpdatePassword: %w", err)
 	}
 	return nil
 }

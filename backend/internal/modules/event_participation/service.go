@@ -25,6 +25,14 @@ func (s *Service) GetById(id pgtype.Int8) (*EventParticipation, error) {
 	return s.repo.GetById(id)
 }
 
+func (s *Service) CreateFromRequest(userId int64, req CreateEventParticipationRequest) (pgtype.Int8, error) {
+	dto := EventParticipation{
+		EventId: pgtype.Int8{Int64: req.EventId, Valid: true},
+		UserId:  pgtype.Int8{Int64: userId, Valid: true},
+	}
+	return s.repo.Create(dto)
+}
+
 func (s *Service) Create(dto EventParticipation) (pgtype.Int8, error) {
 	return s.repo.Create(dto)
 }

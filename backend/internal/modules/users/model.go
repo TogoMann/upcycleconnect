@@ -22,9 +22,9 @@ type UserFrontend struct {
 	HasSeenTutorial    bool     `db:"has_seen_tutorial" json:"has_seen_tutorial"`
 	CreatedAt          string   `db:"created_at" json:"created_at"`
 	Score              int32    `db:"score" json:"score"`
-	Siret              string   `json:"siret"`
+	Siret              string   `db:"siret" json:"siret"`
 	CompanyId          int64    `db:"company_id" json:"company_id"`
-	Plan               string   `json:"plan"`
+	Plan               string   `db:"plan" json:"plan"`
 }
 
 type User struct {

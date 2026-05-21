@@ -1,6 +1,7 @@
 package subscriptions
 
 import (
+	"backend/internal/modules/financial"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/users"
 	"backend/internal/utils"
@@ -11,23 +12,22 @@ import (
 )
 
 type Service struct {
-	repo     *Repository
-	userRepo *users.Repository
-	planRepo *plans.Repository
+	repo         *Repository
+	userRepo     *users.Repository
+	planRepo     *plans.Repository
+	financialSvc *financial.Service
 }
 
-func NewService(repo *Repository, userRepo *users.Repository, planRepo *plans.Repository) *Service {
-	return &Service{repo: repo, userRepo: userRepo, planRepo: planRepo}
+func NewService(repo *Repository, userRepo *users.Repository, planRepo *plans.Repository, financialSvc *financial.Service) *Service {
+	return &Service{repo: repo, userRepo: userRepo, planRepo: planRepo, financialSvc: financialSvc}
 }
 
 func (s *Service) ChoosePlan(userId int64, planId int64, siret string) error {
-	// 1. Fetch plan
 	p, err := s.planRepo.GetById(pgtype.Int8{Int64: planId, Valid: true})
 	if err != nil {
 		return fmt.Errorf("plan not found: %w", err)
 	}
 
-	// 2. Verification logic
 	role := users.Client
 	if p.Name == "Pro" {
 		if !utils.VerifySiret(siret) {
@@ -36,7 +36,6 @@ func (s *Service) ChoosePlan(userId int64, planId int64, siret string) error {
 		role = users.Pro
 	}
 
-	// 3. Update user
 	u, err := s.userRepo.GetById(pgtype.Int8{Int64: userId, Valid: true})
 	if err != nil {
 		return err
@@ -54,17 +53,21 @@ func (s *Service) ChoosePlan(userId int64, planId int64, siret string) error {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	// 4. Create subscription
 	price, _ := p.Price.Float64Value()
 	sub := Subscription{
 		SubscriberId: pgtype.Int8{Int64: userId, Valid: true},
 		Price:        price.Float64,
 		Tier:         p.Name,
-		Until:        pgtype.Date{Time: time.Now().AddDate(0, 1, 0), Valid: true}, // 1 month
+		Until:        pgtype.Date{Time: time.Now().AddDate(0, 1, 0), Valid: true},
 	}
 
-	_, err = s.repo.Create(sub)
-	return err
+	id, err := s.repo.Create(sub)
+	if err != nil {
+		return err
+	}
+
+	s.financialSvc.GenerateInvoiceForOrder(userId, nil, id.Int64, "subscription", price.Float64)
+	return nil
 }
 
 func (s *Service) GetAllAbonnements() ([]AbonnementFrontend, error) {
@@ -84,7 +87,11 @@ func (s *Service) GetActiveByUserId(userId pgtype.Int8) (*Subscription, error) {
 }
 
 func (s *Service) Create(sub Subscription) (pgtype.Int8, error) {
-	return s.repo.Create(sub)
+	id, err := s.repo.Create(sub)
+	if err == nil {
+		s.financialSvc.GenerateInvoiceForOrder(sub.SubscriberId.Int64, nil, id.Int64, "subscription", sub.Price)
+	}
+	return id, err
 }
 
 func (s *Service) Update(id pgtype.Int8, sub Subscription) error {

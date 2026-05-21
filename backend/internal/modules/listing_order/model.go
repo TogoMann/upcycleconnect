@@ -27,3 +27,8 @@ type ListingOrderWithListing struct {
 	ListingOrder
 	ListingName string `db:"listing_name" json:"listing_name"`
 }
+
+type CreateListingOrderRequest struct {
+	ListingId int64   `json:"listing_id"`
+	Price     float64 `json:"price"`
+}

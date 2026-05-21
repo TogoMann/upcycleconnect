@@ -158,6 +158,17 @@ func (r *Repository) Disapprove(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) UpdateStatus(id pgtype.Int8, status ListingStatus) error {
+	tag, err := r.db.Exec(db.Ctx, "UPDATE listing SET status = $1 WHERE id = $2", status, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("package listing/repo UpdateStatus: Id invalide: %d", id.Int64)
+	}
+	return nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 

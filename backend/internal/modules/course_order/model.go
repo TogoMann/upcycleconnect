@@ -17,3 +17,8 @@ type CourseOrderWithCourse struct {
 	CourseOrder
 	CourseName string `db:"course_name" json:"course_name"`
 }
+
+type CreateCourseOrderRequest struct {
+	CourseId int64   `json:"course_id"`
+	Price    float64 `json:"price"`
+}
