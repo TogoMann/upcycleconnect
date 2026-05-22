@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -9,6 +9,13 @@ COPY . .
 
 RUN go build -o main ./cmd/api/main.go
 
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/main .
+
 EXPOSE 8081
 
-ENTRYPOINT [ "/app/main" ]
+ENTRYPOINT [ "./main" ]
+

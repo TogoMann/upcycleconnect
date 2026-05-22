@@ -1,13 +1,18 @@
-FROM oven/bun:alpine
+FROM oven/bun:alpine AS build
 
 WORKDIR /app
 
-COPY package.json ./
-COPY bun.lock ./
+COPY package.json bun.lock ./
 RUN bun install
 
 COPY . .
 
-EXPOSE 5173
+RUN bun run build
 
-CMD [ "bun", "dev", "--", "--host"]
+FROM nginx:alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
