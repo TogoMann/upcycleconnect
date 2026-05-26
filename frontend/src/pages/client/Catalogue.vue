@@ -3,8 +3,10 @@ import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
+import { useAuthStore } from '@/stores/auth'
 
 const clientStore = useClientStore()
+const authStore = useAuthStore()
 const router = useRouter()
 type Tab = 'all' | 'events' | 'courses' | 'annonces'
 const activeTab = ref<Tab>('all')
@@ -80,6 +82,31 @@ function handleBuy(item: any) {
     })
 }
 
+function handleContactSeller(item: any) {
+    if (!authStore.isAuthenticated) {
+        router.push('/auth/login')
+        return
+    }
+    
+    let listingId = ''
+    const id = getItemId(item)
+    if (typeof id === 'object' && id !== null) {
+        listingId = id.Int64?.toString() || id.id?.toString() || ''
+    } else {
+        listingId = id?.toString() || ''
+    }
+
+    if (!listingId) {
+        console.error('No listing ID found')
+        return
+    }
+
+    router.push({
+        path: '/particulier/chat',
+        query: { listingId }
+    })
+}
+
 async function handleAddToCart(item: any) {
     try {
         await clientStore.addToCart(getItemId(item))
@@ -96,6 +123,9 @@ async function handleAddToCart(item: any) {
 onMounted(() => {
     clientStore.fetchCatalogue()
     clientStore.fetchAllAnnonces()
+    if (authStore.isAuthenticated) {
+        clientStore.fetchConversations()
+    }
 })
 </script>
 
@@ -191,9 +221,14 @@ onMounted(() => {
                 </div>
 
                 <div class="card-actions">
-                    <button v-if="item._type === 'annonce'" class="btn-cart btn-cart--full" @click="handleAddToCart(item)">
-                        🛒 Ajouter au panier
-                    </button>
+                    <template v-if="item._type === 'annonce'">
+                        <button v-if="clientStore.isChattingWith(getItemId(item))" class="btn-chat btn-chat--active" @click="handleContactSeller(item)">
+                            💬 Continuer la discussion
+                        </button>
+                        <button v-else class="btn-cart btn-cart--full" @click="handleAddToCart(item)">
+                            🛒 Ajouter au panier
+                        </button>
+                    </template>
                     <button v-else class="btn-book" @click="handleBuy(item)">
                         {{ formatPrice(getItemPrice(item)) === 'Gratuit' ? "S'inscrire" : "Acheter" }}
                     </button>
@@ -441,6 +476,22 @@ onMounted(() => {
 .btn-cart--full:hover {
     background: var(--green-mid);
     color: var(--white);
+}
+.btn-chat--active {
+    width: 100%;
+    padding: 11px;
+    background: #4183d7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.btn-chat--active:hover {
+    background: #3569ad;
 }
 
 /* Toast Styles */

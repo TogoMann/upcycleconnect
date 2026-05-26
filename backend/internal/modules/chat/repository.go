@@ -19,12 +19,17 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) GetOrCreateConversation(listingId, buyerId, sellerId int64) (*Conversation, error) {
 	var conv Conversation
 	err := r.db.QueryRow(db.Ctx, `
-		INSERT INTO chat_conversation (listing_id, buyer_id, seller_id)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (listing_id, buyer_id, seller_id) DO UPDATE 
-		SET updated_at = NOW()
-		RETURNING id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
-	`, listingId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt)
+		WITH ins AS (
+			INSERT INTO chat_conversation (listing_id, buyer_id, seller_id)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (listing_id, buyer_id, seller_id) DO UPDATE 
+			SET updated_at = NOW()
+			RETURNING id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
+		)
+		SELECT ins.id, ins.listing_id, ins.buyer_id, ins.seller_id, ins.is_closed, ins.created_at, ins.updated_at, COALESCE(l.name, '')
+		FROM ins
+		LEFT JOIN listing l ON ins.listing_id = l.id
+	`, listingId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt, &conv.ListingTitle)
 
 	if err != nil {
 		return nil, fmt.Errorf("package chat/repo GetOrCreateConversation: %w", err)
@@ -159,17 +164,33 @@ func (r *Repository) UpdateMessage(id int64, oldContent string, oldPrice *float6
 
 func (r *Repository) GetConversationsByUserId(userId int64) ([]Conversation, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
-		FROM chat_conversation
-		WHERE buyer_id = $1 OR seller_id = $1
-		ORDER BY updated_at DESC
+		SELECT 
+			c.id, c.listing_id, c.buyer_id, c.seller_id, c.is_closed, c.created_at, c.updated_at,
+			COALESCE(l.name, '') as listing_title
+		FROM chat_conversation c
+		LEFT JOIN listing l ON c.listing_id = l.id
+		WHERE c.buyer_id = $1 OR c.seller_id = $1
+		ORDER BY c.updated_at DESC
 	`, userId)
 	if err != nil {
 		return nil, fmt.Errorf("package chat/repo GetConversationsByUserId query: %w", err)
 	}
 	defer rows.Close()
 
-	return pgx.CollectRows(rows, pgx.RowToStructByName[Conversation])
+	conversations := []Conversation{}
+	for rows.Next() {
+		var conv Conversation
+		err := rows.Scan(
+			&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt,
+			&conv.ListingTitle,
+		)
+		if err != nil {
+			return nil, err
+		}
+		conversations = append(conversations, conv)
+	}
+
+	return conversations, nil
 }
 
 func (r *Repository) CloseConversationsByListingId(listingId int64) error {

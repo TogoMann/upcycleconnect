@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useChatStore, type Conversation, type Message } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE } from '@/config'
 
 const chatStore = useChatStore()
 const authStore = useAuthStore()
@@ -19,24 +20,37 @@ const editingMessage = ref<Message | null>(null)
 
 async function loadConversations() {
     try {
-        conversations.value = await chatStore.getConversations()
+        const data = await chatStore.getConversations()
+        conversations.value = Array.isArray(data) ? data : []
 
         const queryListingId = route.query.listingId
         if (queryListingId) {
             const lid = parseInt(queryListingId as string)
             const existing = conversations.value.find((c) => getNumericId(c.listing_id) === lid)
+
             if (existing) {
                 selectConversation(existing)
             } else {
                 selectedConv.value = {
                     listing_id: lid,
+                    listing_title: '',
                     id: 0,
                 }
                 messages.value = []
+
+                fetch(`${API_BASE}/listing/${lid}`)
+                    .then((res) => (res.ok ? res.json() : null))
+                    .then((l) => {
+                        if (l && selectedConv.value && selectedConv.value.id === 0) {
+                            selectedConv.value.listing_title = l.name
+                        }
+                    })
+                    .catch((e) => console.error('Bg title fetch error:', e))
             }
         }
     } catch (e) {
-        console.error(e)
+        console.error('Error loading conversations:', e)
+        conversations.value = []
     }
 }
 
@@ -132,7 +146,7 @@ function goToPayment(price: number) {
     router.push({
         path: '/particulier/paiement',
         query: {
-            id: selectedConv.value.listing_id.toString(),
+            id: getNumericId(selectedConv.value.listing_id)!.toString(),
             price: price.toString(),
             type: 'listing',
         },
@@ -160,24 +174,24 @@ watch(
                 :class="{ active: selectedConv?.id === conv.id }"
                 @click="selectConversation(conv)"
             >
-                <p>Listing #{{ getNumericId(conv.listing_id) }}</p>
+                <p>{{ conv.listing_title || `Objet #${getNumericId(conv.listing_id)}` }}</p>
                 <small
                     >Mis à jour :
                     {{ new Date(conv.updated_at.Time ?? conv.updated_at).toLocaleString() }}</small
                 >
             </div>
         </div>
-
         <div class="chat-window" v-if="selectedConv">
             <div class="chat-header">
                 <h3>
-                    {{ selectedConv.id === 0 ? 'Nouvelle conversation' : 'Conversation' }} - Objet
-                    #{{ getNumericId(selectedConv.listing_id) }}
+                    {{ selectedConv.id === 0 ? 'Nouvelle conversation' : 'Conversation' }} -
+                    {{ selectedConv.listing_title || `Objet #${getNumericId(selectedConv.listing_id)}` }}
                 </h3>
                 <span v-if="selectedConv.is_closed" class="status-closed"
                     >Discussion fermée (Objet vendu)</span
                 >
             </div>
+
             <div class="messages">
                 <div
                     v-for="msg in messages"

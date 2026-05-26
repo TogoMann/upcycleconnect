@@ -1,10 +1,13 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
+import { useChatStore } from './chat'
 import { API_BASE } from '@/config'
 
 export const useClientStore = defineStore('client', () => {
+    const chatStore = useChatStore()
     const annonces = ref<any[]>([])
+    const conversations = ref<any[]>([])
     const depots = ref<any[]>([])
     const entries = ref<any[]>([])
     const planning = ref<any[]>([])
@@ -86,6 +89,23 @@ export const useClientStore = defineStore('client', () => {
             error.value = e.message
             throw e
         }
+    }
+
+    async function fetchConversations() {
+        try {
+            const data = await chatStore.getConversations()
+            conversations.value = Array.isArray(data) ? data : []
+        } catch (e) {
+            console.error('Fetch Conversations Error:', e)
+            conversations.value = []
+        }
+    }
+
+    function isChattingWith(listingId: number): boolean {
+        return conversations.value.some(c => {
+            const cLid = c.listing_id && typeof c.listing_id === 'object' ? (c.listing_id as any).Int64 : c.listing_id
+            return Number(cLid) === listingId
+        })
     }
 
     async function fetchCities() {
@@ -292,6 +312,14 @@ export const useClientStore = defineStore('client', () => {
             }),
         })
         if (!res.ok) throw new Error('Erreur création commande')
+        
+        // Remove from cart if present
+        try {
+            await removeFromCart(listingId)
+        } catch (e) {
+            console.warn('Could not remove from cart after order:', e)
+        }
+        
         return await res.json()
     }
 
@@ -381,6 +409,7 @@ export const useClientStore = defineStore('client', () => {
     return {
         annonces,
         allAnnonces,
+        conversations,
         depots,
         entries,
         planning,
@@ -395,6 +424,8 @@ export const useClientStore = defineStore('client', () => {
         error,
         fetchAnnonces,
         fetchAllAnnonces,
+        fetchConversations,
+        isChattingWith,
         createAnnonce,
         fetchDepots,
         fetchScore,
@@ -419,4 +450,4 @@ export const useClientStore = defineStore('client', () => {
         removeFromCart,
         checkoutCart,
     }
-})
+    })

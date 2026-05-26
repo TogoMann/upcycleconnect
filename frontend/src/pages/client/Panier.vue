@@ -15,14 +15,25 @@ const total = computed(() => {
     return clientStore.cart.reduce((acc, item) => acc + (parseFloat(item.listing.price) || 0), 0)
 })
 
+function goToChat(id: any) {
+    let listingId = ''
+    if (typeof id === 'object' && id !== null) {
+        listingId = id.Int64?.toString() || id.id?.toString() || ''
+    } else {
+        listingId = id?.toString() || ''
+    }
+
+    if (!listingId) return
+
+    router.push({
+        path: '/particulier/chat',
+        query: { listingId }
+    })
+}
+
 async function handleCheckout() {
     if (clientStore.cart.length === 0) return
-    try {
-        await clientStore.checkoutCart()
-        router.push({ name: 'ConfirmationPaiement' })
-    } catch (e: any) {
-        alert(e.message)
-    }
+    alert("Les annonces nécessitent un accord préalable avec le vendeur via la messagerie. Veuillez finaliser le paiement depuis vos conversations.")
 }
 
 async function handleRemove(listingId: number) {
@@ -61,9 +72,18 @@ async function handleRemove(listingId: number) {
                     <div class="item-details">
                         <h3 class="item-name">{{ item.listing.name }}</h3>
                         <p class="item-category">{{ item.listing.category }}</p>
+                        <p class="item-warning">⚠️ Accord avec le vendeur requis</p>
                     </div>
                     <div class="item-price">{{ item.listing.price }}€</div>
-                    <button class="btn-remove" @click="handleRemove(item.listing.id)">Supprimer</button>
+                    <div class="item-actions">
+                        <button class="btn-chat" @click="goToChat(item.listing.id)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                            </svg>
+                            Envoyer un message
+                        </button>
+                        <button class="btn-remove" @click="handleRemove(item.listing.id)">Supprimer</button>
+                    </div>
                 </div>
             </div>
 
@@ -75,10 +95,11 @@ async function handleRemove(listingId: number) {
                         <span>{{ total.toFixed(2) }}€</span>
                     </div>
                     <div class="summary-line total">
-                        <span>Total</span>
+                        <span>Total estimé</span>
                         <span>{{ total.toFixed(2) }}€</span>
                     </div>
-                    <button class="btn-checkout" @click="handleCheckout">Passer la commande</button>
+                    <p class="summary-note">Les prix finaux sont fixés après dialogue avec les vendeurs.</p>
+                    <button class="btn-checkout" @click="handleCheckout">Comment payer ?</button>
                 </div>
             </div>
         </div>
@@ -103,14 +124,21 @@ async function handleRemove(listingId: number) {
 .item-details { flex: 1; }
 .item-name { font-size: 1.1rem; font-weight: 700; margin: 0 0 4px; }
 .item-category { font-size: 0.85rem; opacity: 0.5; margin: 0; }
+.item-warning { font-size: 0.8rem; color: #d97706; font-weight: 600; margin: 8px 0 0; }
 .item-price { font-weight: 700; font-size: 1.1rem; color: var(--green-dark); }
-.btn-remove { background: none; border: none; color: #dc2626; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 10px; }
+.item-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.btn-chat { background: #4183d7; border: none; color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer; padding: 10px 16px; border-radius: 12px; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn-chat:hover { background: #3569ad; transform: translateY(-1px); }
+.btn-chat:active { transform: translateY(0); }
+.btn-chat svg { flex-shrink: 0; }
+.btn-remove { background: none; border: none; color: #dc2626; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 8px; }
 
 .summary-card { background: var(--white); border-radius: 20px; padding: 24px; border: 1.5px solid rgba(53,53,53,0.08); position: sticky; top: 20px; }
 .summary-card h3 { margin: 0 0 20px; font-size: 1.3rem; }
 .summary-line { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; }
 .summary-line.total { border-top: 1px solid rgba(53,53,53,0.1); padding-top: 12px; margin-top: 12px; font-weight: 800; font-size: 1.2rem; }
-.btn-checkout { width: 100%; margin-top: 24px; padding: 16px; border-radius: 12px; border: none; background: var(--green-dark); color: var(--white); font-weight: 700; font-size: 1rem; cursor: pointer; transition: transform 0.2s; }
+.summary-note { font-size: 0.8rem; color: #718096; margin-top: 12px; line-height: 1.4; }
+.btn-checkout { width: 100%; margin-top: 16px; padding: 16px; border-radius: 12px; border: none; background: var(--green-dark); color: var(--white); font-weight: 700; font-size: 1rem; cursor: pointer; transition: transform 0.2s; }
 .btn-checkout:hover { transform: translateY(-2px); }
 
 @media (max-width: 900px) {

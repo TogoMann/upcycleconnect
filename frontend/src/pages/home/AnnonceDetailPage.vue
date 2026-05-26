@@ -3,10 +3,12 @@ import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useClientStore } from '@/stores/client'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const clientStore = useClientStore()
 
 const listing = ref<any>(null)
 const loading = ref(true)
@@ -17,6 +19,9 @@ onMounted(async () => {
         const res = await fetch(`${API_BASE}/listing/${id}`)
         if (res.ok) {
             listing.value = await res.json()
+        }
+        if (authStore.isAuthenticated) {
+            await clientStore.fetchConversations()
         }
     } catch (e) {
         console.error('Failed to fetch listing:', e)
@@ -48,6 +53,14 @@ const formattedDate = computed(() => {
     })
 })
 
+function getItemId(item: any): number {
+    if (!item) return 0
+    if (item.id && typeof item.id === 'object' && 'Int64' in item.id) {
+        return item.id.Int64
+    }
+    return Number(item.id)
+}
+
 function handleAction() {
     if (!authStore.isAuthenticated) {
         router.push('/auth/login')
@@ -56,7 +69,6 @@ function handleAction() {
 
     if (!listing.value) return
 
-    // Safely extract listing ID
     let listingId = ''
     if (typeof listing.value.id === 'object' && listing.value.id !== null) {
         listingId = listing.value.id.Int64?.toString() || listing.value.id.id?.toString() || ''
@@ -69,7 +81,6 @@ function handleAction() {
         return
     }
 
-    // Redirect to chat with the listing ID to initiate contact
     router.push({
         path: '/particulier/chat',
         query: { listingId }
@@ -144,10 +155,14 @@ function handleAction() {
                             </div>
 
                             <div class="detail-actions">
-                                <button class="btn-contact" @click="handleAction">
-                                    Contacter le vendeur
+                                <button 
+                                    class="btn-contact" 
+                                    :class="{ 'btn-contact--active': listing && clientStore.isChattingWith(getItemId(listing)) }"
+                                    @click="handleAction"
+                                >
+                                    {{ listing && clientStore.isChattingWith(getItemId(listing)) ? 'Continuer la discussion' : 'Contacter le vendeur' }}
                                 </button>
-                                <button class="btn-save">
+                                <button v-if="!listing || !clientStore.isChattingWith(getItemId(listing))" class="btn-save">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                     </svg>
@@ -405,6 +420,12 @@ function handleAction() {
 .btn-contact:hover {
     background: var(--green-mid);
     transform: translateY(-1px);
+}
+.btn-contact--active {
+    background: #4183d7;
+}
+.btn-contact--active:hover {
+    background: #3569ad;
 }
 .btn-save {
     display: flex;

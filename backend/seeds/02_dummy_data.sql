@@ -110,7 +110,7 @@ INSERT INTO post (thread_id, created_by, content, upvotes, downvotes, created_at
 -- NEWS & COMMENTS
 -- =========================
 INSERT INTO news (created_by, title, content, created_at, upvotes, downvotes) VALUES
-(3, 'Nouvelle fonctionnalité', 'On a ajouté plein de choses !', NOW(), 10, 1);
+(3, 'Nouveaux trésors Upcycling', 'Découvrez les dernières créations de nos artisans : du mobilier scandinave restauré et des bureaux industriels uniques !', NOW(), 10, 1);
 
 INSERT INTO comments (news_id, created_by, content, created_at, upvotes, downvotes) VALUES
 (1, 1, 'Génial !', NOW(), 2, 0),
@@ -150,8 +150,8 @@ INSERT INTO subscriptions (subscriber_id, price, tier, created_at, until) VALUES
 -- LISTINGS & ORDERS
 -- =========================
 INSERT INTO listing (name, description, category, item_id, city_id, created_by, created_at, approved, approved_by, approved_at, status, price) VALUES
-('Chaise en bois', 'Une belle chaise faite main.', 'Mobilier', 1, 1, 2, NOW(), true, 3, NOW(), 'active', 150.00),
-('Etagère métal', 'Etagère solide en métal.', 'Mobilier', 2, 2, 2, NOW(), true, 3, NOW(), 'sold', 200.00);
+('Chaise Scandi-Up', 'Chaise vintage style scandinave, restaurée avec un tissu velours vert émeraude. Structure en teck poncée et huilée.', 'Mobilier', 1, 1, 2, NOW(), true, 3, NOW(), 'active', 150.00),
+('Bureau Industriel Brut', 'Plateau en chêne massif récupéré sur une ancienne grange, pieds en acier brossé. Idéal pour un espace de télétravail authentique.', 'Mobilier', 2, 2, 2, NOW(), true, 3, NOW(), 'sold', 200.00);
 
 INSERT INTO listing_order (listing_id, user_id, price, created_at, status, stripe_payment_intent_id) VALUES
 (1, 1, 150.00, NOW(), 'paid', 'pi_listing_1'),
@@ -161,7 +161,7 @@ INSERT INTO listing_order (listing_id, user_id, price, created_at, status, strip
 -- PROJECTS & STEPS
 -- =========================
 INSERT INTO project (listing_id, creator_id, title, description, final_score, status, created_at) VALUES
-(1, 1, 'Restauration Chaise', 'Ponçage et vernissage.', 80, 'in progress', NOW());
+(1, 1, 'Restauration Scandi-Up', 'Ponçage de la structure en teck et pose du velours vert émeraude.', 80, 'in progress', NOW());
 
 INSERT INTO project_steps (project_id, step_number, description, created_at) VALUES
 (1, 1, 'Achat du matériel', NOW()),
