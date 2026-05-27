@@ -28,3 +28,34 @@ type Locker struct {
 	Size        string           `db:"size" json:"size"`
 	CreatedAt   pgtype.Timestamp `db:"created_at" json:"created_at"`
 }
+
+type LockerAccess struct {
+	Id         pgtype.Int8      `db:"id" json:"id"`
+	LockerId   pgtype.Int8      `db:"locker_id" json:"locker_id"`
+	ItemId     pgtype.Int8      `db:"item_id" json:"item_id"`
+	UserId     pgtype.Int8      `db:"user_id" json:"user_id"`
+	AccessCode string           `db:"access_code" json:"access_code"`
+	ExpiresAt  pgtype.Timestamp `db:"expires_at" json:"expires_at"`
+	CreatedAt  pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UsedAt     pgtype.Timestamp `db:"used_at" json:"used_at"`
+}
+
+type LockerAccessDetails struct {
+	Id         pgtype.Int8      `db:"id" json:"id"`
+	LockerId   pgtype.Int8      `db:"locker_id" json:"locker_id"`
+	ItemId     pgtype.Int8      `db:"item_id" json:"item_id"`
+	UserId     pgtype.Int8      `db:"user_id" json:"user_id"`
+	AccessCode string           `db:"access_code" json:"access_code"`
+	ExpiresAt  pgtype.Timestamp `db:"expires_at" json:"expires_at"`
+	CreatedAt  pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UsedAt     pgtype.Timestamp `db:"used_at" json:"used_at"`
+
+	// Joined fields
+	LockerLabel      string `db:"locker_label" json:"locker_label"`
+	ContainerAddress string `db:"container_address" json:"container_address"`
+}
+
+type CreateLockerAccessRequest struct {
+	ItemId int64 `json:"item_id"`
+	UserId int64 `json:"user_id"`
+}

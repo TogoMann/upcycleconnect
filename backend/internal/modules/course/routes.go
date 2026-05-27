@@ -28,9 +28,9 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /course", handler.GetAll)
 	r.HandleFunc("GET /course/{id}", handler.GetById)
 	r.HandleFunc("GET /users/{user_id}/courses", handler.GetUserCourses)
-	r.HandleFunc("POST /course", handler.Create)
+	r.HandleFunc("POST /course", middlewares.Authenticated(handler.Create))
 	r.HandleFunc("PUT /course/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("PATCH /course/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("PATCH /course/{id}/approve", middlewares.AdminOnly(handler.Approve))
-	r.HandleFunc("DELETE /course/{id}", handler.DeleteById)
+	r.HandleFunc("DELETE /course/{id}", middlewares.Authenticated(handler.DeleteById))
 }

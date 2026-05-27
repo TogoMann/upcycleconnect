@@ -21,12 +21,57 @@ const allItems = computed(() => {
     return [...evts, ...crs, ...ans]
 })
 
+function getNumericId(val: any): number | null {
+    if (val === null || val === undefined) return null
+    if (typeof val === 'object' && 'Int64' in val) return Number(val.Int64)
+    if (typeof val === 'object' && 'id' in val) return Number(val.id)
+    const n = Number(val)
+    return isNaN(n) ? null : n
+}
+
 const filtered = computed(() => {
-    if (activeTab.value === 'events') return allItems.value.filter(i => i._type === 'event')
-    if (activeTab.value === 'courses') return allItems.value.filter(i => i._type === 'course')
-    if (activeTab.value === 'annonces') return allItems.value.filter(i => i._type === 'annonce')
-    return allItems.value
+    try {
+        let items = allItems.value || []
+        if (activeTab.value === 'events') items = items.filter(i => i._type === 'event')
+        else if (activeTab.value === 'courses') items = items.filter(i => i._type === 'course')
+        else if (activeTab.value === 'annonces') items = items.filter(i => i._type === 'annonce')
+
+        const cartItems = clientStore.cart || []
+        const userParticipations = clientStore.participations || []
+        const userCourseOrders = clientStore.courseOrders || []
+
+        return items.filter(item => {
+            const id = getNumericId(item.id)
+            if (id === null) return false
+            
+            // Check if in cart
+            const inCart = cartItems.some(cartItem => {
+                if (item._type === 'annonce') return getNumericId(cartItem.listing_id) === id
+                if (item._type === 'event') return getNumericId(cartItem.event_id) === id
+                if (item._type === 'course') return getNumericId(cartItem.course_id) === id
+                return false
+            })
+            if (inCart) return false
+
+            // Check if already registered (for events and courses)
+            if (item._type === 'event') {
+                return !userParticipations.some(p => getNumericId(p.event_id) === id)
+            }
+            if (item._type === 'course') {
+                return !userCourseOrders.some(co => getNumericId(co.course_id) === id)
+            }
+
+            return true
+        })
+    } catch (e) {
+        console.error('Filtering error:', e)
+        return []
+    }
 })
+
+function getItemId(item: any): number {
+    return getNumericId(item.id) || 0
+}
 
 function formatDate(ts: any): string {
     if (!ts) return '—'
@@ -58,28 +103,8 @@ function getItemDesc(item: any): string {
     return 'Aucune description disponible for cet atelier.'
 }
 
-function getItemId(item: any): number {
-    if (item.id && typeof item.id === 'object' && 'Int64' in item.id) {
-        return item.id.Int64
-    }
-    return Number(item.id)
-}
-
 function getItemPrice(item: any): any {
     return item.price ?? item.prix
-}
-
-function handleBuy(item: any) {
-    const price = getItemPrice(item)
-    router.push({
-        path: '/particulier/paiement',
-        query: {
-            id: getItemId(item),
-            name: getItemName(item),
-            price: typeof price === 'object' ? price?.Float64 ?? price?.Int64 : price,
-            type: item._type,
-        },
-    })
 }
 
 function handleContactSeller(item: any) {
@@ -108,8 +133,19 @@ function handleContactSeller(item: any) {
 }
 
 async function handleAddToCart(item: any) {
+    if (!authStore.isAuthenticated) {
+        router.push('/auth/login')
+        return
+    }
+    
     try {
-        await clientStore.addToCart(getItemId(item))
+        const id = getItemId(item)
+        const payload: any = {}
+        if (item._type === 'annonce') payload.listingId = id
+        else if (item._type === 'event') payload.eventId = id
+        else if (item._type === 'course') payload.courseId = id
+        
+        await clientStore.addToCart(payload)
         toastMessage.value = `"${getItemName(item)}" ajouté au panier !`
         showToast.value = true
         setTimeout(() => { showToast.value = false }, 3000)
@@ -121,10 +157,13 @@ async function handleAddToCart(item: any) {
 }
 
 onMounted(() => {
+    clientStore.fetchCart()
     clientStore.fetchCatalogue()
     clientStore.fetchAllAnnonces()
     if (authStore.isAuthenticated) {
         clientStore.fetchConversations()
+        clientStore.fetchParticipations()
+        clientStore.fetchCourseOrders()
     }
 })
 </script>
@@ -229,8 +268,8 @@ onMounted(() => {
                             🛒 Ajouter au panier
                         </button>
                     </template>
-                    <button v-else class="btn-book" @click="handleBuy(item)">
-                        {{ formatPrice(getItemPrice(item)) === 'Gratuit' ? "S'inscrire" : "Acheter" }}
+                    <button v-else class="btn-cart btn-cart--full" @click="handleAddToCart(item)">
+                        🛒 Ajouter au panier
                     </button>
                 </div>
             </div>
@@ -428,24 +467,6 @@ onMounted(() => {
 .card-capacity svg {
     width: 13px;
     height: 13px;
-}
-.btn-book {
-    width: 100%;
-    padding: 11px;
-    background: var(--green-pale);
-    color: var(--green-dark);
-    border: none;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.2s, color 0.2s;
-    margin-top: auto;
-}
-.btn-book:hover {
-    background: var(--green-dark);
-    color: var(--white);
 }
 .card-actions {
     display: flex;

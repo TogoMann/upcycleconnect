@@ -1,49 +1,79 @@
 package cart
 
 import (
+	courseorder "backend/internal/modules/course_order"
+	eventparticipation "backend/internal/modules/event_participation"
 	listingorder "backend/internal/modules/listing_order"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
-	repo         *Repository
-	orderService *listingorder.Service
+	repo          *Repository
+	orderService  *listingorder.Service
+	eventPartRepo *eventparticipation.Repository
+	courseOrdRepo *courseorder.Repository
 }
 
-func NewService(repo *Repository, orderService *listingorder.Service) *Service {
-	return &Service{repo: repo, orderService: orderService}
+func NewService(repo *Repository, orderService *listingorder.Service, eventPartRepo *eventparticipation.Repository, courseOrdRepo *courseorder.Repository) *Service {
+	return &Service{
+		repo:          repo,
+		orderService:  orderService,
+		eventPartRepo: eventPartRepo,
+		courseOrdRepo: courseOrdRepo,
+	}
 }
 
-func (s *Service) GetByUserId(userId pgtype.Int8) ([]CartItemWithListing, error) {
+func (s *Service) GetByUserId(userId pgtype.Int8) ([]CartItemDetailed, error) {
 	return s.repo.GetByUserId(userId)
 }
 
-func (s *Service) Add(userId, listingId pgtype.Int8) error {
-	return s.repo.Add(userId, listingId)
+func (s *Service) Add(userId, listingId, eventId, courseId pgtype.Int8) error {
+	return s.repo.Add(userId, listingId, eventId, courseId)
 }
 
-func (s *Service) Remove(userId, listingId pgtype.Int8) error {
-	return s.repo.Remove(userId, listingId)
+func (s *Service) Remove(userId, listingId, eventId, courseId pgtype.Int8) error {
+	return s.repo.Remove(userId, listingId, eventId, courseId)
 }
 
 func (s *Service) Checkout(userId pgtype.Int8) error {
 	items, err := s.repo.GetByUserId(userId)
 	if err != nil {
-		return err
+		return fmt.Errorf("checkout: get cart failed: %w", err)
 	}
+
+	fmt.Printf("Starting checkout for user %d with %d items\n", userId.Int64, len(items))
 
 	for _, item := range items {
-		order := listingorder.ListingOrder{
-			ListingId: item.ListingId,
-			UserId:    userId,
-			Price:     item.Listing.Price,
-			Status:    listingorder.Paid, 
-		}
-		_, err := s.orderService.Create(order)
-		if err != nil {
-			return err
+		if item.EventId.Valid {
+			fmt.Printf("Processing event %d\n", item.EventId.Int64)
+			participation := eventparticipation.EventParticipation{
+				EventId: item.EventId,
+				UserId:  userId,
+			}
+			_, err := s.eventPartRepo.Create(participation)
+			if err != nil {
+				// We log and continue if it's already there (simplified duplicate check)
+				fmt.Printf("Warning: event participation for event %d might already exist or failed: %v\n", item.EventId.Int64, err)
+			}
+		} else if item.CourseId.Valid {
+			fmt.Printf("Processing course %d\n", item.CourseId.Int64)
+			order := courseorder.CourseOrder{
+				CourseId: item.CourseId,
+				BuyerId:  userId,
+				Price:    item.Course.Price,
+			}
+			_, err := s.courseOrdRepo.Create(order)
+			if err != nil {
+				fmt.Printf("Warning: course order for course %d might already exist or failed: %v\n", item.CourseId.Int64, err)
+			}
 		}
 	}
 
-	return s.repo.Clear(userId)
+	fmt.Printf("Clearing direct pay items for user %d\n", userId.Int64)
+	if err := s.repo.ClearDirectPay(userId); err != nil {
+		return fmt.Errorf("checkout: clear cart failed: %w", err)
+	}
+
+	return nil
 }

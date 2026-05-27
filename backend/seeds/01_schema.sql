@@ -364,9 +364,19 @@ CREATE TABLE IF NOT EXISTS cart_item (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     listing_id BIGINT REFERENCES listing(id) ON DELETE CASCADE,
+    event_id BIGINT REFERENCES event(id) ON DELETE CASCADE,
+    course_id BIGINT REFERENCES course(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, listing_id)
+    CHECK (
+        (listing_id IS NOT NULL)::int + 
+        (event_id IS NOT NULL)::int + 
+        (course_id IS NOT NULL)::int = 1
+    )
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS cart_item_user_listing_unique ON cart_item (user_id, listing_id) WHERE listing_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS cart_item_user_event_unique ON cart_item (user_id, event_id) WHERE event_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS cart_item_user_course_unique ON cart_item (user_id, course_id) WHERE course_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS chat_conversation (
     id BIGSERIAL PRIMARY KEY,

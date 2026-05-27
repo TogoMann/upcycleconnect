@@ -1,10 +1,12 @@
 package container
 
 import (
+	"backend/internal/middlewares"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -89,6 +91,54 @@ func (h *Handler) DeleteLocker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) CreateLockerAccess(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	lockerId, _ := strconv.ParseInt(idStr, 10, 64)
+
+	var req CreateLockerAccessRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	access, err := h.service.CreateLockerAccess(
+		pgtype.Int8{Int64: lockerId, Valid: true},
+		pgtype.Int8{Int64: req.ItemId, Valid: true},
+		pgtype.Int8{Int64: req.UserId, Valid: true},
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(access)
+}
+
+func (h *Handler) GetUserAccesses(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	accesses, err := h.service.GetUserAccesses(pgtype.Int8{Int64: int64(sub), Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(accesses)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {

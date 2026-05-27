@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useClientStore } from '@/stores/client'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const clientStore = useClientStore()
+const router = useRouter()
 
 interface Course {
     id: number
@@ -15,7 +19,31 @@ interface Course {
 
 const dynamicCourses = ref<Course[]>([])
 
+const filteredCourses = computed(() => {
+    return dynamicCourses.value.filter(course => {
+        // Check cart
+        const inCart = clientStore.cart.some(cartItem => {
+            const cartCourseId = cartItem.course_id && typeof cartItem.course_id === 'object' && 'Int64' in cartItem.course_id 
+                ? Number(cartItem.course_id.Int64) 
+                : Number(cartItem.course_id)
+            return cartCourseId === Number(course.id)
+        })
+        if (inCart) return false
+
+        // Check already registered
+        const alreadyRegistered = clientStore.courseOrders.some(co => {
+            const cCid = co.course_id && typeof co.course_id === 'object' ? co.course_id.Int64 : co.course_id
+            return Number(cCid) === Number(course.id)
+        })
+        return !alreadyRegistered
+    })
+})
+
+const showToast = ref(false)
+
 onMounted(async () => {
+    clientStore.fetchCart()
+    clientStore.fetchCourseOrders()
     try {
         const res = await fetch(`${API_BASE}/course/catalogue`)
         if (res.ok) {
@@ -25,6 +53,21 @@ onMounted(async () => {
         console.error('Failed to fetch courses:', e)
     }
 })
+
+async function handleAddToCart(course: Course) {
+    if (!authStore.isAuthenticated) {
+        router.push('/auth/login')
+        return
+    }
+
+    try {
+        await clientStore.addToCart({ courseId: course.id })
+        showToast.value = true
+        setTimeout(() => { showToast.value = false }, 3000)
+    } catch (e: any) {
+        alert("Erreur lors de l'ajout au panier")
+    }
+}
 
 const prestations = [
     {
@@ -81,12 +124,12 @@ const prestations = [
                         <div class="prestation-content">
                             <h2 class="prestation-label">{{ p.label }}</h2>
                             <p class="prestation-desc">{{ p.description }}</p>
-                            <button class="btn-reserver">Réserver</button>
+                            <button class="btn-reserver" @click="router.push('/reparer')">En savoir plus</button>
                         </div>
                     </div>
 
                     <div
-                        v-for="course in dynamicCourses"
+                        v-for="course in filteredCourses"
                         :key="course.id"
                         class="prestation-row"
                     >
@@ -100,16 +143,49 @@ const prestations = [
                                 <span class="course-price">{{ course.prix > 0 ? course.prix + ' €' : 'Gratuit' }}</span>
                                 <span class="course-cat">{{ course.categorie }}</span>
                             </div>
-                            <router-link to="/auth/login" class="btn-reserver">S'inscrire</router-link>
+                            <button class="btn-reserver" @click="handleAddToCart(course)">Ajouter au panier</button>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- Toast Notification -->
+        <Transition name="toast">
+            <div v-if="showToast" class="toast-card">
+                <div class="toast-content">
+                    <span class="toast-icon">✅</span>
+                    <span class="toast-text">Atelier ajouté au panier !</span>
+                </div>
+                <router-link to="/particulier/panier" class="toast-link">Voir panier</router-link>
+            </div>
+        </Transition>
     </div>
 </template>
 
 <style scoped>
+/* Toast Styles */
+.toast-card {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--white);
+    border: 1.5px solid var(--green-mid);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 2000;
+}
+.toast-content { display: flex; align-items: center; gap: 10px; }
+.toast-text { font-size: 0.9rem; font-weight: 600; }
+.toast-link { color: var(--green-dark); font-weight: 700; font-size: 0.85rem; text-decoration: underline; }
+.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, 20px); }
+
 .page-content {
     flex: 1;
     display: flex;

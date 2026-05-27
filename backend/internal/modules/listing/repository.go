@@ -51,7 +51,7 @@ func (r *Repository) GetAllApproved() ([]Listing, error) {
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
-		WHERE l.approved = true`)
+		WHERE l.approved = true AND l.status = 'active'`)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAllApproved query: %w", err)
 	}

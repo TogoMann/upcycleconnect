@@ -18,6 +18,11 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("POST /admin/lockers", middlewares.AdminOnly(handler.CreateLocker))
 	r.HandleFunc("PUT /admin/lockers/{id}", middlewares.AdminOnly(handler.UpdateLocker))
 	r.HandleFunc("DELETE /admin/lockers/{id}", middlewares.AdminOnly(handler.DeleteLocker))
+	
+	// Access generation (when an item is deposited)
+	r.HandleFunc("POST /lockers/{id}/access", middlewares.Authenticated(handler.CreateLockerAccess))
+	r.HandleFunc("GET /users/me/locker-access", middlewares.Authenticated(handler.GetUserAccesses))
+
 	r.HandleFunc("POST /container", middlewares.AdminOnly(handler.Create))
 	r.HandleFunc("PUT /container/{id}", middlewares.AdminOnly(handler.Update))
 	r.HandleFunc("DELETE /container/{id}", middlewares.AdminOnly(handler.Delete))

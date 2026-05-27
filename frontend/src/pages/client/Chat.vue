@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useChatStore, type Conversation, type Message } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
+import { useClientStore } from '@/stores/client'
 import { API_BASE } from '@/config'
 
 const chatStore = useChatStore()
 const authStore = useAuthStore()
+const clientStore = useClientStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -17,6 +19,30 @@ const newMessage = ref('')
 const showProposalInput = ref(false)
 const proposedPrice = ref<number | null>(null)
 const editingMessage = ref<Message | null>(null)
+
+const isCurrentListingInCart = computed(() => {
+    if (!selectedConv.value || !selectedConv.value.listing_id) return false
+    const currentId = getNumericId(selectedConv.value.listing_id)
+    return clientStore.cart.some(item => {
+        const cartListingId = item.listing_id && typeof item.listing_id === 'object' && 'Int64' in item.listing_id
+            ? Number(item.listing_id.Int64)
+            : Number(item.listing_id)
+        return cartListingId === currentId
+    })
+})
+
+async function handleRemoveFromCart() {
+    if (!selectedConv.value || !selectedConv.value.listing_id) return
+    const currentId = getNumericId(selectedConv.value.listing_id)
+    if (currentId) {
+        try {
+            await clientStore.removeFromCart('listing', currentId)
+            alert('Objet retiré du panier avec succès.')
+        } catch (e: any) {
+            alert(e.message)
+        }
+    }
+}
 
 async function loadConversations() {
     try {
@@ -153,7 +179,10 @@ function goToPayment(price: number) {
     })
 }
 
-onMounted(loadConversations)
+onMounted(() => {
+    clientStore.fetchCart()
+    loadConversations()
+})
 
 watch(
     () => route.query.listingId,
@@ -183,10 +212,15 @@ watch(
         </div>
         <div class="chat-window" v-if="selectedConv">
             <div class="chat-header">
-                <h3>
-                    {{ selectedConv.id === 0 ? 'Nouvelle conversation' : 'Conversation' }} -
-                    {{ selectedConv.listing_title || `Objet #${getNumericId(selectedConv.listing_id)}` }}
-                </h3>
+                <div class="header-title-area">
+                    <h3>
+                        {{ selectedConv.id === 0 ? 'Nouvelle conversation' : 'Conversation' }} -
+                        {{ selectedConv.listing_title || `Objet #${getNumericId(selectedConv.listing_id)}` }}
+                    </h3>
+                    <button v-if="isCurrentListingInCart" @click="handleRemoveFromCart" class="btn-remove-cart">
+                        Retirer du panier
+                    </button>
+                </div>
                 <span v-if="selectedConv.is_closed" class="status-closed"
                     >Discussion fermée (Objet vendu)</span
                 >
@@ -367,6 +401,29 @@ watch(
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.header-title-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-remove-cart {
+    background: #fff0f0;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-remove-cart:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
 }
 
 .status-closed {

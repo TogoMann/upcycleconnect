@@ -25,6 +25,7 @@ onMounted(async () => {
         clientStore.fetchAnnonces(),
         clientStore.fetchDepots(),
         clientStore.fetchEntries(),
+        clientStore.fetchLockerAccesses(),
     ])
 
     if (!authStore.user?.has_seen_tutorial) {
@@ -88,6 +89,28 @@ onMounted(async () => {
                 <div class="kpi-value">{{ kpiEntries }}</div>
                 <div class="kpi-label">Créneaux planifiés</div>
             </router-link>
+        </div>
+
+        <div class="actions-section">
+            <h2 class="section-title">Mes codes de retrait (Casiers)</h2>
+            <div v-if="clientStore.lockerAccesses.length === 0" class="no-data">
+                <p>Vous n'avez aucun objet en attente de retrait dans un casier.</p>
+            </div>
+            <div v-else class="lockers-grid">
+                <div v-for="access in clientStore.lockerAccesses" :key="access.id.Int64" class="locker-card">
+                    <div class="locker-header">
+                        <h3>Casier {{ access.locker_label }}</h3>
+                        <span class="locker-status">À retirer avant le {{ new Date(access.expires_at.Time).toLocaleDateString('fr-FR') }}</span>
+                    </div>
+                    <div class="locker-body">
+                        <p class="locker-address">📍 {{ access.container_address }}</p>
+                        <div class="qr-container">
+                            <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${access.access_code}`" alt="QR Code d'accès au casier" class="qr-code" />
+                            <p class="qr-hint">Scannez ce code au conteneur pour déverrouiller le casier et récupérer votre objet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="actions-section">
@@ -222,6 +245,92 @@ onMounted(async () => {
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
 }
+
+.lockers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.locker-card {
+    background: var(--white);
+    border: 1.5px solid rgba(53, 53, 53, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.locker-header {
+    background: var(--cream);
+    padding: 12px 16px;
+    border-bottom: 1.5px solid rgba(53, 53, 53, 0.05);
+}
+
+.locker-header h3 {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.locker-status {
+    font-size: 0.8rem;
+    color: var(--green-dark);
+    font-weight: 600;
+}
+
+.locker-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.locker-address {
+    font-size: 0.85rem;
+    color: var(--charcoal);
+    margin: 0;
+    align-self: flex-start;
+}
+
+.qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: #fafafa;
+    padding: 16px;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.qr-code {
+    width: 150px;
+    height: 150px;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.qr-hint {
+    font-size: 0.75rem;
+    text-align: center;
+    color: rgba(53, 53, 53, 0.6);
+    margin: 0;
+}
+
+.no-data {
+    padding: 24px;
+    background: var(--white);
+    border: 1.5px dashed rgba(53, 53, 53, 0.15);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(53, 53, 53, 0.6);
+    margin-bottom: 32px;
+}
+
 .action-card {
     background: var(--white);
     border: 1.5px solid rgba(53, 53, 53, 0.1);

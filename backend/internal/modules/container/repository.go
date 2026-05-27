@@ -100,6 +100,37 @@ func (r *Repository) DeleteLocker(id pgtype.Int8) error {
 	return err
 }
 
+func (r *Repository) CreateLockerAccess(access LockerAccess) (pgtype.Int8, error) {
+	var id int64
+	err := r.db.QueryRow(db.Ctx, 
+		"INSERT INTO locker_access (locker_id, item_id, user_id, access_code, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING id", 
+		access.LockerId, access.ItemId, access.UserId, access.AccessCode, access.ExpiresAt).Scan(&id)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+	return pgtype.Int8{Int64: id, Valid: true}, nil
+}
+
+func (r *Repository) GetAccessesByUserId(userId pgtype.Int8) ([]LockerAccessDetails, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			la.id, la.locker_id, la.item_id, la.user_id, la.access_code, la.expires_at, la.created_at, la.used_at,
+			l.label as locker_label,
+			a.street_number || ' ' || a.street_name || ', ' || ci.name as container_address
+		FROM locker_access la
+		JOIN locker l ON la.locker_id = l.id
+		JOIN container c ON l.container_id = c.id
+		JOIN site s ON c.site_id = s.id
+		JOIN address a ON s.address_id = a.id
+		JOIN city ci ON a.city_id = ci.id
+		WHERE la.user_id = $1 AND la.used_at IS NULL AND la.expires_at > CURRENT_TIMESTAMP
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[LockerAccessDetails])
+}
+
 func (r *Repository) Delete(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "DELETE FROM container WHERE id = $1", id)
 	return err

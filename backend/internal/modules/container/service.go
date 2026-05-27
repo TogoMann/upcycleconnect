@@ -1,6 +1,10 @@
 package container
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -10,6 +14,36 @@ type Service struct {
 
 func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
+}
+
+func (s *Service) generateAccessCode() string {
+	bytes := make([]byte, 8) // 8 bytes = 16 hex chars
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
+
+func (s *Service) CreateLockerAccess(lockerId, itemId, userId pgtype.Int8) (LockerAccess, error) {
+	code := s.generateAccessCode()
+	expiresAt := time.Now().Add(72 * time.Hour) // Access valid for 72 hours
+
+	access := LockerAccess{
+		LockerId:   lockerId,
+		ItemId:     itemId,
+		UserId:     userId,
+		AccessCode: code,
+		ExpiresAt:  pgtype.Timestamp{Time: expiresAt, Valid: true},
+	}
+
+	id, err := s.repo.CreateLockerAccess(access)
+	if err != nil {
+		return LockerAccess{}, err
+	}
+	access.Id = id
+	return access, nil
+}
+
+func (s *Service) GetUserAccesses(userId pgtype.Int8) ([]LockerAccessDetails, error) {
+	return s.repo.GetAccessesByUserId(userId)
 }
 
 func (s *Service) GetAll() ([]ConteneurFrontend, error) {
