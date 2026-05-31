@@ -56,6 +56,22 @@ services:
     networks:
       - uc-api
 
+  ml-training:
+    build:
+      context: ./scripts/ml
+      dockerfile: Dockerfile
+    container_name: uc-ml-dev
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+    depends_on:
+      - postgres
+    networks:
+      - uc-backend
+
   mailpit:
     image: axllent/mailpit
     container_name: uc-mailpit

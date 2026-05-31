@@ -47,7 +47,20 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	users, err := h.service.GetAll()
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 10
+	}
+
+	users, err := h.service.GetAllUsers(page, limit)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -55,8 +68,7 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := json.Marshal(users)
-	fmt.Fprintf(w, "%s", string(res))
+	json.NewEncoder(w).Encode(users)
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {

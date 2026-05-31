@@ -180,6 +180,49 @@
             </table>
         </div>
 
+        <div class="mt-4 flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6" v-if="!adminStore.isLoading && adminStore.users.length > 0">
+          <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div class="flex items-center gap-3">
+              <p class="text-sm text-gray-700 flex items-center gap-2">
+                Page 
+                <input 
+                  type="number" 
+                  min="1" 
+                  :max="adminStore.usersTotalPages" 
+                  v-model.lazy="adminStore.usersCurrentPage" 
+                  @change="adminStore.fetchUsers(adminStore.usersCurrentPage)" 
+                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600" 
+                />
+                sur <span class="font-medium">{{ adminStore.usersTotalPages }}</span>
+              </p>
+            </div>
+            <div>
+              <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  @click="adminStore.fetchUsers(adminStore.usersCurrentPage - 1)"
+                  :disabled="adminStore.usersCurrentPage === 1"
+                  class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                >
+                  <span class="sr-only">Précédent</span>
+                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <button
+                  @click="adminStore.fetchUsers(adminStore.usersCurrentPage + 1)"
+                  :disabled="adminStore.usersCurrentPage === adminStore.usersTotalPages"
+                  class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                >
+                  <span class="sr-only">Suivant</span>
+                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+
         <div v-if="showHistoryModal" class="modal-overlay" @click.self="closeHistory">
             <div class="modal-content">
                 <div class="modal-header">

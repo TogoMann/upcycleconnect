@@ -18,29 +18,55 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetAll() ([]Listing, error) {
+func (r *Repository) GetAll(page, limit int) (*PaginatedListings, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	var total int
+	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM listing").Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("package listing/repo GetAll count query: %w", err)
+	}
+
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+		SELECT
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at,
 			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
-		LEFT JOIN users u ON l.created_by = u.id`)
+		LEFT JOIN users u ON l.created_by = u.id
+		ORDER BY l.id DESC
+		LIMIT $1 OFFSET $2
+	`, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAll query: %w", err)
 	}
 
 	listings, err := pgx.CollectRows(rows, pgx.RowToStructByName[Listing])
-
 	if err != nil {
-		return nil, fmt.Errorf("package listing/repo GetAll: %v", err.Error())
+		return nil, fmt.Errorf("package listing/repo GetAll: %w", err)
 	}
 
-	return listings, nil
-}
+	totalPages := total / limit
+	if total%limit != 0 {
+		totalPages++
+	}
 
+	return &PaginatedListings{
+		Data:       listings,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+	}, nil
+}
 func (r *Repository) GetAllApproved() ([]Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 

@@ -416,4 +416,12 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS user_predictions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    predicted_service_type VARCHAR(64) NOT NULL,
+    probability DECIMAL(5, 2),
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 ALTER TABLE listing ADD COLUMN IF NOT EXISTS image_url VARCHAR(255);

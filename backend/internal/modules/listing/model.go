@@ -41,3 +41,11 @@ type Listing struct {
 	Price       pgtype.Numeric   `db:"price" json:"price"`
 	ImageUrl    pgtype.Text      `db:"image_url" json:"image_url"`
 }
+
+type PaginatedListings struct {
+	Data       []Listing `json:"data"`
+	Total      int       `json:"total"`
+	Page       int       `json:"page"`
+	Limit      int       `json:"limit"`
+	TotalPages int       `json:"total_pages"`
+}

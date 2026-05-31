@@ -54,6 +54,7 @@ import AdminForum from '@/pages/admin/Forum.vue'
 import AdminLangues from '@/pages/admin/Langues.vue'
 import AdminLogs from '@/pages/admin/Logs.vue'
 import AdminParametres from '@/pages/admin/Parametres.vue'
+import AdminReporting from '@/pages/admin/Reporting.vue'
 import AdminUsers from '@/pages/admin/Users.vue'
 import AdminAnnonces from '@/pages/admin/Annonces.vue'
 import AdminPlans from '@/pages/admin/Plans.vue'
@@ -205,6 +206,7 @@ const router = createRouter({
                 { path: 'logs', component: AdminLogs },
                 { path: 'parametres', component: AdminParametres },
                 { path: 'utilisateurs', component: AdminUsers },
+                { path: 'reporting', component: AdminReporting },
                 { path: 'chat', component: AdminChatReview },
             ],
         },

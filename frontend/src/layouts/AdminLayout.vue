@@ -46,6 +46,14 @@ function logout() {
                         <span>Dashboard</span>
                     </router-link>
 
+                    <router-link to="/admin/reporting" class="sidebar-item" active-class="sidebar-item--active">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                            <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                        </svg>
+                        <span>Reporting IA</span>
+                    </router-link>
+
                     <router-link to="/admin/utilisateurs" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

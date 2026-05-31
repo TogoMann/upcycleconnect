@@ -27,18 +27,21 @@ func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			fmt.Printf("DEBUG AdminOnly: Token invalid or error: %v\n", err)
 			http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
+			fmt.Printf("DEBUG AdminOnly: Invalid claims\n")
 			http.Error(w, "Unauthorized: Invalid claims", http.StatusUnauthorized)
 			return
 		}
 
 		role, ok := claims["role"].(string)
 		if !ok || role != "admin" {
+			fmt.Printf("DEBUG AdminOnly: Forbidden role: %v\n", role)
 			http.Error(w, "Forbidden: Admin access required", http.StatusForbidden)
 			return
 		}

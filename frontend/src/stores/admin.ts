@@ -6,23 +6,28 @@ import { API_BASE } from '@/config'
 export const useAdminStore = defineStore('admin', () => {
   const authStore = useAuthStore()
   const users = ref<any[]>([])
+  const usersTotalPages = ref(1)
+  const usersCurrentPage = ref(1)
   const courses = ref<any[]>([])
   const events = ref<any[]>([])
 
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1, limit = 10) => {
     isLoading.value = true
     error.value = null
     try {
-      const res = await fetch(`${API_BASE}/users`, {
+      const res = await fetch(`${API_BASE}/users?page=${page}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${authStore.token}`
         }
       })
       if (!res.ok) throw new Error('Failed to fetch users')
-      users.value = await res.json()
+      const data = await res.json()
+      users.value = data.data || []
+      usersTotalPages.value = data.total_pages || 1
+      usersCurrentPage.value = data.page || 1
     } catch (err: any) {
       error.value = err.message
     } finally {
@@ -207,6 +212,8 @@ export const useAdminStore = defineStore('admin', () => {
 
   return {
     users,
+    usersTotalPages,
+    usersCurrentPage,
     courses,
     events,
     isLoading,

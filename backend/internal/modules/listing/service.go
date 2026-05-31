@@ -16,8 +16,8 @@ func NewService(repo *Repository, subRepo *subscriptions.Repository) *Service {
 	return &Service{repo: repo, subRepo: subRepo}
 }
 
-func (s *Service) GetAll() ([]Listing, error) {
-	return s.repo.GetAll()
+func (s *Service) GetAll(page, limit int) (*PaginatedListings, error) {
+	return s.repo.GetAll(page, limit)
 }
 
 func (s *Service) GetAllApproved() ([]Listing, error) {

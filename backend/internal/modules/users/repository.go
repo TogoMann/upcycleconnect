@@ -18,10 +18,24 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetAll() ([]UserFrontend, error) {
+func (r *Repository) GetAll(page, limit int) (*PaginatedUsers, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	var total int
+	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM users").Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("package users/repo GetAll count query: %w", err)
+	}
+
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			u.id, u.username, u.first_name, u.last_name, u.email, u.role, u.language_preference, u.has_seen_tutorial, 
+			u.id, u.username, u.first_name, u.last_name, u.email, u.role, u.language_preference, u.has_seen_tutorial,
 			TO_CHAR(u.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
 			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = u.id) AS INTEGER) as score,
 			COALESCE(c.siret, '') as siret,
@@ -29,14 +43,31 @@ func (r *Repository) GetAll() ([]UserFrontend, error) {
 			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan
 		FROM users u
 		LEFT JOIN companies c ON u.company_id = c.id
-	`)
+		ORDER BY u.id DESC
+		LIMIT $1 OFFSET $2
+	`, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("package users/repo GetAllusers query: %w", err)
+		return nil, fmt.Errorf("package users/repo GetAll users query: %w", err)
 	}
 
-	return pgx.CollectRows(rows, pgx.RowToStructByName[UserFrontend])
-}
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[UserFrontend])
+	if err != nil {
+		return nil, fmt.Errorf("package users/repo CollectRows: %w", err)
+	}
 
+	totalPages := total / limit
+	if total%limit != 0 {
+		totalPages++
+	}
+
+	return &PaginatedUsers{
+		Data:       users,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+	}, nil
+}
 func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE id = $1", id)
 	if err != nil {
