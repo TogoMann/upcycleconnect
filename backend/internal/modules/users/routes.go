@@ -20,6 +20,6 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("PATCH /users/{id}/tutorial", middlewares.Authenticated(handler.UpdateTutorialSeen))
 	r.HandleFunc("POST /users", handler.Create)
 	r.HandleFunc("PUT /users/{id}", middlewares.AdminOnly(handler.Update))
-	r.HandleFunc("PATCH /users/{id}", middlewares.Authenticated(handler.Update) )
+	r.HandleFunc("PATCH /users/{id}", middlewares.Authenticated(handler.Update))
 	r.HandleFunc("DELETE /users/{id}", middlewares.AdminOnly(handler.DeleteById))
 }

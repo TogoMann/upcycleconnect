@@ -56,7 +56,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validation: start_date must not be in the past
 	if ad.StartDate.Valid && ad.StartDate.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de début de la publicité ne peut pas être dans le passé", http.StatusBadRequest)
 		return

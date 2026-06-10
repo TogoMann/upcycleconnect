@@ -85,8 +85,7 @@ func (h *Handler) CreatePersonalEvent(w http.ResponseWriter, r *http.Request) {
 		Description: input.Description,
 	}
 	e.Date.Scan(input.Date)
-	
-	// Validation: date must not be in the past
+
 	if e.Date.Time.Before(time.Now().Truncate(24 * time.Hour)) {
 		http.Error(w, "La date de l'événement ne peut pas être dans le passé", http.StatusBadRequest)
 		return

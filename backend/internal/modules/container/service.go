@@ -17,14 +17,14 @@ func NewService(repo *Repository) *Service {
 }
 
 func (s *Service) generateAccessCode() string {
-	bytes := make([]byte, 8) // 8 bytes = 16 hex chars
+	bytes := make([]byte, 8)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 
 func (s *Service) CreateLockerAccess(lockerId, itemId, userId pgtype.Int8) (LockerAccess, error) {
 	code := s.generateAccessCode()
-	expiresAt := time.Now().Add(72 * time.Hour) // Access valid for 72 hours
+	expiresAt := time.Now().Add(72 * time.Hour)
 
 	access := LockerAccess{
 		LockerId:   lockerId,

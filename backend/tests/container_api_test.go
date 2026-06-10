@@ -23,8 +23,7 @@ func TestContainerAPI(t *testing.T) {
 			"user_id": 1,
 		}
 		jsonBody, _ := json.Marshal(body)
-		
-		// Assuming locker ID 1 exists from seeds
+
 		req, _ := http.NewRequest("POST", "/lockers/1/access", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Content-Type", "application/json")

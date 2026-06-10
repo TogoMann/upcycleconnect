@@ -36,7 +36,6 @@ func (h *Handler) ExportAuditPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ensure start is before end
 	if start.After(end) {
 		http.Error(w, "La date de debut doit être anterieure a la date de fin", http.StatusBadRequest)
 		return

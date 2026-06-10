@@ -8,6 +8,7 @@ import (
 	"backend/internal/modules/chat"
 	"backend/internal/modules/city"
 	"backend/internal/modules/comments"
+	"backend/internal/modules/companies"
 	"backend/internal/modules/container"
 	"backend/internal/modules/course"
 	courseorder "backend/internal/modules/course_order"
@@ -55,6 +56,7 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 
 	auth.RegisterRoutes(r, db)
 	city.RegisterRoutes(r, db)
+	companies.RegisterRoutes(r, db)
 	advertisement.RegisterRoutes(r, db)
 	users.RegisterRoutes(r, db)
 	item.RegisterRoutes(r, db)

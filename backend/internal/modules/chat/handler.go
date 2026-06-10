@@ -174,7 +174,7 @@ func (h *Handler) AdminGetConversationDetails(w http.ResponseWriter, r *http.Req
 func getUserIdFromContext(r *http.Request) (int64, error) {
 	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
 	if !ok {
-		return 0, http.ErrNoCookie // Or more appropriate error
+		return 0, http.ErrNoCookie
 	}
 
 	sub, ok := claims["sub"].(float64)

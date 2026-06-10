@@ -35,7 +35,7 @@ func (s *Service) GenerateAuditPDF(ctx context.Context, start, end time.Time) ([
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Cell(0, 10, "Description de l'audit : Extraction des objets deposes")
 	pdf.Ln(7)
-	
+
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(0, 10, fmt.Sprintf("Periode : du %s au %s", start.Format("02/01/2006"), end.Format("02/01/2006")))
 	pdf.Ln(7)

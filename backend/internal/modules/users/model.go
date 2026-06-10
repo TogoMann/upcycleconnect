@@ -35,7 +35,6 @@ type PaginatedUsers struct {
 	TotalPages int            `json:"total_pages"`
 }
 
-
 type User struct {
 	Id                 pgtype.Int8      `db:"id" json:"id"`
 	Username           string           `db:"username" json:"username"`

@@ -58,7 +58,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validation: schedule date must not be in the past
 	if e.Schedule.Valid && e.Schedule.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de dépôt ne peut pas être dans le passé", http.StatusBadRequest)
 		return

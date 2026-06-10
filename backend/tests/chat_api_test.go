@@ -13,7 +13,6 @@ func TestChatAPI(t *testing.T) {
 	pool := GetPool()
 	router := SetupTestRouter(pool)
 
-	// User 1 (amartin) is client, user 2 (bdurand) is pro/seller of listing 1
 	token1, _ := utils.GenerateJWT(1, "amartin", "client")
 
 	t.Run("SendMessage_CreateConversation", func(t *testing.T) {
@@ -54,9 +53,9 @@ func TestChatAPI(t *testing.T) {
 	t.Run("SendPriceProposal", func(t *testing.T) {
 		price := 120.0
 		body := map[string]interface{}{
-			"listing_id":    1,
-			"content":       "I propose 120",
-			"message_type":  "price_proposal",
+			"listing_id":     1,
+			"content":        "I propose 120",
+			"message_type":   "price_proposal",
 			"proposed_price": price,
 		}
 		jsonBody, _ := json.Marshal(body)

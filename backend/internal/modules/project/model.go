@@ -5,13 +5,13 @@ import (
 )
 
 type ProjetFrontend struct {
-	Id          int64  `db:"id" json:"id"`
-	Nom         string `db:"nom" json:"nom"`
-	Type        string `db:"type" json:"type"`
-	Auteur      string `db:"auteur" json:"auteur"`
-	Statut      string `db:"statut" json:"statut"`
-	Date        string `db:"date" json:"date"`
-	MisEnAvant  bool   `db:"mis_en_avant" json:"mis_en_avant"`
+	Id         int64  `db:"id" json:"id"`
+	Nom        string `db:"nom" json:"nom"`
+	Type       string `db:"type" json:"type"`
+	Auteur     string `db:"auteur" json:"auteur"`
+	Statut     string `db:"statut" json:"statut"`
+	Date       string `db:"date" json:"date"`
+	MisEnAvant bool   `db:"mis_en_avant" json:"mis_en_avant"`
 }
 
 type Project struct {

@@ -102,8 +102,8 @@ func (r *Repository) DeleteLocker(id pgtype.Int8) error {
 
 func (r *Repository) CreateLockerAccess(access LockerAccess) (pgtype.Int8, error) {
 	var id int64
-	err := r.db.QueryRow(db.Ctx, 
-		"INSERT INTO locker_access (locker_id, item_id, user_id, access_code, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING id", 
+	err := r.db.QueryRow(db.Ctx,
+		"INSERT INTO locker_access (locker_id, item_id, user_id, access_code, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 		access.LockerId, access.ItemId, access.UserId, access.AccessCode, access.ExpiresAt).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err

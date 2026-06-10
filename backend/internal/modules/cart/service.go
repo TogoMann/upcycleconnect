@@ -53,7 +53,7 @@ func (s *Service) Checkout(userId pgtype.Int8) error {
 			}
 			_, err := s.eventPartRepo.Create(participation)
 			if err != nil {
-				// We log and continue if it's already there (simplified duplicate check)
+
 				fmt.Printf("Warning: event participation for event %d might already exist or failed: %v\n", item.EventId.Int64, err)
 			}
 		} else if item.CourseId.Valid {

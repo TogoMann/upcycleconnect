@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-const MaxUploadSize = 5 * 1024 * 1024 // 5 MB
+const MaxUploadSize = 5 * 1024 * 1024
 
 func SaveImage(r *http.Request, fieldName string) (string, error) {
-	// Limit request size
+
 	r.Body = http.MaxBytesReader(nil, r.Body, MaxUploadSize)
 	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
 		return "", fmt.Errorf("Fichier trop volumineux ou invalide (max 5 Mo)")
@@ -24,7 +24,6 @@ func SaveImage(r *http.Request, fieldName string) (string, error) {
 	}
 	defer file.Close()
 
-	// Check file type (optional but good)
 	buff := make([]byte, 512)
 	if _, err := file.Read(buff); err != nil {
 		return "", err
@@ -34,22 +33,18 @@ func SaveImage(r *http.Request, fieldName string) (string, error) {
 		return "", fmt.Errorf("Type de fichier non supporté (JPG, PNG, WEBP uniquement)")
 	}
 
-	// Reset file pointer after reading buff
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		return "", err
 	}
 
-	// Create unique filename
 	filename := fmt.Sprintf("%d-%s", time.Now().UnixNano(), handler.Filename)
 	uploadDir := "./uploads"
 	filePath := filepath.Join(uploadDir, filename)
 
-	// Ensure directory exists
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		return "", err
 	}
 
-	// Save to disk
 	dst, err := os.Create(filePath)
 	if err != nil {
 		return "", err

@@ -105,7 +105,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Award registration points
 	h.service.AddScore(id, utils.ActionRegistration.Points, utils.ActionRegistration.Description)
 
 	userDto.Id = id
@@ -124,7 +123,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	userId := pgtype.Int8{Int64: idInt, Valid: true}
 
-	
 	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -152,7 +150,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	if val, ok := updateData["username"].(string); ok {
 		existingUser.Username = val
 	}
@@ -172,20 +169,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		existingUser.LanguagePreference = val
 	}
 
-	
 	if role != string(Admin) {
-		
-		
-		
-		
-		
-		
-		
-	}
-	
-	
-	if role != string(Admin) {
-		
 		originalUser, _ := h.service.GetById(userId)
 		existingUser.Role = originalUser.Role
 		existingUser.Username = originalUser.Username

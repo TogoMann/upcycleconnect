@@ -116,7 +116,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	c.StartTime.Scan(input.StartTime)
 	c.EndTime.Scan(input.EndTime)
 
-	// Validation: date must not be in the past
 	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
 		return
@@ -127,7 +126,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	res := OffreFrontend{
 		Id:          id.Int64,
 		Nom:         input.Name,
@@ -198,7 +197,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	c.StartTime.Scan(input.StartTime)
 	c.EndTime.Scan(input.EndTime)
 
-	// Validation: date must not be in the past
 	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
 		return

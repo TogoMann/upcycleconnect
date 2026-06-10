@@ -3,10 +3,10 @@ package reporting
 import "time"
 
 type AuditReport struct {
-	Title      string    `json:"title"`
-	StartDate  time.Time `json:"start_date"`
-	EndDate    time.Time `json:"end_date"`
-	ItemCount  int       `json:"item_count"`
+	Title       string    `json:"title"`
+	StartDate   time.Time `json:"start_date"`
+	EndDate     time.Time `json:"end_date"`
+	ItemCount   int       `json:"item_count"`
 	GeneratedAt time.Time `json:"generated_at"`
 }
 

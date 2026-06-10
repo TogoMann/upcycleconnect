@@ -64,6 +64,17 @@ function logout() {
                         <span>Utilisateurs</span>
                     </router-link>
 
+                    <router-link to="/admin/entreprises" class="sidebar-item" active-class="sidebar-item--active">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M3 21h18" />
+                            <path d="M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4" />
+                            <path d="M5 21V10.85" />
+                            <path d="M19 21V10.85" />
+                            <path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+                        </svg>
+                        <span>Entreprises</span>
+                    </router-link>
+
                     <router-link to="/admin/conteneurs" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
