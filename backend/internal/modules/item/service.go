@@ -48,9 +48,7 @@ func (s *Service) Delete(id pgtype.Int8) error {
 }
 
 func (s *Service) RequestDeposit(dto Item) error {
-	
-	
-	
+
 	return nil
 }
 

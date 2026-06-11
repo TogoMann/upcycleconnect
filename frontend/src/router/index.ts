@@ -56,6 +56,7 @@ import AdminLogs from '@/pages/admin/Logs.vue'
 import AdminParametres from '@/pages/admin/Parametres.vue'
 import AdminReporting from '@/pages/admin/Reporting.vue'
 import AdminUsers from '@/pages/admin/Users.vue'
+import AdminCompanies from '@/pages/admin/Companies.vue'
 import AdminAnnonces from '@/pages/admin/Annonces.vue'
 import AdminPlans from '@/pages/admin/Plans.vue'
 import AdminChatReview from '@/pages/admin/ChatReview.vue'
@@ -206,6 +207,7 @@ const router = createRouter({
                 { path: 'logs', component: AdminLogs },
                 { path: 'parametres', component: AdminParametres },
                 { path: 'utilisateurs', component: AdminUsers },
+                { path: 'entreprises', component: AdminCompanies },
                 { path: 'reporting', component: AdminReporting },
                 { path: 'chat', component: AdminChatReview },
             ],

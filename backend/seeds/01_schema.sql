@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS companies (
     id BIGSERIAL PRIMARY KEY,
     siret VARCHAR(14) UNIQUE NOT NULL,
     name VARCHAR(255),
-    address TEXT,
+    address_id BIGINT REFERENCES address(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

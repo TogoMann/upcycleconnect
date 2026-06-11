@@ -20,7 +20,6 @@ func (s *Service) GetAllUsers(page, limit int) (*PaginatedUsers, error) {
 	return s.repo.GetAll(page, limit)
 }
 
-
 func (s *Service) GetById(id pgtype.Int8) (*User, error) {
 	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("users/service User ID invalide: %d", id.Int64)

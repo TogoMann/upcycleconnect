@@ -13,7 +13,6 @@ func TestProjectAPI(t *testing.T) {
 	pool := GetPool()
 	router := SetupTestRouter(pool)
 
-	// User 2 (bdurand) is 'pro'
 	token, _ := utils.GenerateJWT(2, "bdurand", "pro")
 
 	t.Run("CreateProject", func(t *testing.T) {

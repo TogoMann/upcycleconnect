@@ -17,10 +17,10 @@ func TestItemAPI(t *testing.T) {
 
 	t.Run("CreateItem", func(t *testing.T) {
 		body := map[string]interface{}{
-			"material_type": "Bois",
+			"material_type":  "Bois",
 			"physical_state": "bon etat",
-			"status":        "deposited",
-			"site_id":       1,
+			"status":         "deposited",
+			"site_id":        1,
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/items/", bytes.NewBuffer(jsonBody))

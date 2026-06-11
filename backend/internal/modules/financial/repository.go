@@ -36,15 +36,19 @@ func (r *Repository) GetFinancier() (*FinancierData, error) {
 	var data FinancierData
 
 	err := r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(price), 0) AS FLOAT8) FROM listing_order WHERE status = 'paid' OR status = 'completed'").Scan(&data.CaTotal)
-	if err != nil { return nil, err }
-	
+	if err != nil {
+		return nil, err
+	}
+
 	var courseCa float64
 	err = r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(price), 0) AS FLOAT8) FROM course_order").Scan(&courseCa)
-	if err != nil { return nil, err }
-	
+	if err != nil {
+		return nil, err
+	}
+
 	data.CaTotal += courseCa
 
-	data.CaMois = data.CaTotal * 0.15 
+	data.CaMois = data.CaTotal * 0.15
 	data.Charges = data.CaTotal * 0.4
 	data.Marge = data.CaTotal - data.Charges
 
@@ -62,19 +66,27 @@ func (r *Repository) GetReport() (*FinancialReport, error) {
 	var report FinancialReport
 
 	err := r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(price), 0) AS FLOAT8) FROM listing_order WHERE status = 'paid' OR status = 'completed'").Scan(&report.ListingRevenue)
-	if err != nil { return nil, err }
-	
+	if err != nil {
+		return nil, err
+	}
+
 	err = r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(price), 0) AS FLOAT8) FROM course_order").Scan(&report.CourseRevenue)
-	if err != nil { return nil, err }
-	
+	if err != nil {
+		return nil, err
+	}
+
 	err = r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(price), 0) AS FLOAT8) FROM subscriptions").Scan(&report.SubscriptionRevenue)
-	if err != nil { return nil, err }
-	
+	if err != nil {
+		return nil, err
+	}
+
 	err = r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(budget), 0) AS FLOAT8) FROM advertisement WHERE status = 'validated'").Scan(&report.AdRevenue)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	report.TotalCommissions = report.ListingRevenue * 0.10
-	
+
 	report.TotalRevenue = report.ListingRevenue + report.CourseRevenue + report.SubscriptionRevenue + report.AdRevenue
 
 	return &report, nil

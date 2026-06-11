@@ -19,7 +19,15 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) GetBySiret(siret string) (*Company, error) {
 	var c Company
-	err := r.db.QueryRow(db.Ctx, "SELECT id, siret, name, address, created_at FROM companies WHERE siret = $1", siret).Scan(&c.Id, &c.Siret, &c.Name, &c.Address, &c.CreatedAt)
+	query := `
+		SELECT 
+			co.id, co.siret, co.name, co.address_id, co.created_at,
+			COALESCE(a.street_number || ' ' || a.street_name || ', ' || ci.zip_code || ' ' || ci.name, '') as address
+		FROM companies co
+		LEFT JOIN address a ON co.address_id = a.id
+		LEFT JOIN city ci ON a.city_id = ci.id
+		WHERE co.siret = $1`
+	err := r.db.QueryRow(db.Ctx, query, siret).Scan(&c.Id, &c.Siret, &c.Name, &c.AddressId, &c.CreatedAt, &c.Address)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -31,7 +39,7 @@ func (r *Repository) GetBySiret(siret string) (*Company, error) {
 
 func (r *Repository) Create(c Company) (pgtype.Int8, error) {
 	var id int64
-	err := r.db.QueryRow(db.Ctx, "INSERT INTO companies (siret, name, address) VALUES ($1, $2, $3) RETURNING id", c.Siret, c.Name, c.Address).Scan(&id)
+	err := r.db.QueryRow(db.Ctx, "INSERT INTO companies (siret, name, address_id) VALUES ($1, $2, $3) RETURNING id", c.Siret, c.Name, c.AddressId).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
@@ -40,7 +48,15 @@ func (r *Repository) Create(c Company) (pgtype.Int8, error) {
 
 func (r *Repository) GetById(id pgtype.Int8) (*Company, error) {
 	var c Company
-	err := r.db.QueryRow(db.Ctx, "SELECT id, siret, name, address, created_at FROM companies WHERE id = $1", id).Scan(&c.Id, &c.Siret, &c.Name, &c.Address, &c.CreatedAt)
+	query := `
+		SELECT 
+			co.id, co.siret, co.name, co.address_id, co.created_at,
+			COALESCE(a.street_number || ' ' || a.street_name || ', ' || ci.zip_code || ' ' || ci.name, '') as address
+		FROM companies co
+		LEFT JOIN address a ON co.address_id = a.id
+		LEFT JOIN city ci ON a.city_id = ci.id
+		WHERE co.id = $1`
+	err := r.db.QueryRow(db.Ctx, query, id).Scan(&c.Id, &c.Siret, &c.Name, &c.AddressId, &c.CreatedAt, &c.Address)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("company not found")
@@ -48,4 +64,30 @@ func (r *Repository) GetById(id pgtype.Int8) (*Company, error) {
 		return nil, err
 	}
 	return &c, nil
+}
+
+func (r *Repository) GetAll() ([]Company, error) {
+	query := `
+		SELECT 
+			co.id, co.siret, co.name, co.address_id, co.created_at,
+			COALESCE(a.street_number || ' ' || a.street_name || ', ' || ci.zip_code || ' ' || ci.name, '') as address
+		FROM companies co
+		LEFT JOIN address a ON co.address_id = a.id
+		LEFT JOIN city ci ON a.city_id = ci.id
+		ORDER BY co.id DESC`
+	rows, err := r.db.Query(db.Ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var companies []Company
+	for rows.Next() {
+		var c Company
+		if err := rows.Scan(&c.Id, &c.Siret, &c.Name, &c.AddressId, &c.CreatedAt, &c.Address); err != nil {
+			return nil, err
+		}
+		companies = append(companies, c)
+	}
+	return companies, nil
 }

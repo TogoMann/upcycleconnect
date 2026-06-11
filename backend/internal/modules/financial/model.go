@@ -35,23 +35,23 @@ type FinancialReport struct {
 }
 
 type Invoice struct {
-	Id            int64            `db:"id" json:"id"`
-	UserId        int64            `db:"user_id" json:"user_id"`
-	SellerId      pgtype.Int8      `db:"seller_id" json:"seller_id"`
-	OrderId       int64            `db:"order_id" json:"order_id"`
-	OrderType     string           `db:"order_type" json:"order_type"`
-	InvoiceNumber string           `db:"invoice_number" json:"invoice_number"`
-	Amount        float64          `db:"amount" json:"amount"`
-	VatAmount     float64          `db:"vat_amount" json:"vat_amount"`
-	TotalAmount   float64          `db:"total_amount" json:"total_amount"`
-	Status        string           `db:"status" json:"status"`
-	CreatedAt     string           `db:"created_at" json:"created_at"`
+	Id            int64       `db:"id" json:"id"`
+	UserId        int64       `db:"user_id" json:"user_id"`
+	SellerId      pgtype.Int8 `db:"seller_id" json:"seller_id"`
+	OrderId       int64       `db:"order_id" json:"order_id"`
+	OrderType     string      `db:"order_type" json:"order_type"`
+	InvoiceNumber string      `db:"invoice_number" json:"invoice_number"`
+	Amount        float64     `db:"amount" json:"amount"`
+	VatAmount     float64     `db:"vat_amount" json:"vat_amount"`
+	TotalAmount   float64     `db:"total_amount" json:"total_amount"`
+	Status        string      `db:"status" json:"status"`
+	CreatedAt     string      `db:"created_at" json:"created_at"`
 }
 
 type InvoiceDetail struct {
 	Invoice
-	UserName     string `json:"user_name"`
-	UserEmail    string `json:"user_email"`
-	UserAddress  string `json:"user_address"`
-	Description  string `json:"description"`
+	UserName    string `json:"user_name"`
+	UserEmail   string `json:"user_email"`
+	UserAddress string `json:"user_address"`
+	Description string `json:"description"`
 }

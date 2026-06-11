@@ -6,13 +6,35 @@ import { API_BASE } from '@/config'
 export const useAdminStore = defineStore('admin', () => {
   const authStore = useAuthStore()
   const users = ref<any[]>([])
+  const usersCount = ref(0)
   const usersTotalPages = ref(1)
   const usersCurrentPage = ref(1)
   const courses = ref<any[]>([])
+  const listingsCount = ref(0)
   const events = ref<any[]>([])
+  const eventsCount = ref(0)
+  const companies = ref<any[]>([])
 
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  const fetchCompanies = async () => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const res = await fetch(`${API_BASE}/companies`, {
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      })
+      if (!res.ok) throw new Error('Failed to fetch companies')
+      companies.value = await res.json()
+    } catch (err: any) {
+      error.value = err.message
+    } finally {
+      isLoading.value = false
+    }
+  }
 
   const fetchUsers = async (page = 1, limit = 10) => {
     isLoading.value = true
@@ -26,8 +48,28 @@ export const useAdminStore = defineStore('admin', () => {
       if (!res.ok) throw new Error('Failed to fetch users')
       const data = await res.json()
       users.value = data.data || []
+      usersCount.value = data.total || 0
       usersTotalPages.value = data.total_pages || 1
       usersCurrentPage.value = data.page || 1
+    } catch (err: any) {
+      error.value = err.message
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const fetchListings = async () => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const res = await fetch(`${API_BASE}/listing?page=1&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      })
+      if (!res.ok) throw new Error('Failed to fetch listings')
+      const data = await res.json()
+      listingsCount.value = data.total || 0
     } catch (err: any) {
       error.value = err.message
     } finally {
@@ -155,6 +197,7 @@ export const useAdminStore = defineStore('admin', () => {
       })
       if (!res.ok) throw new Error('Failed to fetch events')
       events.value = await res.json()
+      eventsCount.value = events.value.length
     } catch (err: any) {
       error.value = err.message
     } finally {
@@ -212,14 +255,21 @@ export const useAdminStore = defineStore('admin', () => {
 
   return {
     users,
+    usersCount,
     usersTotalPages,
     usersCurrentPage,
     courses,
+    listingsCount,
     events,
+    eventsCount,
+    companies,
     isLoading,
     error,
     fetchUsers,
+    fetchListings,
+    fetchCompanies,
     deleteUser,
+
     updateUser,
     getScoreHistory,
     requestPasswordReset,

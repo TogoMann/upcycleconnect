@@ -39,7 +39,6 @@ func HasPlan(allowedTiers ...string) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			// Admin bypass
 			role, _ := claims["role"].(string)
 			if role == "admin" {
 				next.ServeHTTP(w, r)
@@ -56,11 +55,9 @@ func HasPlan(allowedTiers ...string) func(http.HandlerFunc) http.HandlerFunc {
 			var tier string
 			var until time.Time
 			err = db.Pool.QueryRow(r.Context(), "SELECT tier, until FROM subscriptions WHERE subscriber_id = $1 AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1", userId).Scan(&tier, &until)
-			
+
 			if err != nil {
-				// If no subscription found, they are implicitly "Free" if we want, 
-				// but according to dummy data every user has a subscription entry.
-				// Let's default to "Free" if not found.
+
 				tier = "Free"
 			}
 

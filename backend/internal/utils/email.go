@@ -12,7 +12,6 @@ func SendEmail(to string, subject string, body string) error {
 
 	log.Printf("Tentative d'envoi d'email à %s (SMTP: %s)", to, cfg.SMTPHost)
 
-	// If no SMTP config, just log it (useful for local dev)
 	if cfg.SMTPHost == "" {
 		log.Printf("SIMULATION EMAIL to %s\nSubject: %s\nBody: %s\n", to, subject, body)
 		return nil
@@ -25,7 +24,6 @@ func SendEmail(to string, subject string, body string) error {
 		"\r\n" +
 		body + "\r\n")
 
-	// Mailpit doesn't need auth, but SendMail requires auth object or nil
 	var auth smtp.Auth
 	if cfg.SMTPUser != "" {
 		auth = smtp.PlainAuth("", cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPHost)

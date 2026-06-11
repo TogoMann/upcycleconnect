@@ -44,7 +44,6 @@ func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 		return pgtype.Int8{}, fmt.Errorf("listing/service Listing category manquante")
 	}
 
-	// Check plan limits
 	count, err := s.repo.CountByUserId(loDto.CreatedBy)
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -55,11 +54,11 @@ func (s *Service) Create(loDto Listing) (pgtype.Int8, error) {
 		return pgtype.Int8{}, err
 	}
 
-	limit := 3 // Free
+	limit := 3
 	if tier == "Premium" {
 		limit = 20
 	} else if tier == "Pro" {
-		limit = 1000000 // Unlimited
+		limit = 1000000
 	}
 
 	if count >= int64(limit) {
@@ -138,4 +137,3 @@ func (s *Service) Disapprove(id pgtype.Int8) error {
 	}
 	return s.repo.Disapprove(id)
 }
-

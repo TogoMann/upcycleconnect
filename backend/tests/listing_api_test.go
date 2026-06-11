@@ -25,7 +25,7 @@ func TestListingAPI(t *testing.T) {
 			"description": "Description",
 			"price":       42.50,
 			"category":    "Mobilier",
-			"city_id":      1,
+			"city_id":     1,
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/listing/", bytes.NewBuffer(jsonBody))
@@ -40,7 +40,7 @@ func TestListingAPI(t *testing.T) {
 
 		var resp map[string]interface{}
 		json.Unmarshal(rr.Body.Bytes(), &resp)
-		
+
 		rawId := resp["id"]
 		if idMap, ok := rawId.(map[string]interface{}); ok {
 			createdListingId = int64(idMap["Int64"].(float64))

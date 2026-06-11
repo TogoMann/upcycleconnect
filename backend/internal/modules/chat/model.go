@@ -52,9 +52,9 @@ type MessageEditHistory struct {
 
 type CreateMessageRequest struct {
 	ListingId      int64       `json:"listing_id"`
-	ConversationId int64       `json:"conversation_id"` // Optional: direct reply
+	ConversationId int64       `json:"conversation_id"`
 	Content        string      `json:"content"`
-	MessageType   MessageType `json:"message_type"`
+	MessageType    MessageType `json:"message_type"`
 	ProposedPrice  *float64    `json:"proposed_price"`
 }
 

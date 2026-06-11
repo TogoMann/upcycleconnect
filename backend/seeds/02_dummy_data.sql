@@ -26,9 +26,9 @@ INSERT INTO site (address_id, type_site, created_at) VALUES
 -- =========================
 -- COMPANIES
 -- =========================
-INSERT INTO companies (siret, name, address) VALUES
-('12345678901234', 'Upcycle Pro SARL', '123 Rue de la Récup, 75001 Paris'),
-('98765432109876', 'EcoDesign SAS', '45 Avenue du Green, 69002 Lyon');
+INSERT INTO companies (siret, name, address_id) VALUES
+('12345678901234', 'Upcycle Pro SARL', 1),
+('98765432109876', 'EcoDesign SAS', 2);
 
 INSERT INTO plans (name, description, price, billing_cycle, features, is_active) VALUES
 ('Free', 'Accès limité aux fonctionnalités de base', 0.00, 'monthly', '{"Vente d''objets", "Dépôt d''objets"}', true),

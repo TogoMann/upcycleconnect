@@ -19,7 +19,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
                 </div>
-                <div class="kpi-value">{{ adminStore.users.length }}</div>
+                <div class="kpi-value">{{ adminStore.usersCount }}</div>
                 <div class="kpi-label">Utilisateurs</div>
             </div>
 
@@ -37,7 +37,7 @@
                         <polyline points="14 2 14 8 20 8" />
                     </svg>
                 </div>
-                <div class="kpi-value">{{ adminStore.courses.length }}</div>
+                <div class="kpi-value">{{ adminStore.listingsCount }}</div>
                 <div class="kpi-label">Annonces</div>
             </div>
 
@@ -57,7 +57,7 @@
                         <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
                 </div>
-                <div class="kpi-value">{{ adminStore.events.length }}</div>
+                <div class="kpi-value">{{ adminStore.eventsCount }}</div>
                 <div class="kpi-label">Événements</div>
             </div>
         </div>
@@ -149,6 +149,7 @@ const downloadAudit = async () => {
 
 onMounted(() => {
     adminStore.fetchUsers()
+    adminStore.fetchListings()
     adminStore.fetchCourses()
     adminStore.fetchEvents()
 })

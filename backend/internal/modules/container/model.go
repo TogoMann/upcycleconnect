@@ -50,7 +50,6 @@ type LockerAccessDetails struct {
 	CreatedAt  pgtype.Timestamp `db:"created_at" json:"created_at"`
 	UsedAt     pgtype.Timestamp `db:"used_at" json:"used_at"`
 
-	// Joined fields
 	LockerLabel      string `db:"locker_label" json:"locker_label"`
 	ContainerAddress string `db:"container_address" json:"container_address"`
 }

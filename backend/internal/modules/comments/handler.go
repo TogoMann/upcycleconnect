@@ -1,9 +1,9 @@
 package comments
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgtype"
 	"net/http"
 	"strconv"
 )

@@ -3,7 +3,7 @@ package comments
 import (
 	"backend/internal/middlewares"
 	"net/http"
-	
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

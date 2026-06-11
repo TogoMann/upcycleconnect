@@ -21,7 +21,7 @@ func TestReportingPDF(t *testing.T) {
 		start := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
 		end := time.Now().Format("2006-01-02")
 		url := "/reporting/audit/items/pdf?start=" + start + "&end=" + end
-		
+
 		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rr := httptest.NewRecorder()
@@ -52,7 +52,7 @@ func TestReportingPDF(t *testing.T) {
 		start := "2026-12-31"
 		end := "2026-01-01"
 		url := "/reporting/audit/items/pdf?start=" + start + "&end=" + end
-		
+
 		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rr := httptest.NewRecorder()
@@ -69,7 +69,6 @@ func getAdminTokenForPDF(t *testing.T, router http.Handler, pool *pgxpool.Pool) 
 	adminEmail := "admin_pdf_test@example.com"
 	adminPassword := "password123"
 
-	// Register
 	regBody := map[string]string{
 		"username":   adminUsername,
 		"email":      adminEmail,
@@ -82,13 +81,11 @@ func getAdminTokenForPDF(t *testing.T, router http.Handler, pool *pgxpool.Pool) 
 	rrReg := httptest.NewRecorder()
 	router.ServeHTTP(rrReg, reqReg)
 
-	// Update to admin
 	_, err := pool.Exec(context.Background(), "UPDATE users SET role = 'admin' WHERE username = $1", adminUsername)
 	if err != nil {
 		t.Fatalf("Failed to update user to admin: %v", err)
 	}
 
-	// Login
 	body := map[string]string{
 		"username": adminUsername,
 		"password": adminPassword,

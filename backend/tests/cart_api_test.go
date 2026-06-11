@@ -13,7 +13,6 @@ func TestCartAPI(t *testing.T) {
 	pool := GetPool()
 	router := SetupTestRouter(pool)
 
-	// Generate a test token for user ID 5 (mdede from seeds)
 	token, err := utils.GenerateJWT(5, "mdede", "client")
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
@@ -56,7 +55,6 @@ func TestCartAPI(t *testing.T) {
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		// 201 Created or 500 if ID 1 doesn't exist, but it should in dummy data
 		if rr.Code != http.StatusCreated && rr.Code != http.StatusInternalServerError {
 			t.Errorf("Expected status Created or ServerError, got %v", rr.Code)
 		}

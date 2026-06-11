@@ -58,7 +58,7 @@ func (r *Repository) GetById(id pgtype.Int8) (*Advertisement, error) {
 func (r *Repository) Create(ad Advertisement) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(db.Ctx, `INSERT INTO advertisement (announcer_id, target_id, target_type, ad_type, budget, status, start_date, end_date) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
 		ad.AnnouncerId, ad.TargetId, ad.TargetType, ad.AdType, ad.Budget, ad.Status, ad.StartDate, ad.EndDate).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err

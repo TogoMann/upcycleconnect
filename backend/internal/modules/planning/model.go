@@ -4,7 +4,7 @@ import "github.com/jackc/pgx/v5/pgtype"
 
 type PlanningItem struct {
 	Id          int64  `json:"id"`
-	Type        string `json:"type"` // "depot", "workshop", "event", "personal"
+	Type        string `json:"type"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Date        string `json:"date"`
