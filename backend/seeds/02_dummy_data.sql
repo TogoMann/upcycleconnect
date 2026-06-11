@@ -227,5 +227,29 @@ BEGIN
                 VALUES ((1 + floor(random() * 2)), new_user_id, 150.00, NOW() - (random() * INTERVAL '30 days'), 'completed', 'pi_fake_listing_' || i || '_' || j);
             END IF;
         END LOOP;
+
+        -- Generate some items for the first 100 users (depositors)
+        IF i <= 100 THEN
+            FOR j IN 1..(1 + floor(random() * 10)) LOOP
+                INSERT INTO item (owner_id, site_id, material_type, physical_state, status, created_at)
+                VALUES (new_user_id, 1, 'Bois', 'bon etat', 'deposited', NOW() - (random() * INTERVAL '60 days'));
+            END LOOP;
+        END IF;
+
+        -- Generate some comments for users i > 100 AND i <= 200 (active community)
+        IF i > 100 AND i <= 200 THEN
+            FOR j IN 1..(1 + floor(random() * 5)) LOOP
+                INSERT INTO comments (news_id, created_by, content, created_at)
+                VALUES (1, new_user_id, 'Super article ! ' || j, NOW() - (random() * INTERVAL '30 days'));
+            END LOOP;
+        END IF;
+
+        -- Generate some chat messages for users i > 200 AND i <= 300 (chatty users)
+        IF i > 200 AND i <= 300 THEN
+            FOR j IN 1..(1 + floor(random() * 8)) LOOP
+                INSERT INTO chat_message (conversation_id, sender_id, content, created_at)
+                VALUES (1, new_user_id, 'Message de test ' || j, NOW() - (random() * INTERVAL '30 days'));
+            END LOOP;
+        END IF;
     END LOOP;
 END $$;

@@ -117,3 +117,33 @@ func (r *Repository) GetUserPredictions(ctx context.Context, page, limit int) (*
 		TotalPages: totalPages,
 	}, nil
 }
+
+func (r *Repository) GetMLStatus(ctx context.Context) (*MLStatus, error) {
+	var status MLStatus
+	query := `SELECT MAX(calculated_at), COUNT(*) FROM user_predictions`
+	err := r.db.QueryRow(ctx, query).Scan(&status.LastRun, &status.TotalPredictions)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
+func (r *Repository) GetPredictionDistribution(ctx context.Context) (map[string]int, error) {
+	query := `SELECT predicted_service_type, COUNT(*) FROM user_predictions GROUP BY predicted_service_type`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	dist := make(map[string]int)
+	for rows.Next() {
+		var serviceType string
+		var count int
+		if err := rows.Scan(&serviceType, &count); err != nil {
+			return nil, err
+		}
+		dist[serviceType] = count
+	}
+	return dist, nil
+}

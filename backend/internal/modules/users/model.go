@@ -25,6 +25,8 @@ type UserFrontend struct {
 	Siret              string      `db:"siret" json:"siret"`
 	CompanyId          int64       `db:"company_id" json:"company_id"`
 	Plan               string      `db:"plan" json:"plan"`
+	PredictedService   string      `db:"predicted_service" json:"predicted_service"`
+	Probability        float64     `db:"probability" json:"probability"`
 }
 
 type PaginatedUsers struct {

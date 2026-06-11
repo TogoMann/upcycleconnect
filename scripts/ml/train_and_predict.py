@@ -99,7 +99,8 @@ def main():
     print("Done!")
 
 if __name__ == "__main__":
-    DAY_TIME = 60 * 60 * 24
+    ONE_HOUR = 3600
     while True:
         main()
-        time.sleep(DAY_TIME)
+        time.sleep(ONE_HOUR)
+

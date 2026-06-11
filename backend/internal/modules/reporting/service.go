@@ -23,6 +23,8 @@ func (s *Service) GenerateAuditPDF(ctx context.Context, start, end time.Time) ([
 		return nil, err
 	}
 
+	dist, _ := s.repo.GetPredictionDistribution(ctx)
+
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 
@@ -53,6 +55,25 @@ func (s *Service) GenerateAuditPDF(ctx context.Context, start, end time.Time) ([
 	pdf.CellFormat(70, 10, fmt.Sprintf("%d", count), "1", 0, "C", false, 0, "")
 	pdf.Ln(20)
 
+	if len(dist) > 0 {
+		pdf.SetFont("Arial", "B", 12)
+		pdf.Cell(0, 10, "Predictions ML (Interets utilisateurs)")
+		pdf.Ln(10)
+
+		pdf.SetFont("Arial", "B", 11)
+		pdf.CellFormat(120, 10, "Service Predi", "1", 0, "L", true, 0, "")
+		pdf.CellFormat(70, 10, "Nombre d'utilisateurs", "1", 0, "C", true, 0, "")
+		pdf.Ln(10)
+
+		pdf.SetFont("Arial", "", 11)
+		for sType, sCount := range dist {
+			pdf.CellFormat(120, 10, sType, "1", 0, "L", false, 0, "")
+			pdf.CellFormat(70, 10, fmt.Sprintf("%d", sCount), "1", 0, "C", false, 0, "")
+			pdf.Ln(10)
+		}
+		pdf.Ln(10)
+	}
+
 	pdf.SetFont("Arial", "I", 9)
 	pdf.SetTextColor(100, 100, 100)
 	pdf.MultiCell(0, 5, "Ce document constitue un audit officiel de l'activite de la plateforme UpcycleConnect pour la periode specifiee. Les donnees sont extraites directement de la base de donnees de production.", "", "L", false)
@@ -76,4 +97,8 @@ func (s *Service) GetPrestationStats(ctx context.Context) ([]PrestationStats, er
 
 func (s *Service) GetUserPredictions(ctx context.Context, page, limit int) (*PaginatedPredictions, error) {
 	return s.repo.GetUserPredictions(ctx, page, limit)
+}
+
+func (s *Service) GetMLStatus(ctx context.Context) (*MLStatus, error) {
+	return s.repo.GetMLStatus(ctx)
 }

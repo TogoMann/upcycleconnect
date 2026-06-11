@@ -57,7 +57,6 @@ func HasPlan(allowedTiers ...string) func(http.HandlerFunc) http.HandlerFunc {
 			err = db.Pool.QueryRow(r.Context(), "SELECT tier, until FROM subscriptions WHERE subscriber_id = $1 AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1", userId).Scan(&tier, &until)
 
 			if err != nil {
-
 				tier = "Free"
 			}
 

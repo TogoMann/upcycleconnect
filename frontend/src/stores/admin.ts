@@ -42,8 +42,8 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       const res = await fetch(`${API_BASE}/users?page=${page}&limit=${limit}`, {
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to fetch users')
       const data = await res.json()
@@ -82,11 +82,11 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/users/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (res.ok) {
-        users.value = users.value.filter(u => u.id !== id)
+        users.value = users.value.filter((u) => u.id !== id)
       }
     } catch (err: any) {
       error.value = err.message
@@ -98,15 +98,15 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/users/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to update user')
-      
+
       const updatedUser = await res.json()
-      const index = users.value.findIndex(u => u.id === id)
+      const index = users.value.findIndex((u) => u.id === id)
       if (index !== -1) {
         await fetchUsers()
       }
@@ -120,8 +120,8 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       const res = await fetch(`${API_BASE}/users/${id}/score/history`, {
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to fetch score history')
       return await res.json()
@@ -136,10 +136,10 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/auth/admin/reset-request`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user_id: userId })
+        body: JSON.stringify({ user_id: userId }),
       })
       if (!res.ok) {
         const errData = await res.text()
@@ -158,8 +158,8 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       const res = await fetch(`${API_BASE}/course`, {
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to fetch courses')
       courses.value = await res.json()
@@ -175,11 +175,11 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/course/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (res.ok) {
-        courses.value = courses.value.filter(c => c.id !== id)
+        courses.value = courses.value.filter((c) => c.id !== id)
       }
     } catch (err: any) {
       error.value = err.message
@@ -192,8 +192,8 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       const res = await fetch(`${API_BASE}/admin/events`, {
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to fetch events')
       events.value = await res.json()
@@ -210,11 +210,11 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/event/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (res.ok) {
-        events.value = events.value.filter(e => e.id !== id)
+        events.value = events.value.filter((e) => e.id !== id)
       }
     } catch (err: any) {
       error.value = err.message
@@ -226,11 +226,11 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/event/${id}/approve`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to approve event')
-      const ev = events.value.find(e => e.id === id)
+      const ev = events.value.find((e) => e.id === id)
       if (ev) ev.approved = true
     } catch (err: any) {
       error.value = err.message
@@ -242,11 +242,11 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await fetch(`${API_BASE}/event/${id}/disapprove`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          Authorization: `Bearer ${authStore.token}`,
+        },
       })
       if (!res.ok) throw new Error('Failed to disapprove event')
-      const ev = events.value.find(e => e.id === id)
+      const ev = events.value.find((e) => e.id === id)
       if (ev) ev.approved = false
     } catch (err: any) {
       error.value = err.message
@@ -278,6 +278,6 @@ export const useAdminStore = defineStore('admin', () => {
     fetchEvents,
     deleteEvent,
     approveEvent,
-    disapproveEvent
+    disapproveEvent,
   }
 })

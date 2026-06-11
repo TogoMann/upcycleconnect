@@ -93,3 +93,21 @@ func (h *Handler) GetUserPredictions(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(predictions)
 }
+
+func (h *Handler) GetMLStatus(w http.ResponseWriter, r *http.Request) {
+	status, err := h.service.GetMLStatus(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(status)
+}
+
+func (h *Handler) GetPredictionDistribution(w http.ResponseWriter, r *http.Request) {
+	dist, err := h.service.repo.GetPredictionDistribution(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(dist)
+}

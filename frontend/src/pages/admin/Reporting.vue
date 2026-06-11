@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import {
   Chart as ChartJS,
   Title,
@@ -8,13 +8,25 @@ import {
   BarElement,
   CategoryScale,
   LinearScale,
-  ArcElement
+  ArcElement,
+  PointElement,
+  LineElement
 } from 'chart.js'
-import { Bar, Pie } from 'vue-chartjs'
+import { Bar, Pie, Doughnut } from 'vue-chartjs'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE } from '@/config'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement)
+ChartJS.register(
+  Title, 
+  Tooltip, 
+  Legend, 
+  BarElement, 
+  CategoryScale, 
+  LinearScale, 
+  ArcElement, 
+  PointElement, 
+  LineElement
+)
 
 const authStore = useAuthStore()
 
@@ -22,51 +34,62 @@ const predictions = ref<any[]>([])
 const loading = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
+const mlStatus = ref<any>(null)
 
-const actorChartData = reactive({
-  labels: [] as string[],
+const actorStats = ref<any[]>([])
+const prestationStats = ref<any[]>([])
+const mlDistStats = ref<Record<string, number>>({})
+
+const actorChartData = computed(() => ({
+  labels: actorStats.value.map((s: any) => s.role),
   datasets: [{
     backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
-    data: [] as number[]
+    data: actorStats.value.map((s: any) => s.count)
   }]
-})
+}))
 
-const prestationChartData = reactive({
-  labels: [] as string[],
+const prestationChartData = computed(() => ({
+  labels: prestationStats.value.map((s: any) => s.type),
   datasets: [{
     label: 'Nombre d\'inscriptions/achats',
     backgroundColor: '#3B82F6',
-    data: [] as number[]
+    data: prestationStats.value.map((s: any) => s.count)
   }]
-})
+}))
+
+const mlChartData = computed(() => ({
+  labels: Object.keys(mlDistStats.value),
+  datasets: [{
+    backgroundColor: ['#6366F1', '#F59E0B', '#10B981'],
+    data: Object.values(mlDistStats.value)
+  }]
+}))
 
 const fetchReporting = async () => {
   try {
     const token = localStorage.getItem('auth_token')
     const headers = { 'Authorization': `Bearer ${token}` }
 
-    const [actorsRes, prestationsRes, predictionsRes] = await Promise.all([
+    const [actorsRes, prestationsRes, predictionsRes, mlStatusRes, mlDistRes] = await Promise.all([
       fetch(`${API_BASE}/reporting/actors`, { headers }),
       fetch(`${API_BASE}/reporting/prestations`, { headers }),
-      fetch(`${API_BASE}/reporting/predictions?page=${currentPage.value}&limit=10`, { headers })
+      fetch(`${API_BASE}/reporting/predictions?page=${currentPage.value}&limit=10`, { headers }),
+      fetch(`${API_BASE}/reporting/ml-status`, { headers }),
+      fetch(`${API_BASE}/reporting/predictions/distribution`, { headers })
     ])
 
-    if (!actorsRes.ok || !prestationsRes.ok || !predictionsRes.ok) {
+    if (!actorsRes.ok || !prestationsRes.ok || !predictionsRes.ok || !mlStatusRes.ok || !mlDistRes.ok) {
         throw new Error("One or more requests failed")
     }
 
-    const actors = await actorsRes.json()
-    const prestations = await prestationsRes.json()
+    actorStats.value = await actorsRes.json()
+    prestationStats.value = await prestationsRes.json()
     const predictionsData = await predictionsRes.json()
+    mlStatus.value = await mlStatusRes.json()
+    mlDistStats.value = await mlDistRes.json()
 
     predictions.value = predictionsData.data
     totalPages.value = predictionsData.total_pages
-
-    actorChartData.labels = actors.map((s: any) => s.role)
-    actorChartData.datasets[0].data = actors.map((s: any) => s.count)
-
-    prestationChartData.labels = prestations.map((s: any) => s.type)
-    prestationChartData.datasets[0].data = prestations.map((s: any) => s.count)
     
   } catch (error) {
     console.error('Failed to fetch reporting data', error)
@@ -94,18 +117,41 @@ onMounted(fetchReporting)
     </div>
 
     <div v-else>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <div class="bg-white p-4 rounded-lg shadow mb-8 border-l-4 border-indigo-500 flex justify-between items-center">
+        <div>
+          <h2 class="text-sm font-bold text-indigo-600 uppercase tracking-wider">État de l'Intelligence Artificielle</h2>
+          <p class="text-gray-600 text-sm" v-if="mlStatus">
+            Dernier entraînement : <span class="font-semibold">{{ new Date(mlStatus.last_run).toLocaleString() }}</span>
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="text-2xl font-bold text-indigo-600">{{ mlStatus?.total_predictions || 0 }}</p>
+          <p class="text-xs text-gray-500">Profils analysés</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <div class="bg-white p-6 rounded-lg shadow">
           <h2 class="text-xl font-semibold mb-4">Répartition des Acteurs</h2>
-          <div class="h-64">
-            <Pie :data="actorChartData" :options="{ maintainAspectRatio: false }" />
+          <div class="h-64 flex items-center justify-center">
+            <Pie v-if="actorStats.length > 0" :data="actorChartData" :options="{ maintainAspectRatio: false }" />
+            <p v-else class="text-gray-400 text-sm italic">Aucune donnée disponible</p>
           </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow">
           <h2 class="text-xl font-semibold mb-4">Succès des Prestations</h2>
-          <div class="h-64">
-            <Bar :data="prestationChartData" :options="{ maintainAspectRatio: false }" />
+          <div class="h-64 flex items-center justify-center">
+            <Bar v-if="prestationStats.length > 0" :data="prestationChartData" :options="{ maintainAspectRatio: false }" />
+            <p v-else class="text-gray-400 text-sm italic">Aucune donnée disponible</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h2 class="text-xl font-semibold mb-4">Tendances Prédictives</h2>
+          <div class="h-64 flex items-center justify-center">
+            <Doughnut v-if="Object.keys(mlDistStats).length > 0" :data="mlChartData" :options="{ maintainAspectRatio: false }" />
+            <p v-else class="text-gray-400 text-sm italic">Calcul des prédictions en cours...</p>
           </div>
         </div>
       </div>

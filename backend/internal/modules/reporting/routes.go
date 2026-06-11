@@ -15,4 +15,6 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /reporting/actors", middlewares.AdminOnly(handler.GetActorStats))
 	r.HandleFunc("GET /reporting/prestations", middlewares.AdminOnly(handler.GetPrestationStats))
 	r.HandleFunc("GET /reporting/predictions", middlewares.AdminOnly(handler.GetUserPredictions))
+	r.HandleFunc("GET /reporting/predictions/distribution", middlewares.AdminOnly(handler.GetPredictionDistribution))
+	r.HandleFunc("GET /reporting/ml-status", middlewares.AdminOnly(handler.GetMLStatus))
 }

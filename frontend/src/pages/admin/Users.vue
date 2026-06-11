@@ -75,7 +75,12 @@
                                 <div class="user-avatar">
                                     {{ user.first_name?.[0] ?? '' }}{{ user.last_name?.[0] ?? '' }}
                                 </div>
-                                <span>{{ user.first_name }} {{ user.last_name }}</span>
+                                <div class="flex flex-col">
+                                    <span>{{ user.first_name }} {{ user.last_name }}</span>
+                                    <span v-if="user.predicted_service" class="text-[10px] font-bold text-indigo-600 uppercase">
+                                        {{ user.predicted_service }} ({{ (user.probability * 100).toFixed(0) }}%)
+                                    </span>
+                                </div>
                             </div>
                         </td>
 

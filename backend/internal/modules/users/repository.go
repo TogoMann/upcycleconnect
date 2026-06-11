@@ -40,9 +40,12 @@ func (r *Repository) GetAll(page, limit int) (*PaginatedUsers, error) {
 			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = u.id) AS INTEGER) as score,
 			COALESCE(c.siret, '') as siret,
 			COALESCE(u.company_id, 0) as company_id,
-			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan
+			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan,
+			COALESCE(up.predicted_service_type, '') as predicted_service,
+			COALESCE(up.probability, 0) as probability
 		FROM users u
 		LEFT JOIN companies c ON u.company_id = c.id
+		LEFT JOIN user_predictions up ON u.id = up.user_id
 		ORDER BY u.id DESC
 		LIMIT $1 OFFSET $2
 	`, limit, offset)
@@ -107,11 +110,14 @@ func (r *Repository) GetMe(username string) (*UserFrontend, error) {
 			CAST((SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = u.id) AS INTEGER) as score,
 			COALESCE(c.siret, '') as siret,
 			COALESCE(u.company_id, 0) as company_id,
-			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan
+			COALESCE((SELECT tier FROM subscriptions WHERE subscriber_id = u.id AND until >= CURRENT_DATE ORDER BY until DESC LIMIT 1), 'Free') as plan,
+			COALESCE(up.predicted_service_type, '') as predicted_service,
+			COALESCE(up.probability, 0) as probability
 		FROM users u
 		LEFT JOIN companies c ON u.company_id = c.id
+		LEFT JOIN user_predictions up ON u.id = up.user_id
 		WHERE u.username = $1
-	`, username).Scan(&u.Id, &u.Username, &u.FirstName, &u.LastName, &u.Email, &u.Role, &u.LanguagePreference, &u.HasSeenTutorial, &u.CreatedAt, &u.Score, &u.Siret, &u.CompanyId, &u.Plan)
+	`, username).Scan(&u.Id, &u.Username, &u.FirstName, &u.LastName, &u.Email, &u.Role, &u.LanguagePreference, &u.HasSeenTutorial, &u.CreatedAt, &u.Score, &u.Siret, &u.CompanyId, &u.Plan, &u.PredictedService, &u.Probability)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {

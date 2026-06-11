@@ -61,6 +61,28 @@ func TestReportingAPI(t *testing.T) {
 			t.Errorf("expected status 200, got %d: %s", rr.Code, rr.Body.String())
 		}
 	})
+
+	t.Run("GetMLStatus", func(t *testing.T) {
+		// Ensure at least one prediction exists for the query to not fail on Scan
+		_, _ = pool.Exec(context.Background(), "INSERT INTO user_predictions (user_id, predicted_service_type, probability) VALUES (1, 'listing', 0.95) ON CONFLICT DO NOTHING")
+
+		req, _ := http.NewRequest("GET", "/reporting/ml-status", nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d: %s", rr.Code, rr.Body.String())
+		}
+
+		var status map[string]interface{}
+		if err := json.Unmarshal(rr.Body.Bytes(), &status); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := status["total_predictions"]; !ok {
+			t.Error("expected total_predictions in response")
+		}
+	})
 }
 
 func getAdminTokenForReportingAPI(t *testing.T, router http.Handler, pool *pgxpool.Pool) string {

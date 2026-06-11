@@ -37,3 +37,8 @@ type PaginatedPredictions struct {
 	Limit      int              `json:"limit"`
 	TotalPages int              `json:"total_pages"`
 }
+
+type MLStatus struct {
+	LastRun          time.Time `json:"last_run"`
+	TotalPredictions int       `json:"total_predictions"`
+}
