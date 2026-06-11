@@ -36,9 +36,9 @@ function goToChat(id: any) {
 
 async function handleCheckout() {
     if (clientStore.cart.length === 0) return
-    
-    const hasListing = clientStore.cart.some(item => item.listing_id?.Valid)
-    const hasDirectPay = clientStore.cart.some(item => item.event_id?.Valid || item.course_id?.Valid)
+
+    const hasListing = clientStore.cart.some((item: any) => item.listing_id?.Valid)
+    const hasDirectPay = clientStore.cart.some((item: any) => item.event_id?.Valid || item.course_id?.Valid)
 
     if (hasListing && !hasDirectPay) {
         alert("Les annonces nécessitent un accord préalable avec le vendeur via la messagerie. Veuillez finaliser le paiement depuis vos conversations.")
@@ -46,30 +46,25 @@ async function handleCheckout() {
     }
 
     if (hasListing && hasDirectPay) {
-        if (confirm("Votre panier contient des annonces (paiement via chat) et des ateliers/événements (paiement direct). Voulez-vous payer les ateliers/événements maintenant ?")) {
-            try {
-                await clientStore.checkoutCart()
-                
-                if (clientStore.cart.length === 1 && clientStore.cart[0].listing_id?.Valid) {
-                    if (confirm("Paiement réussi pour les ateliers ! Il vous reste une annonce dans votre panier. Voulez-vous contacter le vendeur maintenant ?")) {
-                        goToChat(clientStore.cart[0].listing_id)
-                    }
-                } else {
-                    alert("Paiement réussi pour les ateliers et événements. N'oubliez pas de contacter les vendeurs pour vos objets restants dans le panier.")
-                }
-            } catch (e: any) {
-                alert(e.message)
-            }
+        if (!confirm("Votre panier contient des annonces (paiement via chat) et des ateliers/événements (paiement direct). Voulez-vous payer les ateliers/événements maintenant ?")) {
+            return
         }
-        return
     }
 
-    try {
-        await clientStore.checkoutCart()
-        router.push({ name: 'ConfirmationPaiement' })
-    } catch (e: any) {
-        alert(e.message)
-    }
+    const directPayTotal = clientStore.cart.reduce((acc: number, item: any) => {
+        if (item.listing_id?.Valid) return acc
+        const price = item.event?.price || item.course?.price || 0
+        return acc + (parseFloat(price) || 0)
+    }, 0)
+
+    router.push({
+        path: '/particulier/paiement',
+        query: {
+            type: 'cart',
+            price: directPayTotal.toFixed(2),
+            name: hasListing ? 'Ateliers & Événements' : 'Panier',
+        },
+    })
 }
 
 async function handleRemove(item: any) {

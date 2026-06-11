@@ -109,7 +109,7 @@ func (r *Repository) GetInvoiceById(id int64) (*InvoiceDetail, error) {
 		TO_CHAR(i.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
 		u.first_name || ' ' || u.last_name as user_name,
 		u.email as user_email,
-		COALESCE(l.name, c.name, s.tier, 'Transaction') as description
+		COALESCE(l.name, c.name, CASE WHEN i.order_type = 'event' THEN 'Participation événement' END, s.tier, 'Transaction') as description
 		FROM invoices i
 		JOIN users u ON i.user_id = u.id
 		LEFT JOIN listing_order lo ON i.order_id = lo.id AND i.order_type = 'listing'

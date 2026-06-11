@@ -2,10 +2,12 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
+import { useCartStore } from '@/stores/cart'
 
 const route = useRoute()
 const router = useRouter()
 const clientStore = useClientStore()
+const cartStore = useCartStore()
 
 const itemName = computed(() => (route.query.name as string) || 'Article')
 const itemPrice = computed(() => Number(route.query.price) || 0)
@@ -69,14 +71,16 @@ async function handleSubmit() {
     errors.global = ''
     try {
         const type = route.query.type as string
-        if (type === 'course') {
+        if (type === 'cart') {
+            await cartStore.checkoutCart()
+        } else if (type === 'course') {
             await clientStore.createCourseOrder(itemId.value, itemPrice.value)
         } else if (type === 'event') {
             await clientStore.createEventParticipation(itemId.value)
         } else {
             await clientStore.createOrder(itemId.value, itemPrice.value)
         }
-        
+
         router.push({
             path: '/particulier/paiement/confirmation',
             query: { name: itemName.value, price: itemPrice.value },
@@ -89,7 +93,8 @@ async function handleSubmit() {
 }
 
 onMounted(() => {
-    if (!itemId.value) {
+    const type = route.query.type as string
+    if (type !== 'cart' && !itemId.value) {
         router.push('/particulier/catalogue')
     }
 })

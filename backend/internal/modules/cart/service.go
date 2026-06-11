@@ -3,6 +3,7 @@ package cart
 import (
 	courseorder "backend/internal/modules/course_order"
 	eventparticipation "backend/internal/modules/event_participation"
+	"backend/internal/modules/financial"
 	listingorder "backend/internal/modules/listing_order"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -13,14 +14,16 @@ type Service struct {
 	orderService  *listingorder.Service
 	eventPartRepo *eventparticipation.Repository
 	courseOrdRepo *courseorder.Repository
+	financialSvc  *financial.Service
 }
 
-func NewService(repo *Repository, orderService *listingorder.Service, eventPartRepo *eventparticipation.Repository, courseOrdRepo *courseorder.Repository) *Service {
+func NewService(repo *Repository, orderService *listingorder.Service, eventPartRepo *eventparticipation.Repository, courseOrdRepo *courseorder.Repository, financialSvc *financial.Service) *Service {
 	return &Service{
 		repo:          repo,
 		orderService:  orderService,
 		eventPartRepo: eventPartRepo,
 		courseOrdRepo: courseOrdRepo,
+		financialSvc:  financialSvc,
 	}
 }
 
@@ -53,8 +56,11 @@ func (s *Service) Checkout(userId pgtype.Int8) error {
 			}
 			_, err := s.eventPartRepo.Create(participation)
 			if err != nil {
-				// We log and continue if it's already there (simplified duplicate check)
 				fmt.Printf("Warning: event participation for event %d might already exist or failed: %v\n", item.EventId.Int64, err)
+			} else if item.Event != nil {
+				price, _ := item.Event.Price.Float64Value()
+				sellerId := item.Event.CreatedBy.Int64
+				s.financialSvc.GenerateInvoiceForOrder(userId.Int64, &sellerId, item.EventId.Int64, "event", price.Float64)
 			}
 		} else if item.CourseId.Valid {
 			fmt.Printf("Processing course %d\n", item.CourseId.Int64)
@@ -63,9 +69,13 @@ func (s *Service) Checkout(userId pgtype.Int8) error {
 				BuyerId:  userId,
 				Price:    item.Course.Price,
 			}
-			_, err := s.courseOrdRepo.Create(order)
+			id, err := s.courseOrdRepo.Create(order)
 			if err != nil {
 				fmt.Printf("Warning: course order for course %d might already exist or failed: %v\n", item.CourseId.Int64, err)
+			} else if item.Course != nil {
+				price, _ := item.Course.Price.Float64Value()
+				sellerId := item.Course.CreatedBy.Int64
+				s.financialSvc.GenerateInvoiceForOrder(userId.Int64, &sellerId, id.Int64, "course", price.Float64)
 			}
 		}
 	}

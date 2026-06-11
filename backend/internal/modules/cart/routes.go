@@ -31,7 +31,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	courseOrdRepo := courseorder.NewRepository(db)
 
 	repo := NewRepository(db)
-	service := NewService(repo, orderService, eventPartRepo, courseOrdRepo)
+	service := NewService(repo, orderService, eventPartRepo, courseOrdRepo, finSvc)
 	handler := NewHandler(service)
 
 	r.HandleFunc("GET /cart", middlewares.Authenticated(handler.Get))
