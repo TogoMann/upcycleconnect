@@ -47,6 +47,14 @@ func (s *Service) Delete(id pgtype.Int8) error {
 	return s.repo.Delete(id)
 }
 
+func (s *Service) GetAdminDepots() ([]AdminDepot, error) {
+	return s.repo.GetAdminDepots()
+}
+
+func (s *Service) AdminValidateDepot(id pgtype.Int8) error {
+	return s.repo.UpdateStatus(id, Validated)
+}
+
 func (s *Service) RequestDeposit(dto Item) error {
 
 	return nil

@@ -42,6 +42,46 @@ func (h *Handler) GetByUserId(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(items)
 }
 
+func (h *Handler) GetAdminDepots(w http.ResponseWriter, r *http.Request) {
+	depots, err := h.service.GetAdminDepots()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(depots)
+}
+
+func (h *Handler) AdminValidateDepot(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	idInt, _ := strconv.ParseInt(idStr, 10, 64)
+
+	err := h.service.AdminValidateDepot(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) AdminSendCode(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	idInt, _ := strconv.ParseInt(idStr, 10, 64)
+
+	item, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	_, err = h.service.ValidateAndGenerateCode(pgtype.Int8{Int64: idInt, Valid: true}, item.OwnerId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	items, err := h.service.GetAll()
 	if err != nil {

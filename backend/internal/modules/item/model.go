@@ -31,3 +31,12 @@ type Item struct {
 	CreatedAt     pgtype.Timestamp `db:"created_at" json:"created_at"`
 	SiteType      string           `db:"site_type" json:"site_type"`
 }
+
+type AdminDepot struct {
+	Id          int64  `db:"id" json:"id"`
+	Utilisateur string `db:"utilisateur" json:"utilisateur"`
+	Objet       string `db:"objet" json:"objet"`
+	Date        string `db:"date" json:"date"`
+	Statut      string `db:"statut" json:"statut"`
+	CodeEnvoye  bool   `db:"code_envoye" json:"code_envoye"`
+}

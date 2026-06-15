@@ -1,8 +1,27 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useClientStore } from '@/stores/client'
+import { API_BASE } from '@/config'
+import { useAuthStore } from '@/stores/auth'
+import Barcode from '@/components/Barcode.vue'
 
 const clientStore = useClientStore()
+const authStore = useAuthStore()
+
+const lockerAccesses = ref<any[]>([])
+
+async function fetchAccesses() {
+    try {
+        const res = await fetch(`${API_BASE}/users/me/locker-access`, {
+            headers: { Authorization: `Bearer ${authStore.token}` }
+        })
+        if (res.ok) {
+            lockerAccesses.value = await res.json()
+        }
+    } catch (err) {
+        console.error('Failed to fetch accesses', err)
+    }
+}
 
 const statusLabels: Record<string, string> = {
     deposited: 'Déposé',
@@ -30,6 +49,7 @@ function formatWeight(w: any): string {
 
 onMounted(() => {
     clientStore.fetchDepots()
+    fetchAccesses()
 })
 </script>
 
@@ -76,6 +96,21 @@ onMounted(() => {
                 <div class="stat-chip">
                     <span class="stat-value">{{ clientStore.depots.filter((d: any) => d.status === 'collected').length }}</span>
                     <span class="stat-label">collecté(s)</span>
+                </div>
+            </div>
+
+            <div v-if="lockerAccesses.length > 0" class="access-section">
+                <h3 class="section-title">Codes d'accès aux casiers</h3>
+                <div class="access-grid">
+                    <div v-for="access in lockerAccesses" :key="access.id?.Int64" class="access-card">
+                        <div class="access-header">
+                            <span class="access-locker">Casier {{ access.locker_label }}</span>
+                            <span class="access-expiry">Expire le {{ formatDate(access.expires_at) }}</span>
+                        </div>
+                        <p class="access-address">{{ access.container_address }}</p>
+                        <Barcode :value="access.access_code" :height="60" />
+                        <p class="access-code-text">Code: {{ access.access_code }}</p>
+                    </div>
                 </div>
             </div>
 
@@ -212,6 +247,57 @@ onMounted(() => {
     color: var(--green-dark);
     opacity: 0.7;
     font-weight: 500;
+}
+
+.access-section {
+    margin-bottom: 32px;
+}
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-bottom: 16px;
+}
+.access-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+.access-card {
+    background: var(--white);
+    border: 1.5px solid var(--green-pale);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(8, 106, 53, 0.05);
+}
+.access-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.access-locker {
+    font-weight: 700;
+    color: var(--green-dark);
+}
+.access-expiry {
+    font-size: 0.75rem;
+    color: var(--charcoal);
+    opacity: 0.5;
+}
+.access-address {
+    font-size: 0.85rem;
+    color: var(--charcoal);
+    opacity: 0.7;
+    margin-bottom: 16px;
+}
+.access-code-text {
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin-top: 8px;
+    letter-spacing: 0.1em;
 }
 
 .depots-list {

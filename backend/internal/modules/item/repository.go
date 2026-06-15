@@ -32,6 +32,28 @@ func (r *Repository) GetAll() ([]Item, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[Item])
 }
 
+func (r *Repository) GetAdminDepots() ([]AdminDepot, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			i.id, 
+			u.username as utilisateur, 
+			i.material_type as objet, 
+			TO_CHAR(i.created_at, 'DD/MM/YYYY HH24:MI') as date,
+			CASE 
+				WHEN i.status = 'validated' OR i.status = 'collected' THEN 'valide'
+				ELSE 'en_attente'
+			END as statut,
+			EXISTS(SELECT 1 FROM locker_access la WHERE la.item_id = i.id) as code_envoye
+		FROM item i
+		JOIN users u ON i.owner_id = u.id
+		ORDER BY i.created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[AdminDepot])
+}
+
 func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 

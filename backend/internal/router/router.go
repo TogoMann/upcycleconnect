@@ -21,6 +21,7 @@ import (
 	"backend/internal/modules/listing"
 	listingorder "backend/internal/modules/listing_order"
 	"backend/internal/modules/news"
+	"backend/internal/modules/notifications"
 	"backend/internal/modules/planning"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/post"
@@ -66,6 +67,7 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	listingorder.RegisterRoutes(r, db)
 	listing.RegisterRoutes(r, db)
 	cart.RegisterRoutes(r, db)
+	notifications.RegisterRoutes(r, db)
 	planning.RegisterRoutes(r, db)
 	plans.RegisterRoutes(r, db)
 	eventparticipation.RegisterRoutes(r, db)
