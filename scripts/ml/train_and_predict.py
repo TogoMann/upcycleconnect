@@ -45,9 +45,9 @@ def main():
         u.role,
         EXTRACT(DAY FROM (NOW() - u.created_at)) as days_since_registration,
         COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = u.id), 0) as total_points,
-        (SELECT COUNT(*) FROM event_participation WHERE user_id = u.id) as count_events,
-        (SELECT COUNT(*) FROM course_order WHERE buyer_id = u.id) as count_courses,
-        (SELECT COUNT(*) FROM listing_order WHERE user_id = u.id) as count_listings
+        (SELECT COUNT(event_id) FROM event_participation WHERE user_id = u.id) as count_events,
+        (SELECT COUNT(id) FROM course_order WHERE buyer_id = u.id) as count_courses,
+        (SELECT COUNT(id) FROM listing_order WHERE user_id = u.id) as count_listings
     FROM users u;
     """
     import warnings
