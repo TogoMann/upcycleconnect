@@ -7,11 +7,13 @@ RUN bun install
 
 COPY . .
 
-RUN bun run build
+# Set VITE_API_BASE at build time to enable relative paths and proxy routing
+RUN VITE_API_BASE=/api bun run build-only
 
 FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

@@ -2,7 +2,6 @@ package notifications
 
 import (
 	"backend/internal/utils"
-	"fmt"
 	"log"
 )
 

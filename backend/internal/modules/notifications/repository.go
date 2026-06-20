@@ -2,7 +2,6 @@ package notifications
 
 import (
 	db "backend/internal/database"
-	"context"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

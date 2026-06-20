@@ -24,5 +24,12 @@ export default defineConfig({
     hmr: {
       port: 5173,
     },
+    proxy: {
+      '/api': {
+        target: process.env.BACKEND_URL || 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
 })

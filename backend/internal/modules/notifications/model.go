@@ -1,7 +1,5 @@
 package notifications
 
-import "time"
-
 type Notification struct {
 	Id      int64     `db:"id" json:"id"`
 	Titre   string    `db:"titre" json:"titre"`
