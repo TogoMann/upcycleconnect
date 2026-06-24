@@ -15,11 +15,14 @@ vi.mock('chart.js', () => ({
   CategoryScale: vi.fn(),
   LinearScale: vi.fn(),
   ArcElement: vi.fn(),
+  PointElement: vi.fn(),
+  LineElement: vi.fn(),
 }))
 
 vi.mock('vue-chartjs', () => ({
   Bar: { template: '<div>Bar Chart</div>' },
   Pie: { template: '<div>Pie Chart</div>' },
+  Doughnut: { template: '<div>Doughnut Chart</div>' },
 }))
 
 describe('Reporting.vue', () => {
@@ -46,6 +49,15 @@ describe('Reporting.vue', () => {
           ])
         })
       }
+      if (url.includes('/reporting/predictions/distribution')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            'event': 10,
+            'course': 5
+          })
+        })
+      }
       if (url.includes('/reporting/predictions')) {
         return Promise.resolve({
           ok: true,
@@ -57,7 +69,16 @@ describe('Reporting.vue', () => {
           })
         })
       }
-      return Promise.reject(new Error('Unknown URL'))
+      if (url.includes('/reporting/ml-status')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            last_run: '2026-06-25T00:00:00Z',
+            total_predictions: 1
+          })
+        })
+      }
+      return Promise.reject(new Error('Unknown URL: ' + url))
     }) as any
   })
 

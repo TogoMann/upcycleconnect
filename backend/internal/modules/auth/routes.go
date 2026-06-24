@@ -20,7 +20,9 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	handler := NewHandler(service)
 
 	r.HandleFunc("POST /login/", handler.Login)
+	r.HandleFunc("POST /login", handler.Login)
 	r.HandleFunc("POST /register/", handler.Register)
+	r.HandleFunc("POST /register", handler.Register)
 	r.HandleFunc("POST /auth/admin/reset-request", middlewares.AdminOnly(handler.AdminRequestReset))
 	r.HandleFunc("POST /auth/reset-password", handler.ResetPassword)
 }

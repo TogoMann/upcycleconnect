@@ -19,7 +19,7 @@ export const useDepositStore = defineStore('deposit', () => {
         const authStore = useAuthStore()
         isLoading.value = true
         try {
-            const res = await fetch(`${API_BASE}/items/owner/${authStore.user?.id}`, { headers: authHeaders() })
+            const res = await fetch(`${API_BASE}/items/me`, { headers: authHeaders() })
             if (!res.ok) throw new Error('Erreur chargement dépôts')
             depots.value = await res.json()
         } catch (e: any) {

@@ -79,18 +79,34 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function fetchCurrentUser() {
         if (!token.value) return
-        const res = await fetch(`${API_BASE}/users/me`, {
-            headers: { Authorization: `Bearer ${token.value}` },
-        })
-        if (!res.ok) return
-        const found = await res.json()
-        if (found) {
-            const rawId = found.id
-            if (rawId && typeof rawId === 'object' && 'Int64' in rawId) {
-                found.id = rawId.Int64
+        try {
+            const res = await fetch(`${API_BASE}/users/me`, {
+                headers: { Authorization: `Bearer ${token.value}` },
+            })
+            if (!res.ok) {
+                logout()
+                const securedPrefixes = ['/particulier', '/pro', '/salarie', '/admin']
+                if (securedPrefixes.some(prefix => window.location.pathname.startsWith(prefix))) {
+                    window.location.href = '/auth/login'
+                }
+                return
+            }
+            const found = await res.json()
+            if (found) {
+                const rawId = found.id
+                if (rawId && typeof rawId === 'object' && 'Int64' in rawId) {
+                    found.id = rawId.Int64
+                }
+            }
+            user.value = found
+        } catch (err) {
+            console.error('Fetch Current User Error:', err)
+            logout()
+            const securedPrefixes = ['/particulier', '/pro', '/salarie', '/admin']
+            if (securedPrefixes.some(prefix => window.location.pathname.startsWith(prefix))) {
+                window.location.href = '/auth/login'
             }
         }
-        user.value = found
     }
 
     function logout() {
