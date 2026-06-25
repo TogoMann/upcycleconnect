@@ -61,7 +61,7 @@ INSERT INTO users (username, first_name, last_name, email, password_hash, role, 
 ('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW(), NULL),
 ('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'pro', NOW(), 1),
 ('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'admin', NOW(), NULL),
-('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'interne', NOW(), NULL),
+('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'interne', NOW(), NULL),
 ('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW(), NULL);
 
 -- =========================
