@@ -115,6 +115,8 @@ async function submit() {
                     <label class="form-label">Durée</label>
                     <input v-model="form.duree" type="text" class="form-input" />
                 </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Date</label>
