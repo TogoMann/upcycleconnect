@@ -3,6 +3,7 @@ package router
 import (
 	db "backend/internal/database"
 	"backend/internal/modules/advertisement"
+	"backend/internal/modules/brands"
 	"backend/internal/modules/auth"
 	"backend/internal/modules/cart"
 	"backend/internal/modules/chat"
@@ -22,6 +23,7 @@ import (
 	listingorder "backend/internal/modules/listing_order"
 	"backend/internal/modules/news"
 	"backend/internal/modules/notifications"
+	paymentmethods "backend/internal/modules/payment_methods"
 	"backend/internal/modules/planning"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/post"
@@ -83,6 +85,8 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	project.RegisterRoutes(r, db)
 	chat.RegisterRoutes(r, db)
 	reporting.RegisterRoutes(r, db)
+	brands.RegisterRoutes(r, db)
+	paymentmethods.RegisterRoutes(r, db)
 
 	return r
 }

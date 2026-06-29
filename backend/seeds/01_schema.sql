@@ -350,6 +350,29 @@ CREATE TABLE IF NOT EXISTS advertisement (
     approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS brands (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
+    description TEXT,
+    logo_url VARCHAR(255),
+    website VARCHAR(255),
+    created_by BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS payment_methods (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    stripe_payment_method_id VARCHAR(255),
+    card_last4 VARCHAR(4),
+    card_brand VARCHAR(32),
+    card_exp_month INTEGER,
+    card_exp_year INTEGER,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS personal_event (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

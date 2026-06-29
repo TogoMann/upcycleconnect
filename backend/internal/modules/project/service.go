@@ -16,6 +16,10 @@ func (s *Service) GetAllProjets() ([]ProjetFrontend, error) {
 	return s.repo.GetAllProjets()
 }
 
+func (s *Service) GetByCreatorId(creatorId int64) ([]Project, error) {
+	return s.repo.GetByCreatorId(creatorId)
+}
+
 func (s *Service) GetAll() ([]Project, error) {
 	return s.repo.GetAll()
 }

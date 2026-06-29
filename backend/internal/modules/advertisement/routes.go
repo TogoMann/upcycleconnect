@@ -17,6 +17,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("DELETE /admin/publicites/{id}", middlewares.AdminOnly(handler.Delete))
 
 	r.HandleFunc("GET /advertisement", handler.GetAll)
+	r.HandleFunc("GET /advertisement/me", middlewares.Authenticated(handler.GetMyAds))
 	r.HandleFunc("GET /advertisement/{id}", handler.GetById)
 	r.HandleFunc("POST /advertisement", middlewares.HasPlan("Premium", "Pro")(handler.Create))
 	r.HandleFunc("PATCH /advertisement/{id}/approve", middlewares.AdminOnly(handler.Approve))

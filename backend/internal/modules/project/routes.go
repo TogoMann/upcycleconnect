@@ -16,6 +16,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("PATCH /admin/projets/{id}/mise-en-avant", middlewares.AdminOnly(handler.UpdateFeatured))
 
 	r.HandleFunc("GET /project", handler.GetAll)
+	r.HandleFunc("GET /project/me", middlewares.Authenticated(handler.GetMyProjects))
 	r.HandleFunc("GET /project/{id}", handler.GetById)
 	r.HandleFunc("GET /project/{id}/steps", handler.GetSteps)
 

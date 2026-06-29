@@ -35,6 +35,14 @@ func (r *Repository) GetAllPubs() ([]PubFrontend, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[PubFrontend])
 }
 
+func (r *Repository) GetByAnnouncerId(announcerId int64) ([]Advertisement, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, announcer_id, target_id, target_type, ad_type, budget, status, stripe_payment_intent_id, start_date, end_date, created_at, approved_by FROM advertisement WHERE announcer_id = $1 ORDER BY created_at DESC", announcerId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Advertisement])
+}
+
 func (r *Repository) GetAll() ([]Advertisement, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT * FROM advertisement")
 	if err != nil {

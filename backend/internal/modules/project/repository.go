@@ -34,6 +34,14 @@ func (r *Repository) GetAllProjets() ([]ProjetFrontend, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[ProjetFrontend])
 }
 
+func (r *Repository) GetByCreatorId(creatorId int64) ([]Project, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, listing_id, creator_id, title, description, final_score, status, created_at, completed_at FROM project WHERE creator_id = $1 ORDER BY created_at DESC", creatorId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Project])
+}
+
 func (r *Repository) GetAll() ([]Project, error) {
 	rows, err := r.db.Query(db.Ctx, "SELECT * FROM project")
 	if err != nil {

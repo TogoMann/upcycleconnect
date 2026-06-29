@@ -16,6 +16,10 @@ func (s *Service) GetAllPubs() ([]PubFrontend, error) {
 	return s.repo.GetAllPubs()
 }
 
+func (s *Service) GetByAnnouncerId(announcerId int64) ([]Advertisement, error) {
+	return s.repo.GetByAnnouncerId(announcerId)
+}
+
 func (s *Service) GetAll() ([]Advertisement, error) {
 	return s.repo.GetAll()
 }
