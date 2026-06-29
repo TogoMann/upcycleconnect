@@ -57,3 +57,8 @@ func (r *Repository) GetEmailsByRole(role string) ([]string, error) {
 	}
 	return emails, nil
 }
+
+func (r *Repository) UpdateEnvoyes(id int64, count int) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE notifications SET envoyes = $1 WHERE id = $2", count, id)
+	return err
+}

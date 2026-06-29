@@ -122,6 +122,14 @@ export const useChatStore = defineStore('chat', () => {
     return await res.json()
   }
 
+  async function adminCensorMessage(messageId: number) {
+    const res = await fetch(`${API_BASE}/admin/chat/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${authStore.token}` },
+    })
+    if (!res.ok) throw new Error('Failed to censor message')
+  }
+
   return {
     sendMessage,
     getConversations,
@@ -130,5 +138,6 @@ export const useChatStore = defineStore('chat', () => {
     editMessage,
     adminGetConversations,
     adminGetConversationDetails,
+    adminCensorMessage,
   }
 })

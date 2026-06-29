@@ -28,6 +28,7 @@ import (
 	"backend/internal/modules/plans"
 	"backend/internal/modules/post"
 	"backend/internal/modules/project"
+	"backend/internal/modules/logs"
 	"backend/internal/modules/reporting"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/thread"
@@ -87,6 +88,7 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	reporting.RegisterRoutes(r, db)
 	brands.RegisterRoutes(r, db)
 	paymentmethods.RegisterRoutes(r, db)
+	logs.RegisterRoutes(r, db)
 
 	return r
 }

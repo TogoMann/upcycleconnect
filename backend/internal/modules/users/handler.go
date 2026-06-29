@@ -2,6 +2,7 @@ package users
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/logs"
 	"backend/internal/utils"
 	"encoding/json"
 	"fmt"
@@ -107,6 +108,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	h.service.AddScore(id, utils.ActionRegistration.Points, utils.ActionRegistration.Description)
 
+	logs.AddFromRequest(r, "Création d'utilisateur", fmt.Sprintf("Utilisateur #%d: %s", id, userDto.Username), "info")
+
 	userDto.Id = id
 	res, _ := json.Marshal(userDto)
 	fmt.Fprintf(w, "%s", string(res))
@@ -181,6 +184,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logs.AddFromRequest(r, "Modification d'utilisateur", fmt.Sprintf("Utilisateur #%d (%s) modifié", idInt, existingUser.Username), "info")
+
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"message": "user updated successfully"}`)
 }
@@ -201,6 +206,8 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logs.AddFromRequest(r, "Suppression d'utilisateur", fmt.Sprintf("Utilisateur #%d supprimé", idInt), "info")
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"message": "user deleted successfully"}`)

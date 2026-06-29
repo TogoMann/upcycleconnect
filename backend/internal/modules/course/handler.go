@@ -2,6 +2,7 @@ package course
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/logs"
 	"backend/internal/modules/users"
 	"encoding/json"
 	"fmt"
@@ -170,6 +171,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logs.AddFromRequest(r, "Création de formation", fmt.Sprintf("Formation #%d: %s", id.Int64, name), "info")
 
 	res := OffreFrontend{
 		Id:          id.Int64,

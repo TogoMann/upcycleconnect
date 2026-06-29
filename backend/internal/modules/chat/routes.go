@@ -26,4 +26,5 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 
 	r.HandleFunc("GET /admin/chat/conversations", middlewares.AdminOnly(handler.AdminGetConversations))
 	r.HandleFunc("GET /admin/chat/conversations/{id}", middlewares.AdminOnly(handler.AdminGetConversationDetails))
+	r.HandleFunc("DELETE /admin/chat/messages/{id}", middlewares.AdminOnly(handler.AdminDeleteMessage))
 }

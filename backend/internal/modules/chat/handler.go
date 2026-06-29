@@ -1,8 +1,11 @@
 package chat
 
 import (
+	db "backend/internal/database"
 	"backend/internal/middlewares"
+	"backend/internal/modules/logs"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -88,6 +91,8 @@ func (h *Handler) EditMessage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logs.AddFromRequest(r, "Modification de message", fmt.Sprintf("Message #%d modifié", msgId), "info")
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -183,4 +188,24 @@ func getUserIdFromContext(r *http.Request) (int64, error) {
 	}
 
 	return int64(sub), nil
+}
+
+func (h *Handler) AdminDeleteMessage(w http.ResponseWriter, r *http.Request) {
+	msgIdStr := r.PathValue("id")
+	msgId, err := strconv.ParseInt(msgIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid message ID", http.StatusBadRequest)
+		return
+	}
+
+	_, err = h.service.repo.db.Exec(db.Ctx, "UPDATE message SET content = '[Message censuré par la modération]' WHERE id = $1", msgId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	logs.AddFromRequest(r, "Censure de message", fmt.Sprintf("Message #%d censuré par la modération", msgId), "warning")
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"message": "Message censored successfully"}`)
 }

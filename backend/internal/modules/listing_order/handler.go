@@ -2,6 +2,7 @@ package listingorder
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/logs"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -96,6 +97,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logs.AddFromRequest(r, "Vente d'objet", fmt.Sprintf("Commande d'objet #%d (Annonce #%d)", id.Int64, req.ListingId), "info")
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")

@@ -2,6 +2,7 @@ package listing
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/logs"
 	"backend/internal/modules/users"
 	"backend/internal/utils"
 	"encoding/json"
@@ -63,6 +64,8 @@ func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logs.AddFromRequest(r, "Approbation d'annonce", fmt.Sprintf("Annonce #%d approuvée", idInt), "info")
+
 	fmt.Fprintf(w, `{"message": "listing approved successfully"}`)
 }
 
@@ -80,6 +83,8 @@ func (h *Handler) Disapprove(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logs.AddFromRequest(r, "Désapprobation d'annonce", fmt.Sprintf("Annonce #%d désapprouvée", idInt), "info")
 
 	fmt.Fprintf(w, `{"message": "listing disapproved successfully"}`)
 }
@@ -209,6 +214,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	listingDto.Id = id
+	logs.AddFromRequest(r, "Création d'annonce", fmt.Sprintf("Annonce #%d: %s", id, listingDto.Name), "info")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(listingDto)
@@ -280,6 +286,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logs.AddFromRequest(r, "Modification d'annonce", fmt.Sprintf("Annonce #%d modifiée: %s", idInt, dto.Name), "info")
+
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"message": "listing updated successfully"}`)
 }
@@ -324,6 +332,8 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	logs.AddFromRequest(r, "Suppression d'annonce", fmt.Sprintf("Annonce #%d: %s supprimée", idInt, existing.Name), "info")
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"message": "listing deleted successfully"}`)

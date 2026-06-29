@@ -2,6 +2,7 @@ package event
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/logs"
 	"backend/internal/modules/users"
 	"encoding/json"
 	"fmt"
@@ -189,6 +190,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dto.Id = id
+	logs.AddFromRequest(r, "Création d'événement", fmt.Sprintf("Événement #%d à %s", id.Int64, dto.Location), "info")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(dto)
