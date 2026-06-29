@@ -91,13 +91,18 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		Name        string  `json:"nom"`
+		Title       string  `json:"titre"`
 		Description string  `json:"description"`
 		Prix        float64 `json:"prix"`
+		Price       float64 `json:"price"`
 		Categorie   string  `json:"categorie"`
 		Actif       bool    `json:"actif"`
+		Statut      string  `json:"statut"`
 		Date        string  `json:"date"`
 		StartTime   string  `json:"start_time"`
 		EndTime     string  `json:"end_time"`
+		MaxCapacity *int32  `json:"max_capacity"`
+		Duree       string  `json:"duree"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -105,12 +110,34 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := Course{
-		Name:        input.Name,
-		Description: input.Description,
-		Approved:    input.Actif,
+	name := input.Name
+	if name == "" {
+		name = input.Title
 	}
-	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
+	approved := input.Actif
+	if input.Statut == "publiee" {
+		approved = true
+	} else if input.Statut == "brouillon" {
+		approved = false
+	}
+	price := input.Prix
+	if price == 0 {
+		price = input.Price
+	}
+	desc := input.Description
+	if input.Duree != "" {
+		desc = desc + "\n\nDurée: " + input.Duree
+	}
+
+	c := Course{
+		Name:        name,
+		Description: desc,
+		Approved:    approved,
+	}
+	if input.MaxCapacity != nil {
+		c.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}
+	}
+	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
 	c.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
 	c.Date.Scan(input.Date)
 	c.StartTime.Scan(input.StartTime)
@@ -118,6 +145,23 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
+
+	if c.Date.Valid && c.StartTime.Valid {
+		now := time.Now()
+		today := now.Truncate(24 * time.Hour)
+		if c.Date.Time.Equal(today) {
+			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+			if c.StartTime.Microseconds < nowMicros {
+				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	if c.StartTime.Valid && c.EndTime.Valid && c.StartTime.Microseconds >= c.EndTime.Microseconds {
+		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
 		return
 	}
 
@@ -173,13 +217,18 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		Name        string  `json:"nom"`
+		Title       string  `json:"titre"`
 		Description string  `json:"description"`
 		Prix        float64 `json:"prix"`
+		Price       float64 `json:"price"`
 		Categorie   string  `json:"categorie"`
 		Actif       bool    `json:"actif"`
+		Statut      string  `json:"statut"`
 		Date        string  `json:"date"`
 		StartTime   string  `json:"start_time"`
 		EndTime     string  `json:"end_time"`
+		MaxCapacity *int32  `json:"max_capacity"`
+		Duree       string  `json:"duree"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -187,18 +236,57 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := Course{
-		Name:        input.Name,
-		Description: input.Description,
-		Approved:    input.Actif,
+	name := input.Name
+	if name == "" {
+		name = input.Title
 	}
-	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
+	approved := input.Actif
+	if input.Statut == "publiee" {
+		approved = true
+	} else if input.Statut == "brouillon" {
+		approved = false
+	}
+	price := input.Prix
+	if price == 0 {
+		price = input.Price
+	}
+	desc := input.Description
+	if input.Duree != "" {
+		desc = desc + "\n\nDurée: " + input.Duree
+	}
+
+	c := Course{
+		Name:        name,
+		Description: desc,
+		Approved:    approved,
+	}
+	if input.MaxCapacity != nil {
+		c.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}
+	}
+	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
 	c.Date.Scan(input.Date)
 	c.StartTime.Scan(input.StartTime)
 	c.EndTime.Scan(input.EndTime)
 
 	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
+		return
+	}
+
+	if c.Date.Valid && c.StartTime.Valid {
+		now := time.Now()
+		today := now.Truncate(24 * time.Hour)
+		if c.Date.Time.Equal(today) {
+			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+			if c.StartTime.Microseconds < nowMicros {
+				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	if c.StartTime.Valid && c.EndTime.Valid && c.StartTime.Microseconds >= c.EndTime.Microseconds {
+		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
 		return
 	}
 
@@ -283,4 +371,87 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) GetMyCourses(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	courses, err := h.service.GetUserCourses(pgtype.Int8{Int64: int64(sub), Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(courses)
+}
+
+func (h *Handler) ProposeModification(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+
+	var input struct {
+		Comment     string  `json:"comment"`
+		Name        string  `json:"nom"`
+		Description string  `json:"description"`
+		Prix        float64 `json:"prix"`
+		Date        string  `json:"date"`
+		StartTime   string  `json:"start_time"`
+		EndTime     string  `json:"end_time"`
+		MaxCapacity *int32  `json:"max_capacity"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	courseId := pgtype.Int8{Int64: id, Valid: true}
+	existing, err := h.service.GetById(courseId)
+	if err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
+		return
+	}
+
+	if input.Name != "" {
+		existing.Name = input.Name
+	}
+	if input.Description != "" {
+		existing.Description = input.Description
+	}
+	if input.Prix != 0 {
+		existing.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Prix)))
+	}
+	if input.Date != "" {
+		existing.Date.Scan(input.Date)
+	}
+	if input.StartTime != "" {
+		existing.StartTime.Scan(input.StartTime)
+	}
+	if input.EndTime != "" {
+		existing.EndTime.Scan(input.EndTime)
+	}
+	if input.MaxCapacity != nil {
+		existing.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}
+	}
+
+	existing.Status = "needs_modification"
+	existing.CorrectionComment = pgtype.Text{String: input.Comment, Valid: true}
+
+	if err := h.service.Update(courseId, *existing); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"message": "Modification proposal sent successfully"}`)
 }

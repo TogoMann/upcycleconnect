@@ -128,11 +128,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	role, _ := claims["role"].(string)
 
 	var input struct {
-		Date      string  `json:"date"`
-		StartTime string  `json:"start_time"`
-		EndTime   string  `json:"end_time"`
-		Location  string  `json:"location"`
-		Price     float64 `json:"price"`
+		Date        string  `json:"date"`
+		StartTime   string  `json:"start_time"`
+		EndTime     string  `json:"end_time"`
+		Location    string  `json:"location"`
+		Price       float64 `json:"price"`
+		MaxCapacity *int32  `json:"max_capacity"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -145,6 +146,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		CreatedBy: pgtype.Int8{Int64: int64(sub), Valid: true},
 		Location:  input.Location,
 		Approved:  role == "admin",
+	}
+	if input.MaxCapacity != nil {
+		dto.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}
 	}
 	if role == "admin" {
 		dto.ApprovedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
@@ -171,6 +175,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	}
+
+	if dto.StartTime.Valid && dto.EndTime.Valid && dto.StartTime.Microseconds >= dto.EndTime.Microseconds {
+		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
+		return
 	}
 
 	id, err := h.service.Create(dto)
@@ -212,7 +221,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing.CreatedBy.Int64 != int64(sub) {
+	role, _ := claims["role"].(string)
+	if role != "admin" && existing.CreatedBy.Int64 != int64(sub) {
 		http.Error(w, "Forbidden: you do not own this event", http.StatusForbidden)
 		return
 	}
@@ -239,6 +249,11 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	}
+
+	if dto.StartTime.Valid && dto.EndTime.Valid && dto.StartTime.Microseconds >= dto.EndTime.Microseconds {
+		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
+		return
 	}
 
 	err = h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, dto)
@@ -278,7 +293,8 @@ func (h *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing.CreatedBy.Int64 != int64(sub) {
+	role, _ := claims["role"].(string)
+	if role != "admin" && existing.CreatedBy.Int64 != int64(sub) {
 		http.Error(w, "Forbidden: you do not own this event", http.StatusForbidden)
 		return
 	}

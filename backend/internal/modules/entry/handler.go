@@ -63,6 +63,23 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if e.Schedule.Valid && e.Start.Valid {
+		now := time.Now()
+		today := now.Truncate(24 * time.Hour)
+		if e.Schedule.Time.Equal(today) {
+			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+			if e.Start.Microseconds < nowMicros {
+				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	if e.Start.Valid && e.Ending.Valid && e.Start.Microseconds >= e.Ending.Microseconds {
+		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
+		return
+	}
+
 	id, err := h.service.Create(e)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

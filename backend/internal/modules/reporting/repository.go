@@ -147,3 +147,40 @@ func (r *Repository) GetPredictionDistribution(ctx context.Context) (map[string]
 	}
 	return dist, nil
 }
+
+func (r *Repository) GetSalarieStats(ctx context.Context, userId int64) (map[string]int, error) {
+	stats := map[string]int{
+		"formations": 0,
+		"creneaux":    0,
+		"articles":    0,
+		"threads":     0,
+	}
+
+	var countFormations, countCreneaux, countArticles, countThreads int
+
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM course WHERE created_by = $1", userId).Scan(&countFormations)
+	if err != nil {
+		return nil, err
+	}
+	stats["formations"] = countFormations
+
+	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM personal_event WHERE user_id = $1", userId).Scan(&countCreneaux)
+	if err != nil {
+		return nil, err
+	}
+	stats["creneaux"] = countCreneaux
+
+	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM news WHERE created_by = $1", userId).Scan(&countArticles)
+	if err != nil {
+		return nil, err
+	}
+	stats["articles"] = countArticles
+
+	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM thread WHERE created_by = $1", userId).Scan(&countThreads)
+	if err != nil {
+		return nil, err
+	}
+	stats["threads"] = countThreads
+
+	return stats, nil
+}

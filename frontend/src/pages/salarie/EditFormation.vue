@@ -8,7 +8,18 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const form = ref({ titre: '', categorie: '', description: '', duree: '', statut: 'brouillon' })
+const form = ref({
+    titre: '',
+    categorie: '',
+    description: '',
+    duree: '',
+    statut: 'brouillon',
+    date: '',
+    start_time: '',
+    end_time: '',
+    prix: '',
+    max_capacity: '',
+})
 const error = ref('')
 const loading = ref(false)
 
@@ -21,7 +32,18 @@ onMounted(async () => {
         })
         if (res.ok) {
             const data = await res.json()
-            form.value = { titre: data.titre, categorie: data.categorie, description: data.description, duree: data.duree, statut: data.statut }
+            form.value = {
+                titre: data.name || data.nom || '',
+                categorie: data.categorie || 'general',
+                description: data.description || '',
+                duree: data.duree || '',
+                statut: data.approved ? 'publiee' : 'brouillon',
+                date: data.date ? data.date.substring(0, 10) : '',
+                start_time: data.start_time ? data.start_time.substring(0, 5) : '',
+                end_time: data.end_time ? data.end_time.substring(0, 5) : '',
+                prix: data.price || '',
+                max_capacity: data.max_capacity || '',
+            }
         } else {
             router.push('/salarie/formations')
         }
@@ -32,13 +54,18 @@ async function submit() {
     loading.value = true
     error.value = ''
     try {
+        const payload = {
+            ...form.value,
+            prix: parseFloat(form.value.prix) || 0,
+            max_capacity: parseInt(form.value.max_capacity) || null,
+        }
         const res = await fetch(`${API_BASE}/salarie/formations/${route.params.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${authStore.token}`,
             },
-            body: JSON.stringify(form.value),
+            body: JSON.stringify(payload),
         })
         if (res.ok) router.push('/salarie/formations')
         else {
@@ -87,6 +114,32 @@ async function submit() {
                 <div class="form-group">
                     <label class="form-label">Durée</label>
                     <input v-model="form.duree" type="text" class="form-input" />
+                </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input v-model="form.date" type="date" class="form-input" />
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="form-group">
+                        <label class="form-label">Début</label>
+                        <input v-model="form.start_time" type="time" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fin</label>
+                        <input v-model="form.end_time" type="time" class="form-input" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Prix (€)</label>
+                    <input v-model="form.prix" type="number" step="0.01" class="form-input" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Capacité maximale</label>
+                    <input v-model="form.max_capacity" type="number" class="form-input" placeholder="Ex: 15" />
                 </div>
             </div>
 

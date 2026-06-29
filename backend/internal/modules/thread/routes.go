@@ -20,4 +20,9 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("PUT /thread/{id}", middlewares.StaffOnly(handler.Update))
 	r.HandleFunc("PATCH /thread/{id}", middlewares.StaffOnly(handler.Update))
 	r.HandleFunc("DELETE /thread/{id}", middlewares.StaffOnly(handler.DeleteById))
+
+	r.HandleFunc("GET /salarie/forum", middlewares.StaffOnly(handler.GetSalarieForum))
+	r.HandleFunc("POST /salarie/forum/{id}/epingler", middlewares.StaffOnly(handler.Epingler))
+	r.HandleFunc("POST /salarie/forum/bannir", middlewares.StaffOnly(handler.Bannir))
+	r.HandleFunc("DELETE /salarie/forum/{id}", middlewares.StaffOnly(handler.DeleteById))
 }

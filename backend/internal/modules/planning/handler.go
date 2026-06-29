@@ -101,6 +101,23 @@ func (h *Handler) CreatePersonalEvent(w http.ResponseWriter, r *http.Request) {
 		e.EndTime.Scan("23:59:59")
 	}
 
+	if e.Date.Valid && e.StartTime.Valid {
+		now := time.Now()
+		today := now.Truncate(24 * time.Hour)
+		if e.Date.Time.Equal(today) {
+			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+			if e.StartTime.Microseconds < nowMicros {
+				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	if e.StartTime.Valid && e.EndTime.Valid && e.StartTime.Microseconds >= e.EndTime.Microseconds {
+		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
+		return
+	}
+
 	id, err := h.service.CreatePersonalEvent(e)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

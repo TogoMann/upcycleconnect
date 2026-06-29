@@ -20,6 +20,7 @@ interface Event {
     start_time: PgtypeTime | null
     end_time: PgtypeTime | null
     location: string | null
+    max_capacity: any | null
     created_by: number | null
     created_at: string | null
     creator_username: string | null
@@ -30,7 +31,7 @@ interface Event {
 
 const events = ref<Event[]>([])
 const showForm = ref(false)
-const form = ref({ date: '', start_time: '', end_time: '', location: '', price: '' })
+const form = ref({ date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' })
 const saving = ref(false)
 const selectedEvent = ref<Event | null>(null)
 
@@ -53,6 +54,7 @@ async function creer() {
             location: form.value.location
         }
         if (form.value.price) body.price = parseFloat(form.value.price)
+        if (form.value.max_capacity) body.max_capacity = parseInt(form.value.max_capacity, 10)
         const res = await fetch(`${API_BASE}/event/`, {
             method: 'POST',
             headers: {
@@ -64,7 +66,7 @@ async function creer() {
         if (res.ok) {
             const created = await res.json()
             events.value.unshift(created)
-            form.value = { date: '', start_time: '', end_time: '', location: '', price: '' }
+            form.value = { date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' }
             showForm.value = false
         }
     } catch {}
@@ -118,6 +120,14 @@ function fmtDate(iso: string | null): string {
     })
 }
 
+function getLocalDateString(): string {
+    const d = new Date()
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
 function fmtTime(t: PgtypeTime | null): string {
     if (!t || !t.Valid) return '—'
     const totalSeconds = Math.floor(t.Microseconds / 1_000_000)
@@ -156,7 +166,7 @@ function fmtTimestamp(ts: string | null): string {
             <form @submit.prevent="creer" class="form-grid">
                 <div class="field">
                     <label class="field-label">Date</label>
-                    <input v-model="form.date" type="date" class="field-input" required :min="new Date().toISOString().split('T')[0]" />
+                    <input v-model="form.date" type="date" class="field-input" required :min="getLocalDateString()" />
                 </div>
                 <div class="field">
                     <label class="field-label">Début</label>
@@ -179,6 +189,16 @@ function fmtTimestamp(ts: string | null): string {
                         min="0"
                         class="field-input"
                         placeholder="Gratuit si vide"
+                    />
+                </div>
+                <div class="field">
+                    <label class="field-label">Capacité max (participants)</label>
+                    <input
+                        v-model="form.max_capacity"
+                        type="number"
+                        min="1"
+                        class="field-input"
+                        placeholder="Illimité si vide"
                     />
                 </div>
                 <button type="submit" class="btn-save" :disabled="saving">
@@ -215,6 +235,8 @@ function fmtTimestamp(ts: string | null): string {
                         </dd>
                         <dt>Approuvé le</dt>
                         <dd>{{ fmtTimestamp(selectedEvent.approved_at) }}</dd>
+                        <dt>Capacité</dt>
+                        <dd>{{ selectedEvent.max_capacity != null && selectedEvent.max_capacity.Valid !== false ? (selectedEvent.max_capacity.Int32 ?? selectedEvent.max_capacity) + ' participants max' : 'Illimitée' }}</dd>
                     </dl>
                 </div>
             </div>
@@ -229,6 +251,7 @@ function fmtTimestamp(ts: string | null): string {
                         <th>Début</th>
                         <th>Fin</th>
                         <th>Lieu</th>
+                        <th>Capacité</th>
                         <th>Prix</th>
                         <th>Statut</th>
                         <th>Actions</th>
@@ -236,7 +259,7 @@ function fmtTimestamp(ts: string | null): string {
                 </thead>
                 <tbody>
                     <tr v-if="events.length === 0">
-                        <td colspan="8" class="empty">Aucun évènement.</td>
+                        <td colspan="9" class="empty">Aucun évènement.</td>
                     </tr>
                     <tr v-for="e in events" :key="e.id">
                         <td class="td-id">#{{ e.id }}</td>
@@ -244,6 +267,7 @@ function fmtTimestamp(ts: string | null): string {
                         <td>{{ fmtTime(e.start_time) }}</td>
                         <td>{{ fmtTime(e.end_time) }}</td>
                         <td>{{ e.location || '—' }}</td>
+                        <td>{{ e.max_capacity != null && e.max_capacity.Valid !== false ? (e.max_capacity.Int32 ?? e.max_capacity) + ' places' : 'Illimitée' }}</td>
                         <td>{{ e.price != null ? e.price + ' €' : 'Gratuit' }}</td>
                         <td>
                             <span

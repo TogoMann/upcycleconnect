@@ -3,6 +3,7 @@ package thread
 import (
 	db "backend/internal/database"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -140,4 +141,47 @@ func (r *Repository) IncrementViews(threadId pgtype.Int8, userId pgtype.Int8) er
 			VALUES (NULL, $1, 1)`, threadId)
 	}
 	return err
+}
+
+type SalarieThread struct {
+	Id      int64  `json:"id"`
+	Titre   string `json:"titre"`
+	Auteur  string `json:"auteur"`
+	Date    string `json:"date"`
+	Epingle bool   `json:"epingle"`
+	Statut  string `json:"statut"`
+	Replies int    `json:"replies"`
+}
+
+func (r *Repository) GetSalarieForum() ([]SalarieThread, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT 
+			t.id, 
+			t.title, 
+			COALESCE(u.username, 'Anonyme') as auteur, 
+			t.created_at,
+			COUNT(p.id) as replies
+		FROM thread t
+		LEFT JOIN users u ON t.created_by = u.id
+		LEFT JOIN post p ON t.id = p.thread_id
+		GROUP BY t.id, t.title, u.username, t.created_at
+		ORDER BY t.created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var threads []SalarieThread
+	for rows.Next() {
+		var st SalarieThread
+		var createdAt time.Time
+		if err := rows.Scan(&st.Id, &st.Titre, &st.Auteur, &createdAt, &st.Replies); err != nil {
+			return nil, err
+		}
+		st.Date = createdAt.Format("2006-01-02")
+		st.Epingle = false
+		st.Statut = "actif"
+		threads = append(threads, st)
+	}
+	return threads, nil
 }

@@ -23,7 +23,7 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]CartItemDetailed, error)
 		SELECT 
 			ci.id, ci.user_id, ci.listing_id, ci.event_id, ci.course_id, ci.created_at,
 			l.id, COALESCE(l.name, ''), COALESCE(l.description, ''), COALESCE(l.category::text, ''), l.item_id, l.city_id, l.created_by, l.created_at, COALESCE(l.approved, false), l.approved_by, l.approved_at, COALESCE(l.status::text, ''), l.price, l.image_url,
-			e.id, COALESCE(e.approved, false), e.approved_by, e.approved_at, e.price, e.date, e.start_time, e.end_time, COALESCE(e.location, ''), e.created_by, e.created_at,
+			e.id, COALESCE(e.approved, false), e.approved_by, e.approved_at, e.price, e.date, e.start_time, e.end_time, COALESCE(e.location, ''), e.max_capacity, e.created_by, e.created_at,
 			c.id, COALESCE(c.name, ''), COALESCE(c.description, ''), COALESCE(c.max_capacity, 0), c.created_by, c.created_at, COALESCE(c.approved, false), c.approved_by, c.approved_at, c.price, c.date, c.start_time, c.end_time
 		FROM cart_item ci
 		LEFT JOIN listing l ON ci.listing_id = l.id
@@ -47,7 +47,7 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]CartItemDetailed, error)
 		err := rows.Scan(
 			&item.Id, &item.UserId, &item.ListingId, &item.EventId, &item.CourseId, &item.CreatedAt,
 			&l.Id, &l.Name, &l.Description, &l.Category, &l.ItemId, &l.CityId, &l.CreatedBy, &l.CreatedAt, &l.Approved, &l.ApprovedBy, &l.ApprovedAt, &l.Status, &l.Price, &l.ImageUrl,
-			&e.Id, &e.Approved, &e.ApprovedBy, &e.ApprovedAt, &e.Price, &e.Date, &e.StartTime, &e.EndTime, &e.Location, &e.CreatedBy, &e.CreatedAt,
+			&e.Id, &e.Approved, &e.ApprovedBy, &e.ApprovedAt, &e.Price, &e.Date, &e.StartTime, &e.EndTime, &e.Location, &e.MaxCapacity, &e.CreatedBy, &e.CreatedAt,
 			&c.Id, &c.Name, &c.Description, &c.MaxCapacity, &c.CreatedBy, &c.CreatedAt, &c.Approved, &c.ApprovedBy, &c.ApprovedAt, &c.Price, &c.Date, &c.StartTime, &c.EndTime,
 		)
 		if err != nil {

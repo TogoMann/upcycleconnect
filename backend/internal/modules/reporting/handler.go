@@ -1,10 +1,13 @@
 package reporting
 
 import (
+	"backend/internal/middlewares"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Handler struct {
@@ -110,4 +113,26 @@ func (h *Handler) GetPredictionDistribution(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	json.NewEncoder(w).Encode(dist)
+}
+
+func (h *Handler) GetSalarieStats(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	stats, err := h.service.GetSalarieStats(r.Context(), int64(sub))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }

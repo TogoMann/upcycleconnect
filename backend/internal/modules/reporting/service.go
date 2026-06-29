@@ -102,3 +102,7 @@ func (s *Service) GetUserPredictions(ctx context.Context, page, limit int) (*Pag
 func (s *Service) GetMLStatus(ctx context.Context) (*MLStatus, error) {
 	return s.repo.GetMLStatus(ctx)
 }
+
+func (s *Service) GetSalarieStats(ctx context.Context, userId int64) (map[string]int, error) {
+	return s.repo.GetSalarieStats(ctx, userId)
+}

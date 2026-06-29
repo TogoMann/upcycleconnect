@@ -20,6 +20,40 @@ const editId = ref<number | null>(null)
 const form = ref({ nom: '', categorie: '', prix: '', description: '', actif: true })
 const loading = ref(false)
 
+const showProposeModal = ref(false)
+const proposeComment = ref('')
+const proposeId = ref<number | null>(null)
+
+function openPropose(id: number) {
+    proposeId.value = id
+    proposeComment.value = ''
+    showProposeModal.value = true
+}
+
+async function submitPropose() {
+    if (!proposeComment.value) return
+    loading.value = true
+    try {
+        const res = await fetch(`${API_BASE}/admin/catalogue/${proposeId.value}/propose`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${authStore.token}`,
+            },
+            body: JSON.stringify({ comment: proposeComment.value }),
+        })
+        if (res.ok) {
+            alert('Proposition de modification envoyée.')
+            showProposeModal.value = false
+            const resCat = await fetch(`${API_BASE}/admin/catalogue`, {
+                headers: { Authorization: `Bearer ${authStore.token}` },
+            })
+            if (resCat.ok) offres.value = await resCat.json()
+        }
+    } catch {}
+    loading.value = false
+}
+
 onMounted(async () => {
     try {
         const res = await fetch(`${API_BASE}/admin/catalogue`, {
@@ -186,6 +220,9 @@ async function supprimer(id: number) {
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             </button>
+                            <button v-if="!o.actif" class="btn-icon" title="Proposer une modification" @click="openPropose(o.id)">
+                                <span style="font-size: 1.1rem; line-height: 1;">📝</span>
+                            </button>
                             <button v-else class="btn-icon" title="Désapprouver" @click="desapprouver(o.id)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -208,6 +245,22 @@ async function supprimer(id: number) {
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div v-if="showProposeModal" class="form-overlay" @click.self="showProposeModal = false">
+            <div class="form-modal">
+                <h3 class="modal-title">Proposer une modification</h3>
+                <div class="form-group">
+                    <label class="form-label">Commentaire / Suggestions de modification</label>
+                    <textarea v-model="proposeComment" class="form-input form-textarea" rows="4" placeholder="Indiquez à l'interne ce qu'il doit modifier (ex: ajuster le prix ou la date)..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" @click="showProposeModal = false">Annuler</button>
+                    <button class="btn-primary" :disabled="loading || !proposeComment" @click="submitPropose">
+                        {{ loading ? 'Envoi...' : 'Envoyer la proposition' }}
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </template>

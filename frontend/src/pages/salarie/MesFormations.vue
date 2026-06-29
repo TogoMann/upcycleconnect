@@ -68,13 +68,18 @@ async function supprimer(id: number) {
                         <td colspan="6" class="empty">Aucune formation.</td>
                     </tr>
                     <tr v-for="f in formations" :key="f.id">
-                        <td class="td-bold">{{ f.titre }}</td>
+                        <td class="td-bold">
+                            <div>{{ f.name || f.nom || f.titre }}</div>
+                            <div v-if="f.status === 'needs_modification' && f.correction_comment?.String" style="font-size: 0.82rem; color: #b91c1c; font-weight: 500; margin-top: 4px;">
+                                ⚠️ Correction requise : "{{ f.correction_comment.String }}"
+                            </div>
+                        </td>
                         <td class="td-muted">{{ f.categorie }}</td>
                         <td>{{ f.duree }}</td>
                         <td>{{ f.inscrits }}</td>
                         <td>
-                            <span class="badge" :class="f.statut === 'publiee' ? 'badge--active' : 'badge--draft'">
-                                {{ f.statut === 'publiee' ? 'Publiée' : 'Brouillon' }}
+                            <span class="badge" :class="f.status === 'needs_modification' ? 'badge--warn' : (f.approved ? 'badge--active' : 'badge--draft')">
+                                {{ f.status === 'needs_modification' ? 'À corriger' : (f.approved ? 'Publiée' : 'Brouillon') }}
                             </span>
                         </td>
                         <td class="td-actions">
@@ -120,6 +125,7 @@ async function supprimer(id: number) {
 .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
 .badge--active { background: var(--green-pale); color: var(--green-dark); }
 .badge--draft { background: rgba(53,53,53,0.08); color: var(--charcoal); }
+.badge--warn { background: #fef3c7; color: #d97706; }
 .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1.5px solid rgba(53,53,53,0.12); background: transparent; cursor: pointer; color: var(--charcoal); text-decoration: none; transition: border-color 0.2s, color 0.2s; }
 .btn-icon svg { width: 14px; height: 14px; }
 .btn-icon:hover { border-color: var(--green-dark); color: var(--green-dark); }

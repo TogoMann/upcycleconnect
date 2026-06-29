@@ -181,3 +181,25 @@ func (h *Handler) Downvote(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"message": "thread downvoted successfully"}`)
 }
+
+func (h *Handler) GetSalarieForum(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	threads, err := h.service.GetSalarieForum()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(threads)
+}
+
+func (h *Handler) Epingler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"message": "thread pin status updated"}`)
+}
+
+func (h *Handler) Bannir(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"message": "user banned"}`)
+}

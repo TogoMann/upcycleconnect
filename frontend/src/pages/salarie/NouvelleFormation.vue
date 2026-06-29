@@ -13,6 +13,11 @@ const form = ref({
     description: '',
     duree: '',
     statut: 'brouillon',
+    date: '',
+    start_time: '',
+    end_time: '',
+    prix: '',
+    max_capacity: '',
 })
 const error = ref('')
 const loading = ref(false)
@@ -25,13 +30,18 @@ async function submit() {
     loading.value = true
     error.value = ''
     try {
+        const payload = {
+            ...form.value,
+            prix: parseFloat(form.value.prix) || 0,
+            max_capacity: parseInt(form.value.max_capacity) || null,
+        }
         const res = await fetch(`${API_BASE}/salarie/formations`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${authStore.token}`,
             },
-            body: JSON.stringify(form.value),
+            body: JSON.stringify(payload),
         })
         if (res.ok) router.push('/salarie/formations')
         else {
@@ -80,6 +90,34 @@ async function submit() {
                 <div class="form-group">
                     <label class="form-label">Durée</label>
                     <input v-model="form.duree" type="text" class="form-input" placeholder="Ex: 2h30" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input v-model="form.date" type="date" class="form-input" />
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="form-group">
+                        <label class="form-label">Début</label>
+                        <input v-model="form.start_time" type="time" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fin</label>
+                        <input v-model="form.end_time" type="time" class="form-input" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Prix (€)</label>
+                    <input v-model="form.prix" type="number" step="0.01" class="form-input" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Capacité maximale</label>
+                    <input v-model="form.max_capacity" type="number" class="form-input" placeholder="Ex: 15" />
                 </div>
             </div>
 
