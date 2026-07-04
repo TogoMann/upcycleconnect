@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -12,13 +12,23 @@ const form = ref({
     titre: '',
     categorie: '',
     description: '',
-    duree: '',
     statut: 'brouillon',
     date: '',
     start_time: '',
     end_time: '',
     prix: '',
     max_capacity: '',
+})
+
+const dureeCalculee = computed(() => {
+    if (!form.value.start_time || !form.value.end_time) return ''
+    const [h1, m1] = form.value.start_time.split(':').map(Number)
+    const [h2, m2] = form.value.end_time.split(':').map(Number)
+    const minutes = (h2 * 60 + m2) - (h1 * 60 + m1)
+    if (minutes <= 0) return ''
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 })
 const error = ref('')
 const loading = ref(false)
@@ -36,7 +46,6 @@ onMounted(async () => {
                 titre: data.name || data.nom || '',
                 categorie: data.categorie || 'general',
                 description: data.description || '',
-                duree: data.duree || '',
                 statut: data.approved ? 'publiee' : 'brouillon',
                 date: data.date ? data.date.substring(0, 10) : '',
                 start_time: data.start_time ? data.start_time.substring(0, 5) : '',
@@ -56,6 +65,7 @@ async function submit() {
     try {
         const payload = {
             ...form.value,
+            duree: dureeCalculee.value,
             prix: parseFloat(form.value.prix) || 0,
             max_capacity: parseInt(form.value.max_capacity) || null,
         }
@@ -111,9 +121,9 @@ async function submit() {
                         <option value="general">Général</option>
                     </select>
                 </div>
-                <div class="form-group">
+               <div class="form-group">
                     <label class="form-label">Durée</label>
-                    <input v-model="form.duree" type="text" class="form-input" />
+                    <input :value="dureeCalculee || '—'" type="text" class="form-input" readonly />
                 </div>
             </div>
 

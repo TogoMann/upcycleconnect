@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -11,13 +11,23 @@ const form = ref({
     titre: '',
     categorie: '',
     description: '',
-    duree: '',
     statut: 'brouillon',
     date: '',
     start_time: '',
     end_time: '',
     prix: '',
     max_capacity: '',
+})
+
+const dureeCalculee = computed(() => {
+    if (!form.value.start_time || !form.value.end_time) return ''
+    const [h1, m1] = form.value.start_time.split(':').map(Number)
+    const [h2, m2] = form.value.end_time.split(':').map(Number)
+    const minutes = (h2 * 60 + m2) - (h1 * 60 + m1)
+    if (minutes <= 0) return ''
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 })
 const error = ref('')
 const loading = ref(false)
@@ -32,6 +42,7 @@ async function submit() {
     try {
         const payload = {
             ...form.value,
+            duree: dureeCalculee.value,
             prix: parseFloat(form.value.prix) || 0,
             max_capacity: parseInt(form.value.max_capacity) || null,
         }
@@ -89,7 +100,7 @@ async function submit() {
                 </div>
                 <div class="form-group">
                     <label class="form-label">Durée</label>
-                    <input v-model="form.duree" type="text" class="form-input" placeholder="Ex: 2h30" />
+                    <input :value="dureeCalculee || '—'" type="text" class="form-input" readonly />
                 </div>
             </div>
 
