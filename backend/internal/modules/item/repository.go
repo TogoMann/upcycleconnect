@@ -20,8 +20,8 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) GetAll() ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type, 
-			i.physical_state, i.status, i.weight, i.created_at,
+			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type,
+			i.physical_state, i.size, i.status, i.weight, i.created_at,
 			s.type_site as site_type
 		FROM item i
 		LEFT JOIN site s ON i.site_id = s.id
@@ -57,8 +57,8 @@ func (r *Repository) GetAdminDepots() ([]AdminDepot, error) {
 func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type, 
-			i.physical_state, i.status, i.weight, i.created_at,
+			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type,
+			i.physical_state, i.size, i.status, i.weight, i.created_at,
 			s.type_site as site_type
 		FROM item i
 		LEFT JOIN site s ON i.site_id = s.id
@@ -73,8 +73,8 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 func (r *Repository) GetById(id pgtype.Int8) (*Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type, 
-			i.physical_state, i.status, i.weight, i.created_at,
+			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type,
+			i.physical_state, i.size, i.status, i.weight, i.created_at,
 			s.type_site as site_type
 		FROM item i
 		LEFT JOIN site s ON i.site_id = s.id
@@ -91,10 +91,14 @@ func (r *Repository) GetById(id pgtype.Int8) (*Item, error) {
 }
 
 func (r *Repository) Create(item Item) (pgtype.Int8, error) {
+	size := item.Size
+	if size == "" {
+		size = SizeM
+	}
 	var id int64
 	err := r.db.QueryRow(db.Ctx,
-		"INSERT INTO item (owner_id, locker_id, site_id, material_type, physical_state, status, weight) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, item.Status, item.Weight).Scan(&id)
+		"INSERT INTO item (owner_id, locker_id, site_id, material_type, physical_state, size, status, weight) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, size, item.Status, item.Weight).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
@@ -102,9 +106,13 @@ func (r *Repository) Create(item Item) (pgtype.Int8, error) {
 }
 
 func (r *Repository) Update(id pgtype.Int8, item Item) error {
+	size := item.Size
+	if size == "" {
+		size = SizeM
+	}
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE item SET owner_id=$1, locker_id=$2, site_id=$3, material_type=$4, physical_state=$5, status=$6, weight=$7 WHERE id=$8",
-		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, item.Status, item.Weight, id)
+		"UPDATE item SET owner_id=$1, locker_id=$2, site_id=$3, material_type=$4, physical_state=$5, size=$6, status=$7, weight=$8 WHERE id=$9",
+		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, size, item.Status, item.Weight, id)
 	if err != nil {
 		return err
 	}

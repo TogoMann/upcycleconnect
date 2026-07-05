@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Depot {
@@ -45,25 +47,25 @@ async function envoyerCode(d: Depot) {
 <template>
     <div class="depots">
         <div class="page-header">
-            <h1 class="page-title">Dépôts.</h1>
-            <p class="page-subtitle">Validation des demandes de dépôt et envoi des codes.</p>
+            <h1 class="page-title">{{ t('admin.depots.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.depots.subtitle') }}</p>
         </div>
 
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Utilisateur</th>
-                        <th>Objet</th>
-                        <th>Date</th>
-                        <th>Statut</th>
-                        <th>Code</th>
-                        <th>Actions</th>
+                        <th>{{ t('admin.depots.colUser') }}</th>
+                        <th>{{ t('admin.depots.colItem') }}</th>
+                        <th>{{ t('admin.depots.colDate') }}</th>
+                        <th>{{ t('admin.depots.colStatus') }}</th>
+                        <th>{{ t('admin.depots.colCode') }}</th>
+                        <th>{{ t('admin.depots.colActions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="depots.length === 0">
-                        <td colspan="6" class="empty">Aucune demande de dépôt.</td>
+                        <td colspan="6" class="empty">{{ t('admin.depots.empty') }}</td>
                     </tr>
                     <tr v-for="d in depots" :key="d.id">
                         <td class="td-bold">{{ d.utilisateur }}</td>
@@ -71,12 +73,12 @@ async function envoyerCode(d: Depot) {
                         <td class="td-muted">{{ d.date }}</td>
                         <td>
                             <span class="badge" :class="d.statut === 'valide' ? 'badge--active' : 'badge--pending'">
-                                {{ d.statut === 'valide' ? 'Validé' : 'En attente' }}
+                                {{ d.statut === 'valide' ? t('admin.depots.validated') : t('admin.depots.pending') }}
                             </span>
                         </td>
                         <td>
                             <span class="badge" :class="d.code_envoye ? 'badge--active' : 'badge--none'">
-                                {{ d.code_envoye ? 'Envoyé' : 'Non envoyé' }}
+                                {{ d.code_envoye ? t('admin.depots.sent') : t('admin.depots.notSent') }}
                             </span>
                         </td>
                         <td class="td-actions">
@@ -84,12 +86,12 @@ async function envoyerCode(d: Depot) {
                                 v-if="d.statut !== 'valide'"
                                 class="btn-action"
                                 @click="valider(d)"
-                            >Valider</button>
+                            >{{ t('admin.depots.validate') }}</button>
                             <button
                                 v-if="d.statut === 'valide' && !d.code_envoye"
                                 class="btn-action btn-action--send"
                                 @click="envoyerCode(d)"
-                            >Envoyer code</button>
+                            >{{ t('admin.depots.sendCode') }}</button>
                         </td>
                     </tr>
                 </tbody>

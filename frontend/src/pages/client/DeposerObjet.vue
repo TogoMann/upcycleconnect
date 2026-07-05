@@ -1,13 +1,32 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const clientStore = useClientStore()
 
 const ETATS = ['Neuf', 'Bon état', 'Abimé', 'Cassé'] as const
 const MATERIAUX = ['Bois', 'Métal', 'Textile', 'Plastique', 'Verre', 'Céramique', 'Cuir', 'Autre']
+
+const etatLabels = computed<Record<string, string>>(() => ({
+    'Neuf': t('client.deposerObjet.stateNew'),
+    'Bon état': t('client.deposerObjet.stateGood'),
+    'Abimé': t('client.deposerObjet.stateDamaged'),
+    'Cassé': t('client.deposerObjet.stateBroken'),
+}))
+const materiauLabels = computed<Record<string, string>>(() => ({
+    'Bois': t('client.deposerObjet.materialWood'),
+    'Métal': t('client.deposerObjet.materialMetal'),
+    'Textile': t('client.deposerObjet.materialTextile'),
+    'Plastique': t('client.deposerObjet.materialPlastic'),
+    'Verre': t('client.deposerObjet.materialGlass'),
+    'Céramique': t('client.deposerObjet.materialCeramic'),
+    'Cuir': t('client.deposerObjet.materialLeather'),
+    'Autre': t('client.deposerObjet.materialOther'),
+}))
 
 const form = reactive({
     material_type: '',
@@ -31,13 +50,13 @@ const submitting = ref(false)
 const success = ref(false)
 
 function validate(): boolean {
-    errors.material_type = form.material_type ? '' : 'Le type de matériau est requis'
-    errors.physical_state = form.physical_state ? '' : "L'état de l'objet est requis"
-    errors.schedule = form.schedule ? '' : 'La date est requise'
-    errors.start = form.start ? '' : "L'heure de début est requise"
-    errors.ending = form.ending ? '' : "L'heure de fin est requise"
+    errors.material_type = form.material_type ? '' : t('client.deposerObjet.errorMaterialRequired')
+    errors.physical_state = form.physical_state ? '' : t('client.deposerObjet.errorStateRequired')
+    errors.schedule = form.schedule ? '' : t('client.deposerObjet.errorDateRequired')
+    errors.start = form.start ? '' : t('client.deposerObjet.errorStartRequired')
+    errors.ending = form.ending ? '' : t('client.deposerObjet.errorEndRequired')
     if (form.start && form.ending && form.start >= form.ending) {
-        errors.ending = "L'heure de fin doit être après l'heure de début"
+        errors.ending = t('client.deposerObjet.errorEndAfterStart')
     }
     return !errors.material_type && !errors.physical_state && !errors.schedule && !errors.start && !errors.ending
 }
@@ -100,9 +119,9 @@ onMounted(() => {
                     <line x1="19" y1="12" x2="5" y2="12" />
                     <polyline points="12 19 5 12 12 5" />
                 </svg>
-                Mes dépôts
+                {{ t('client.deposerObjet.backToDeposits') }}
             </router-link>
-            <h1 class="page-title">Déposer un objet.</h1>
+            <h1 class="page-title">{{ t('client.deposerObjet.pageTitle') }}</h1>
         </div>
 
         <div v-if="success" class="success-card">
@@ -111,14 +130,13 @@ onMounted(() => {
                     <polyline points="20 6 9 17 4 12" />
                 </svg>
             </div>
-            <h2 class="success-title">Dépôt enregistré !</h2>
+            <h2 class="success-title">{{ t('client.deposerObjet.successTitle') }}</h2>
             <p class="success-desc">
-                Votre objet a été enregistré et votre créneau de dépôt réservé.
-                Présentez-vous au site partenaire à l'heure indiquée.
+                {{ t('client.deposerObjet.successDesc') }}
             </p>
             <div class="success-actions">
-                <router-link to="/particulier/planning" class="btn-primary">Voir mon planning</router-link>
-                <button class="btn-secondary" @click="resetForm">Déposer un autre objet</button>
+                <router-link to="/particulier/planning" class="btn-primary">{{ t('client.deposerObjet.viewPlanning') }}</router-link>
+                <button class="btn-secondary" @click="resetForm">{{ t('client.deposerObjet.depositAnother') }}</button>
             </div>
         </div>
 
@@ -130,55 +148,55 @@ onMounted(() => {
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 <p>
-                    Décrivez votre objet et choisissez un créneau pour le déposer dans l'un de nos sites partenaires.
+                    {{ t('client.deposerObjet.infoBanner') }}
                 </p>
             </div>
 
             <form class="form-card" @submit.prevent="handleSubmit">
-                <div class="form-section-title">L'objet</div>
+                <div class="form-section-title">{{ t('client.deposerObjet.itemSection') }}</div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Type de matériau</label>
+                        <label class="form-label">{{ t('client.deposerObjet.materialType') }}</label>
                         <select
                             v-model="form.material_type"
                             class="form-input"
                             :class="{ 'form-input--error': errors.material_type }"
                         >
-                            <option value="" disabled>Sélectionnez</option>
-                            <option v-for="m in MATERIAUX" :key="m" :value="m">{{ m }}</option>
+                            <option value="" disabled>{{ t('client.deposerObjet.select') }}</option>
+                            <option v-for="m in MATERIAUX" :key="m" :value="m">{{ materiauLabels[m] }}</option>
                         </select>
                         <span v-if="errors.material_type" class="form-error">{{ errors.material_type }}</span>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">État de l'objet</label>
+                        <label class="form-label">{{ t('client.deposerObjet.physicalState') }}</label>
                         <select
                             v-model="form.physical_state"
                             class="form-input"
                             :class="{ 'form-input--error': errors.physical_state }"
                         >
-                            <option value="" disabled>Sélectionnez</option>
-                            <option v-for="e in ETATS" :key="e" :value="e">{{ e }}</option>
+                            <option value="" disabled>{{ t('client.deposerObjet.select') }}</option>
+                            <option v-for="e in ETATS" :key="e" :value="e">{{ etatLabels[e] }}</option>
                         </select>
                         <span v-if="errors.physical_state" class="form-error">{{ errors.physical_state }}</span>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Lieu de dépôt</label>
+                    <label class="form-label">{{ t('client.deposerObjet.depositLocation') }}</label>
                     <select v-model="form.site_id" class="form-input">
-                        <option value="">Sélectionnez un site (optionnel)</option>
+                        <option value="">{{ t('client.deposerObjet.selectSiteOptional') }}</option>
                         <option v-for="site in clientStore.sites" :key="site.id?.Int64" :value="site.id?.Int64">
-                            Site #{{ site.id?.Int64 }} — {{ site.type_site || 'Point de collecte' }}
+                            {{ t('client.deposerObjet.site', { id: site.id?.Int64, type: site.type_site || t('client.deposerObjet.collectionPoint') }) }}
                         </option>
                     </select>
                 </div>
 
-                <div class="form-section-title form-section-title--mt">Créneau de dépôt</div>
+                <div class="form-section-title form-section-title--mt">{{ t('client.deposerObjet.slotSection') }}</div>
 
                 <div class="form-group">
-                    <label class="form-label">Date du dépôt</label>
+                    <label class="form-label">{{ t('client.deposerObjet.depositDate') }}</label>
                     <input
                         v-model="form.schedule"
                         type="date"
@@ -191,7 +209,7 @@ onMounted(() => {
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Heure de début</label>
+                        <label class="form-label">{{ t('client.deposerObjet.startTime') }}</label>
                         <input
                             v-model="form.start"
                             type="time"
@@ -202,7 +220,7 @@ onMounted(() => {
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Heure de fin</label>
+                        <label class="form-label">{{ t('client.deposerObjet.endTime') }}</label>
                         <input
                             v-model="form.ending"
                             type="time"
@@ -216,9 +234,9 @@ onMounted(() => {
                 <div v-if="errors.global" class="error-banner">{{ errors.global }}</div>
 
                 <div class="form-actions">
-                    <router-link to="/particulier/conteneurs" class="btn-cancel">Annuler</router-link>
+                    <router-link to="/particulier/conteneurs" class="btn-cancel">{{ t('client.deposerObjet.cancel') }}</router-link>
                     <button type="submit" class="btn-submit" :disabled="submitting">
-                        {{ submitting ? 'Enregistrement…' : 'Valider le dépôt' }}
+                        {{ submitting ? t('client.deposerObjet.saving') : t('client.deposerObjet.validateDeposit') }}
                     </button>
                 </div>
             </form>

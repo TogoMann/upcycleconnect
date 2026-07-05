@@ -15,8 +15,8 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetAll() ([]NewsFrontend, error) {
-	return s.repo.GetAll()
+func (s *Service) GetAll(newsType string) ([]NewsFrontend, error) {
+	return s.repo.GetAll(newsType)
 }
 
 func (s *Service) GetById(id pgtype.Int8) (*News, error) {
@@ -33,6 +33,16 @@ func (s *Service) Create(newsDto News) (pgtype.Int8, error) {
 	}
 
 	return s.repo.Create(newsDto)
+}
+
+func (s *Service) Update(id pgtype.Int8, newsDto News) error {
+	if !id.Valid || id.Int64 < 1 {
+		return fmt.Errorf("news/service News ID invalide: %d", id)
+	}
+	if strings.TrimSpace(newsDto.Content) == "" || strings.TrimSpace(newsDto.Title) == "" {
+		return fmt.Errorf("news/service Invalid string(s): Missing values.")
+	}
+	return s.repo.Update(id, newsDto)
 }
 
 func (s *Service) Delete(id pgtype.Int8) error {

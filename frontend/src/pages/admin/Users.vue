@@ -1,7 +1,7 @@
 <template>
     <div class="admin-page">
         <div class="section-header">
-            <h2 class="section-title">Gestion des utilisateurs</h2>
+            <h2 class="section-title">{{ t('admin.users.pageTitle') }}</h2>
             <button class="btn-refresh" @click="adminStore.fetchUsers()">
                 <svg
                     width="14"
@@ -19,7 +19,7 @@
                         d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
                     />
                 </svg>
-                Actualiser
+                {{ t('admin.users.refresh') }}
             </button>
         </div>
 
@@ -35,7 +35,7 @@
             >
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
-            Chargement des utilisateurs...
+            {{ t('admin.users.loading') }}
         </div>
 
         <div v-if="adminStore.error" class="state-error">
@@ -58,12 +58,12 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Rôle</th>
-                        <th>Score</th>
-                        <th>Actions</th>
+                        <th>{{ t('admin.users.colId') }}</th>
+                        <th>{{ t('admin.users.colName') }}</th>
+                        <th>{{ t('admin.users.colEmail') }}</th>
+                        <th>{{ t('admin.users.colRole') }}</th>
+                        <th>{{ t('admin.users.colScore') }}</th>
+                        <th>{{ t('admin.users.colActions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,7 +91,7 @@
                                 class="badge"
                                 :class="`badge--${user.role}`"
                             >
-                                {{ user.role }}
+                                {{ roleLabel(user.role) }}
                             </span>
                         </td>
 
@@ -123,7 +123,7 @@
                                 >
                                     <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                Historique
+                                {{ t('admin.users.history') }}
                             </button>
                             <button class="btn-reset" @click="resetPassword(user)">
                                 <svg
@@ -139,7 +139,7 @@
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                 </svg>
-                                Réinitialiser MDP
+                                {{ t('admin.users.resetPassword') }}
                             </button>
                             <button class="btn-edit" @click="openEdit(user)">
                                 <svg
@@ -155,7 +155,7 @@
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
-                                Modifier
+                                {{ t('admin.users.edit') }}
                             </button>
                             <button class="btn-delete" @click="deleteUser(user.id)">
                                 <svg
@@ -173,13 +173,13 @@
                                     <path d="M10 11v6M14 11v6" />
                                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                                 </svg>
-                                Supprimer
+                                {{ t('admin.users.delete') }}
                             </button>
                         </td>
                     </tr>
 
                     <tr v-if="adminStore.users.length === 0">
-                        <td colspan="6" class="cell-empty">Aucun utilisateur trouvé.</td>
+                        <td colspan="6" class="cell-empty">{{ t('admin.users.empty') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -189,16 +189,16 @@
           <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
               <p class="text-sm text-gray-700 flex items-center gap-2">
-                Page 
-                <input 
-                  type="number" 
-                  min="1" 
-                  :max="adminStore.usersTotalPages" 
-                  v-model.lazy="adminStore.usersCurrentPage" 
-                  @change="adminStore.fetchUsers(adminStore.usersCurrentPage)" 
-                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600" 
+                {{ t('admin.users.page') }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="adminStore.usersTotalPages"
+                  v-model.lazy="adminStore.usersCurrentPage"
+                  @change="adminStore.fetchUsers(adminStore.usersCurrentPage)"
+                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
                 />
-                sur <span class="font-medium">{{ adminStore.usersTotalPages }}</span>
+                {{ t('admin.users.of') }} <span class="font-medium">{{ adminStore.usersTotalPages }}</span>
               </p>
             </div>
             <div>
@@ -208,7 +208,7 @@
                   :disabled="adminStore.usersCurrentPage === 1"
                   class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                 >
-                  <span class="sr-only">Précédent</span>
+                  <span class="sr-only">{{ t('admin.users.previous') }}</span>
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
                   </svg>
@@ -218,7 +218,7 @@
                   :disabled="adminStore.usersCurrentPage === adminStore.usersTotalPages"
                   class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                 >
-                  <span class="sr-only">Suivant</span>
+                  <span class="sr-only">{{ t('admin.users.next') }}</span>
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
                   </svg>
@@ -231,7 +231,7 @@
         <div v-if="showHistoryModal" class="modal-overlay" @click.self="closeHistory">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Historique des points - {{ historyUser?.username }}</h3>
+                    <h3 class="modal-title">{{ t('admin.users.historyTitle', { username: historyUser?.username }) }}</h3>
                     <button class="btn-close" @click="closeHistory">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -241,8 +241,8 @@
                 </div>
                 
                 <div class="modal-body history-modal-body">
-                    <div v-if="isLoadingHistory" class="history-loading">Chargement...</div>
-                    <div v-else-if="scoreHistory.length === 0" class="history-empty">Aucun historique trouvé.</div>
+                    <div v-if="isLoadingHistory" class="history-loading">{{ t('admin.users.historyLoading') }}</div>
+                    <div v-else-if="scoreHistory.length === 0" class="history-empty">{{ t('admin.users.historyEmpty') }}</div>
                     <div v-else class="history-list">
                         <div v-for="item in scoreHistory" :key="item.id" class="history-item">
                             <div class="history-item-main">
@@ -251,7 +251,7 @@
                                 </span>
                                 <span class="history-desc">{{ item.description }}</span>
                             </div>
-                            <span class="history-date">{{ new Date(item.created_at).toLocaleDateString() }}</span>
+                            <span class="history-date">{{ new Date(item.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR') }}</span>
                         </div>
                     </div>
                 </div>
@@ -261,7 +261,7 @@
         <div v-if="showEditModal" class="modal-overlay" @click.self="closeEdit">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Modifier l'utilisateur</h3>
+                    <h3 class="modal-title">{{ t('admin.users.editUserTitle') }}</h3>
                     <button class="btn-close" @click="closeEdit">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -273,39 +273,39 @@
                 <form @submit.prevent="saveUser" class="modal-body">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Prénom</label>
+                            <label>{{ t('admin.users.firstName') }}</label>
                             <input type="text" v-model="editForm.first_name" required class="form-input" />
                         </div>
                         <div class="form-group">
-                            <label>Nom</label>
+                            <label>{{ t('admin.users.lastName') }}</label>
                             <input type="text" v-model="editForm.last_name" required class="form-input" />
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Nom d'utilisateur</label>
+                        <label>{{ t('admin.users.username') }}</label>
                         <input type="text" v-model="editForm.username" required class="form-input" />
                     </div>
 
                     <div class="form-group">
-                        <label>Email</label>
+                        <label>{{ t('admin.users.email') }}</label>
                         <input type="email" v-model="editForm.email" required class="form-input" />
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>Rôle</label>
+                        <label>{{ t('admin.users.role') }}</label>
                         <select v-model="editForm.role" class="form-select">
-                            <option value="client">Client</option>
-                            <option value="pro">Professionnel</option>
-                            <option value="interne">Salarié</option>
-                            <option value="admin">Administrateur</option>
+                            <option value="client">{{ t('admin.users.roleClient') }}</option>
+                            <option value="pro">{{ t('admin.users.rolePro') }}</option>
+                            <option value="interne">{{ t('admin.users.roleInterne') }}</option>
+                            <option value="admin">{{ t('admin.users.roleAdmin') }}</option>
                         </select>
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" class="btn-cancel" @click="closeEdit">Annuler</button>
+                        <button type="button" class="btn-cancel" @click="closeEdit">{{ t('admin.users.cancel') }}</button>
                         <button type="submit" class="btn-save" :disabled="isSaving">
-                            {{ isSaving ? 'Enregistrement...' : 'Enregistrer' }}
+                            {{ isSaving ? t('admin.users.saving') : t('admin.users.save') }}
                         </button>
                     </div>
                 </form>
@@ -317,8 +317,20 @@
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue'
 import { useAdminStore } from '@/stores/admin'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const adminStore = useAdminStore()
+
+function roleLabel(role: string): string {
+    switch (role) {
+        case 'client': return t('admin.users.roleClient')
+        case 'pro': return t('admin.users.rolePro')
+        case 'interne': return t('admin.users.roleInterne')
+        case 'admin': return t('admin.users.roleAdmin')
+        default: return role
+    }
+}
 
 const showEditModal = ref(false)
 const showHistoryModal = ref(false)
@@ -393,18 +405,18 @@ const saveUser = async () => {
 }
 
 const deleteUser = (id: number) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+    if (confirm(t('admin.users.confirmDelete'))) {
         adminStore.deleteUser(id)
     }
 }
 
 const resetPassword = async (user: any) => {
-    if (confirm(`Voulez-vous envoyer un email de réinitialisation de mot de passe à ${user.first_name} ${user.last_name} (${user.email}) ?`)) {
+    if (confirm(t('admin.users.confirmResetPassword', { name: `${user.first_name} ${user.last_name}`, email: user.email }))) {
         try {
             await adminStore.requestPasswordReset(user.id)
-            alert('Email de réinitialisation envoyé avec succès !')
+            alert(t('admin.users.resetPasswordSuccess'))
         } catch (err: any) {
-            alert(`Erreur: ${err.message}`)
+            alert(t('admin.users.resetPasswordError', { message: err.message }))
         }
     }
 }

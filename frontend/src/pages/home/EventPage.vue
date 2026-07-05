@@ -4,13 +4,17 @@ import { ref, onMounted, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const clientStore = useClientStore()
 const authStore = useAuthStore()
 const router = useRouter()
 
 interface Event {
     id: number
+    title: string
+    description: string | null
     approved: boolean
     price: number | null
     date: string | null
@@ -58,12 +62,12 @@ onMounted(async () => {
 
 function fmtDate(iso: string | null): string {
     if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function fmtPrice(price: number | null): string {
-    if (price == null) return 'Gratuit'
-    if (price === 0) return 'Gratuit'
+    if (price == null) return t('listingDetail.free')
+    if (price === 0) return t('listingDetail.free')
     return `${price} €`
 }
 
@@ -78,7 +82,7 @@ async function handleAddToCart(event: Event) {
         showToast.value = true
         setTimeout(() => { showToast.value = false }, 3000)
     } catch (e: any) {
-        alert("Erreur lors de l'ajout au panier")
+        alert(t('events.addToCartError'))
     }
 }
 </script>
@@ -87,49 +91,47 @@ async function handleAddToCart(event: Event) {
     <div class="page-content">
         <section class="hero">
             <div class="container">
-                <h1 class="hero-title">Découvrez nos évènements.</h1>
+                <h1 class="hero-title">{{ t('events.pageTitle') }}</h1>
             </div>
         </section>
 
         <section class="events-section">
             <div class="container">
-                <div v-if="loading" class="loading">Chargement des évènements…</div>
+                <div v-if="loading" class="loading">{{ t('events.loading') }}</div>
 
-                <div v-else-if="events.length === 0" class="empty">Aucun évènement à venir.</div>
+                <div v-else-if="events.length === 0" class="empty">{{ t('events.noEvents') }}</div>
 
                 <div
-                    <div
-                        v-for="(event, index) in filteredEvents"
-                        :key="event.id"
-                        class="event-block"
-                        :class="{ 'event-block--last': index === filteredEvents.length - 1 }"
-                    >
-
+                    v-for="(event, index) in filteredEvents"
+                    :key="event.id"
+                    class="event-block"
+                    :class="{ 'event-block--last': index === filteredEvents.length - 1 }"
+                >
                     <div class="event-info">
                         <div class="event-badges">
                             <span class="badge-date">{{ fmtDate(event.date) }}</span>
-                            <span v-if="!event.approved" class="badge-pending">En attente de validation</span>
+                            <span v-if="!event.approved" class="badge-pending">{{ t('events.pendingApproval') }}</span>
                         </div>
-                        <h2 class="event-title">Évènement #{{ event.id }}</h2>
+                        <h2 class="event-title">{{ event.title }}</h2>
+                        <p v-if="event.description" class="event-desc">{{ event.description }}</p>
                         <p v-if="event.location" class="event-loc">📍 {{ event.location }}</p>
                     </div>
 
                     <div class="event-footer">
                         <span class="event-price">{{ fmtPrice(event.price) }}</span>
-                        <button class="btn-reserver" @click="handleAddToCart(event)">Ajouter au panier</button>
+                        <button class="btn-reserver" @click="handleAddToCart(event)">{{ t('events.addToCart') }}</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Toast Notification -->
         <Transition name="toast">
             <div v-if="showToast" class="toast-card">
                 <div class="toast-content">
                     <span class="toast-icon">✅</span>
-                    <span class="toast-text">Événement ajouté au panier !</span>
+                    <span class="toast-text">{{ t('events.addedToCart') }}</span>
                 </div>
-                <router-link to="/particulier/panier" class="toast-link">Voir panier</router-link>
+                <router-link to="/particulier/panier" class="toast-link">{{ t('events.viewCart') }}</router-link>
             </div>
         </Transition>
     </div>
@@ -138,6 +140,7 @@ async function handleAddToCart(event: Event) {
 <style scoped>
 /* Previous styles + Toast styles */
 .event-loc { margin-top: 8px; font-size: 0.95rem; opacity: 0.7; }
+.event-desc { margin-top: 10px; font-size: 0.95rem; opacity: 0.75; line-height: 1.5; }
 
 .toast-card {
     position: fixed;

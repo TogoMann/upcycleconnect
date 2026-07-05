@@ -1,11 +1,13 @@
 package entryparticipation
 
 import (
+	"backend/internal/middlewares"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -51,12 +53,26 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
 	var dto EntryParticipation
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
+
+	dto.UserId = pgtype.Int8{Int64: int64(sub), Valid: true}
 
 	_, err = h.service.Create(dto)
 	if err != nil {

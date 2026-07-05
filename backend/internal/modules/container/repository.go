@@ -135,3 +135,82 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "DELETE FROM container WHERE id = $1", id)
 	return err
 }
+
+func (r *Repository) FindAvailableLocker(cityId pgtype.Int8) (pgtype.Int8, error) {
+	var lockerId int64
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT l.id
+		FROM locker l
+		JOIN container c ON l.container_id = c.id
+		JOIN site s ON c.site_id = s.id
+		JOIN address a ON s.address_id = a.id
+		WHERE l.status = 'Available' AND c.status != 'HS'
+		ORDER BY (a.city_id = $1) DESC, l.id ASC
+		LIMIT 1
+	`, cityId).Scan(&lockerId)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+	return pgtype.Int8{Int64: lockerId, Valid: true}, nil
+}
+
+func (r *Repository) UpdateLockerStatus(lockerId pgtype.Int8, status string) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE locker SET status = $1 WHERE id = $2", status, lockerId)
+	return err
+}
+
+func (r *Repository) GetSitesByCity(cityId pgtype.Int8) ([]SiteOption, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT
+			s.id as site_id,
+			a.street_number || ' ' || a.street_name as address,
+			COALESCE(s.type_site, '') as type_site
+		FROM site s
+		JOIN address a ON s.address_id = a.id
+		WHERE a.city_id = $1
+		ORDER BY s.id
+	`, cityId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[SiteOption])
+}
+
+func (r *Repository) GetLockersBySite(siteId pgtype.Int8) ([]LockerOption, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT
+			l.id, l.label, l.size, l.status, l.container_id, c.site_id,
+			a.street_number || ' ' || a.street_name || ', ' || ci.name as address
+		FROM locker l
+		JOIN container c ON l.container_id = c.id
+		JOIN site s ON c.site_id = s.id
+		JOIN address a ON s.address_id = a.id
+		JOIN city ci ON a.city_id = ci.id
+		WHERE c.site_id = $1 AND c.status != 'HS'
+		ORDER BY l.label
+	`, siteId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[LockerOption])
+}
+
+func (r *Repository) GetLockerById(id pgtype.Int8) (*Locker, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, container_id, label, status, size, created_at FROM locker WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	locker, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Locker])
+	if err != nil {
+		return nil, err
+	}
+	return &locker, nil
+}
+
+func (r *Repository) ClaimLocker(lockerId pgtype.Int8) (bool, error) {
+	tag, err := r.db.Exec(db.Ctx, "UPDATE locker SET status = 'Occupied' WHERE id = $1 AND status = 'Available'", lockerId)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}

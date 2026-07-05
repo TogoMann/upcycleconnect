@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 interface Project {
@@ -50,21 +52,21 @@ onMounted(async () => {
 
 function formatDate(d: { Time: string; Valid: boolean } | undefined) {
     if (!d?.Valid) return '—'
-    return new Date(d.Time).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(d.Time).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function statusConfig(s: string) {
     const map: Record<string, { label: string; class: string; icon: string }> = {
-        'in progress': { label: 'En cours', class: 'badge--progress', icon: 'progress' },
-        'done': { label: 'Terminé', class: 'badge--done', icon: 'check' },
-        'featured': { label: 'Mis en avant', class: 'badge--featured', icon: 'star' },
-        'cancelled': { label: 'Annulé', class: 'badge--cancelled', icon: 'x' },
+        'in progress': { label: t('pro.mesProjets.statusInProgress'), class: 'badge--progress', icon: 'progress' },
+        'done': { label: t('pro.mesProjets.statusDone'), class: 'badge--done', icon: 'check' },
+        'featured': { label: t('pro.mesProjets.statusFeatured'), class: 'badge--featured', icon: 'star' },
+        'cancelled': { label: t('pro.mesProjets.statusCancelled'), class: 'badge--cancelled', icon: 'x' },
     }
     return map[s] || { label: s, class: 'badge--default', icon: 'default' }
 }
 
 function truncate(text: string, max: number) {
-    if (!text) return 'Aucune description'
+    if (!text) return t('pro.mesProjets.noDescription')
     return text.length > max ? text.slice(0, max) + '...' : text
 }
 </script>
@@ -74,36 +76,36 @@ function truncate(text: string, max: number) {
         <div class="page-header">
             <div class="header-row">
                 <div>
-                    <h1 class="page-title">Mes Projets.</h1>
-                    <p class="page-subtitle">Documentez et partagez vos projets d'upcycling avec la communauté.</p>
+                    <h1 class="page-title">{{ t('pro.mesProjets.pageTitle') }}</h1>
+                    <p class="page-subtitle">{{ t('pro.mesProjets.subtitle') }}</p>
                 </div>
                 <router-link to="/pro/projets/nouveau" class="btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Nouveau projet
+                    {{ t('pro.mesProjets.newProject') }}
                 </router-link>
             </div>
         </div>
 
-        <div v-if="loading" class="loading-state">Chargement...</div>
+        <div v-if="loading" class="loading-state">{{ t('pro.mesProjets.loading') }}</div>
 
         <template v-else>
             <!-- KPIs -->
             <div class="kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-value">{{ stats.total }}</div>
-                    <div class="kpi-label">Total</div>
+                    <div class="kpi-label">{{ t('pro.mesProjets.total') }}</div>
                 </div>
                 <div class="kpi-card kpi-card--blue">
                     <div class="kpi-value">{{ stats.inProgress }}</div>
-                    <div class="kpi-label">En cours</div>
+                    <div class="kpi-label">{{ t('pro.mesProjets.inProgress') }}</div>
                 </div>
                 <div class="kpi-card kpi-card--green">
                     <div class="kpi-value">{{ stats.done }}</div>
-                    <div class="kpi-label">Terminés</div>
+                    <div class="kpi-label">{{ t('pro.mesProjets.done') }}</div>
                 </div>
                 <div class="kpi-card kpi-card--yellow">
                     <div class="kpi-value">{{ stats.featured }}</div>
-                    <div class="kpi-label">Mis en avant</div>
+                    <div class="kpi-label">{{ t('pro.mesProjets.featured') }}</div>
                 </div>
             </div>
 
@@ -112,7 +114,7 @@ function truncate(text: string, max: number) {
                 <button v-for="f in ['all', 'in progress', 'done', 'featured', 'cancelled']" :key="f"
                     class="filter-btn" :class="{ 'filter-btn--active': filter === f }"
                     @click="filter = f">
-                    {{ f === 'all' ? 'Tous' : statusConfig(f).label }}
+                    {{ f === 'all' ? t('pro.mesProjets.all') : statusConfig(f).label }}
                 </button>
             </div>
 
@@ -123,8 +125,8 @@ function truncate(text: string, max: number) {
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                     </svg>
                 </div>
-                <p class="empty-text">{{ filter === 'all' ? 'Aucun projet pour le moment.' : 'Aucun projet avec ce statut.' }}</p>
-                <router-link v-if="filter === 'all'" to="/pro/projets/nouveau" class="btn-primary">Créer un projet</router-link>
+                <p class="empty-text">{{ filter === 'all' ? t('pro.mesProjets.noProjects') : t('pro.mesProjets.noProjectsWithStatus') }}</p>
+                <router-link v-if="filter === 'all'" to="/pro/projets/nouveau" class="btn-primary">{{ t('pro.mesProjets.createProject') }}</router-link>
             </div>
 
             <!-- Grille projets -->
@@ -147,12 +149,12 @@ function truncate(text: string, max: number) {
                         </div>
                         <div v-if="p.final_score?.Valid" class="meta-item meta-score">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            Score: {{ p.final_score.Int32 }}
+                            {{ t('pro.mesProjets.score', { score: p.final_score.Int32 }) }}
                         </div>
                     </div>
                     <div v-if="p.status === 'featured'" class="featured-badge-bar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        Projet mis en avant sur la plateforme
+                        {{ t('pro.mesProjets.featuredBanner') }}
                     </div>
                 </router-link>
             </div>

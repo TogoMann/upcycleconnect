@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const clientStore = useClientStore()
 
-const statusLabels: Record<string, string> = {
-    active: 'Active',
-    sold: 'Vendue',
-    cancelled: 'Annulée',
-}
+const statusLabels = computed<Record<string, string>>(() => ({
+    active: t('client.mesAnnonces.statusActive'),
+    sold: t('client.mesAnnonces.statusSold'),
+    cancelled: t('client.mesAnnonces.statusCancelled'),
+}))
 
 const statusClass: Record<string, string> = {
     active: 'badge--active',
@@ -17,16 +19,24 @@ const statusClass: Record<string, string> = {
     cancelled: 'badge--cancelled',
 }
 
-function formatPrice(price: any): string {
-    if (!price) return '—'
+function priceValue(price: any): number {
+    if (price === null || price === undefined) return 0
     const val = typeof price === 'object' ? (price.Float64 ?? price.Int64) : price
-    return `${Number(val).toFixed(2)} €`
+    return Number(val) || 0
+}
+
+function isDon(annonce: any): boolean {
+    return priceValue(annonce.price) === 0
+}
+
+function formatPrice(price: any): string {
+    return `${priceValue(price).toFixed(2)} €`
 }
 
 function formatDate(ts: any): string {
     if (!ts) return '—'
     const date = new Date(ts.Time ?? ts)
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 async function handleDelete(id: number) {
@@ -41,18 +51,18 @@ onMounted(() => {
 <template>
     <div class="page">
         <div class="page-header">
-            <h1 class="page-title">Mes Annonces.</h1>
+            <h1 class="page-title">{{ t('client.mesAnnonces.pageTitle') }}</h1>
             <router-link to="/particulier/annonces/nouvelle" class="btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Nouvelle annonce
+                {{ t('client.mesAnnonces.newListing') }}
             </router-link>
         </div>
 
         <div v-if="clientStore.isLoading" class="state-empty">
-            <p>Chargement…</p>
+            <p>{{ t('client.mesAnnonces.loading') }}</p>
         </div>
 
         <div v-else-if="clientStore.annonces.length === 0" class="state-empty">
@@ -62,15 +72,15 @@ onMounted(() => {
                     <polyline points="14 2 14 8 20 8" />
                 </svg>
             </div>
-            <p class="empty-title">Aucune annonce pour l'instant</p>
+            <p class="empty-title">{{ t('client.mesAnnonces.emptyTitle') }}</p>
             <p class="empty-sub">
-                Publiez votre première annonce pour proposer vos objets à la communauté.
+                {{ t('client.mesAnnonces.emptySubtitle') }}
             </p>
             <router-link
                 to="/particulier/annonces/nouvelle"
                 class="btn-primary btn-primary--centered"
             >
-                Créer une annonce
+                {{ t('client.mesAnnonces.createListing') }}
             </router-link>
         </div>
 
@@ -90,20 +100,22 @@ onMounted(() => {
                                 {{ statusLabels[annonce.status] ?? annonce.status }}
                             </span>
                             <span v-if="!annonce.approved" class="badge badge--pending">
-                                En attente
+                                {{ t('client.mesAnnonces.pending') }}
                             </span>
                         </div>
                         <h3 class="annonce-name">{{ annonce.name }}</h3>
                         <p class="annonce-desc">{{ annonce.description }}</p>
+                        <span class="annonce-handoff">{{ annonce.handoff_mode === 'casier' ? t('client.mesAnnonces.handoffLocker') : t('client.mesAnnonces.handoffInPerson') }}</span>
                     </div>
                     <div class="annonce-meta">
-                        <span class="annonce-price">{{ formatPrice(annonce.price) }}</span>
+                        <span v-if="isDon(annonce)" class="badge badge--don">{{ t('client.mesAnnonces.don') }}</span>
+                        <span v-else class="annonce-price">{{ formatPrice(annonce.price) }}</span>
                         <span class="annonce-date">{{ formatDate(annonce.created_at) }}</span>
                     </div>
                 </div>
                 <div class="annonce-actions">
                     <button class="btn-danger" @click="handleDelete(annonce.id?.Int64)">
-                        Supprimer
+                        {{ t('client.mesAnnonces.delete') }}
                     </button>
                 </div>
             </div>
@@ -264,6 +276,20 @@ onMounted(() => {
 .badge--pending {
     background: rgba(246, 173, 85, 0.15);
     color: #c05621;
+}
+.badge--don {
+    background: var(--green-mid);
+    color: var(--white);
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+.annonce-handoff {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--charcoal);
+    opacity: 0.5;
+    margin-top: 4px;
 }
 .annonce-name {
     font-size: 0.95rem;

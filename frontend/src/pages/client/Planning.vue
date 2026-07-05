@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const clientStore = useClientStore()
 
 const viewMode = ref<'month' | 'week'>('month')
@@ -13,7 +15,10 @@ const HOUR_HEIGHT = 60
 const DAY_START = 7
 const DAY_END = 21
 
-const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const DAY_NAMES = computed(() => [
+    t('client.planning.dayMon'), t('client.planning.dayTue'), t('client.planning.dayWed'),
+    t('client.planning.dayThu'), t('client.planning.dayFri'), t('client.planning.daySat'), t('client.planning.daySun'),
+])
 
 function toISO(d: Date): string {
     const y = d.getFullYear()
@@ -89,15 +94,15 @@ function eventsForDate(date: Date) {
     return (clientStore.planning || []).filter((e: any) => e.date === iso)
 }
 
-const TYPE: Record<string, { bg: string; border: string; text: string; label: string }> = {
-    depot:    { bg: '#ebf5fb', border: '#3498db', text: '#1a6fa0', label: 'Dépôt' },
-    workshop: { bg: '#f4ecf7', border: '#9b59b6', text: '#6c3483', label: 'Atelier' },
-    event:    { bg: '#fef9e7', border: '#f39c12', text: '#9a6200', label: 'Événement' },
-    personal: { bg: '#e8f8f5', border: '#1abc9c', text: '#0e6655', label: 'Personnel' },
-}
+const TYPE = computed<Record<string, { bg: string; border: string; text: string; label: string }>>(() => ({
+    depot:    { bg: '#ebf5fb', border: '#3498db', text: '#1a6fa0', label: t('client.planning.typeDeposit') },
+    workshop: { bg: '#f4ecf7', border: '#9b59b6', text: '#6c3483', label: t('client.planning.typeWorkshop') },
+    event:    { bg: '#fef9e7', border: '#f39c12', text: '#9a6200', label: t('client.planning.typeEvent') },
+    personal: { bg: '#e8f8f5', border: '#1abc9c', text: '#0e6655', label: t('client.planning.typePersonal') },
+}))
 
 function ts(type: string) {
-    return TYPE[type] || { bg: '#f0f0f0', border: '#aaa', text: '#555', label: 'Autre' }
+    return TYPE.value[type] || { bg: '#f0f0f0', border: '#aaa', text: '#555', label: t('client.planning.typeOther') }
 }
 
 function parseHour(t: string): number {
@@ -120,13 +125,15 @@ function eventStyle(ev: any): Record<string, string> {
     }
 }
 
+const dateLocale = computed(() => locale.value === 'en' ? 'en-US' : 'fr-FR')
+
 const periodLabel = computed(() => {
     if (viewMode.value === 'month') {
-        return currentDate.value.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+        return currentDate.value.toLocaleDateString(dateLocale.value, { month: 'long', year: 'numeric' })
     }
     const days = weekDays.value
-    const s = days[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-    const e = days[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    const s = days[0].toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'short' })
+    const e = days[6].toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'short', year: 'numeric' })
     return `${s} – ${e}`
 })
 
@@ -143,7 +150,7 @@ const selectedEvents = computed(() =>
 
 const selectedDateLabel = computed(() => {
     if (!selectedDate.value) return ''
-    return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString('fr-FR', {
+    return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString(dateLocale.value, {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     })
 })
@@ -170,7 +177,7 @@ async function submitEvent() {
             payload.end_time = '23:59'
         }
         if (!payload.start_time || !payload.end_time) {
-            throw new Error('Renseignez les horaires ou cochez "Toute la journée"')
+            throw new Error(t('client.planning.errorTimeRequired'))
         }
         await clientStore.createPersonalEvent(payload)
         showModal.value = false
@@ -180,9 +187,9 @@ async function submitEvent() {
 }
 
 async function deleteItem(item: any) {
-    if (item.type === 'personal' && confirm('Supprimer cet événement ?')) {
+    if (item.type === 'personal' && confirm(t('client.planning.confirmDeletePersonal'))) {
         await clientStore.deletePersonalEvent(item.id)
-    } else if (item.type === 'depot' && confirm('Annuler ce créneau de dépôt ?')) {
+    } else if (item.type === 'depot' && confirm(t('client.planning.confirmDeleteDeposit'))) {
         await clientStore.deleteEntry(item.id)
         await clientStore.fetchPlanning()
     }
@@ -212,20 +219,20 @@ onMounted(() => clientStore.fetchPlanning())
             </div>
 
             <div class="control-group">
-                <button class="today-btn" @click="goToday">Aujourd'hui</button>
+                <button class="today-btn" @click="goToday">{{ t('client.planning.today') }}</button>
                 <div class="view-toggle">
-                    <button :class="{ active: viewMode === 'month' }" @click="switchView('month')">Mois</button>
-                    <button :class="{ active: viewMode === 'week' }" @click="switchView('week')">Semaine</button>
+                    <button :class="{ active: viewMode === 'month' }" @click="switchView('month')">{{ t('client.planning.month') }}</button>
+                    <button :class="{ active: viewMode === 'week' }" @click="switchView('week')">{{ t('client.planning.week') }}</button>
                 </div>
-                <router-link to="/particulier/conteneurs/deposer" class="btn-secondary">Nouveau dépôt</router-link>
+                <router-link to="/particulier/conteneurs/deposer" class="btn-secondary">{{ t('client.planning.newDeposit') }}</router-link>
                 <button class="btn-primary" @click="openModal()">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Ajouter
+                    {{ t('client.planning.add') }}
                 </button>
             </div>
         </div>
 
-        <div v-if="clientStore.isLoading" class="cal-loading">Chargement…</div>
+        <div v-if="clientStore.isLoading" class="cal-loading">{{ t('client.planning.loading') }}</div>
 
         <template v-else-if="viewMode === 'month'">
             <div class="month-view">
@@ -256,7 +263,7 @@ onMounted(() => clientStore.fetchPlanning())
                                 <span class="chip-title">{{ ev.title }}</span>
                             </div>
                             <div v-if="eventsForDate(cell.date).length > 3" class="event-more">
-                                +{{ eventsForDate(cell.date).length - 3 }} autres
+                                {{ t('client.planning.more', { count: eventsForDate(cell.date).length - 3 }) }}
                             </div>
                         </div>
                     </div>
@@ -267,13 +274,13 @@ onMounted(() => clientStore.fetchPlanning())
                 <div class="day-panel-head">
                     <span class="day-panel-label">{{ selectedDateLabel }}</span>
                     <div class="day-panel-actions">
-                        <button class="btn-add-small" @click="openModal(selectedDate ?? undefined)">+ Événement</button>
+                        <button class="btn-add-small" @click="openModal(selectedDate ?? undefined)">{{ t('client.planning.addEvent') }}</button>
                         <button class="close-btn" @click="selectedDate = null">×</button>
                     </div>
                 </div>
                 <div v-if="selectedEvents.length === 0" class="day-panel-empty">
-                    Aucun événement ce jour.
-                    <span class="link" @click="openModal(selectedDate ?? undefined)">Ajouter</span>
+                    {{ t('client.planning.noEventsToday') }}
+                    <span class="link" @click="openModal(selectedDate ?? undefined)">{{ t('client.planning.addLink') }}</span>
                 </div>
                 <div v-else class="day-panel-list">
                     <div v-for="ev in selectedEvents" :key="ev.id + ev.type" class="day-ev-row" :style="{ borderLeft: `3px solid ${ts(ev.type).border}` }">
@@ -346,39 +353,39 @@ onMounted(() => clientStore.fetchPlanning())
         <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
             <div class="modal">
                 <div class="modal-head">
-                    <h2 class="modal-title">Nouvel événement</h2>
+                    <h2 class="modal-title">{{ t('client.planning.newEventTitle') }}</h2>
                     <button class="modal-close" @click="showModal = false">×</button>
                 </div>
                 <form class="modal-body" @submit.prevent="submitEvent">
                     <div class="fg">
-                        <label>Titre</label>
-                        <input v-model="form.title" type="text" required placeholder="Ex: Déplacement Lyon" />
+                        <label>{{ t('client.planning.titleLabel') }}</label>
+                        <input v-model="form.title" type="text" required :placeholder="t('client.planning.titlePlaceholder')" />
                     </div>
                     <div class="fg">
-                        <label>Description (optionnel)</label>
+                        <label>{{ t('client.planning.descriptionLabel') }}</label>
                         <textarea v-model="form.description" rows="2"></textarea>
                     </div>
                     <label class="cb-label">
                         <input v-model="form.all_day" type="checkbox" />
-                        Toute la journée
+                        {{ t('client.planning.allDay') }}
                     </label>
                     <div class="fg">
-                        <label>Date</label>
+                        <label>{{ t('client.planning.dateLabel') }}</label>
                         <input v-model="form.date" type="date" required :min="todayISO" />
                     </div>
                     <div v-if="!form.all_day" class="fg-row">
                         <div class="fg">
-                            <label>Début</label>
+                            <label>{{ t('client.planning.startLabel') }}</label>
                             <input v-model="form.start_time" type="time" :required="!form.all_day" />
                         </div>
                         <div class="fg">
-                            <label>Fin</label>
+                            <label>{{ t('client.planning.endLabel') }}</label>
                             <input v-model="form.end_time" type="time" :required="!form.all_day" />
                         </div>
                     </div>
                     <div class="modal-acts">
-                        <button type="button" class="btn-cancel" @click="showModal = false">Annuler</button>
-                        <button type="submit" class="btn-submit">Enregistrer</button>
+                        <button type="button" class="btn-cancel" @click="showModal = false">{{ t('client.planning.cancel') }}</button>
+                        <button type="submit" class="btn-submit">{{ t('client.planning.save') }}</button>
                     </div>
                 </form>
             </div>

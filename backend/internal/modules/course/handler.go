@@ -4,15 +4,91 @@ import (
 	"backend/internal/middlewares"
 	"backend/internal/modules/logs"
 	"backend/internal/modules/users"
+	"backend/internal/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"time"
 )
+
+func normalizeTime(t string) string {
+	if len(t) == 5 {
+		return t + ":00"
+	}
+	return t
+}
+
+func deriveStatus(statut string, actif bool) (string, bool) {
+	if statut != "" {
+		if statut == "brouillon" {
+			return "brouillon", false
+		}
+		return "pending", false
+	}
+	if actif {
+		return "approved", true
+	}
+	return "pending", false
+}
+
+type sessionInput struct {
+	Date      string `json:"date"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+}
+
+func buildSessions(rawSessions []sessionInput, fallbackDate, fallbackStart, fallbackEnd string) ([]CourseSession, error) {
+	if len(rawSessions) == 0 && fallbackDate != "" {
+		rawSessions = []sessionInput{{Date: fallbackDate, StartTime: fallbackStart, EndTime: fallbackEnd}}
+	}
+	if len(rawSessions) == 0 {
+		return nil, fmt.Errorf("au moins une date de session est requise")
+	}
+
+	sessions := make([]CourseSession, 0, len(rawSessions))
+	now := time.Now()
+	today := now.Truncate(24 * time.Hour)
+	nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
+
+	for _, raw := range rawSessions {
+		var sess CourseSession
+		if err := sess.SessionDate.Scan(raw.Date); err != nil || !sess.SessionDate.Valid {
+			return nil, fmt.Errorf("date de session invalide")
+		}
+		if err := sess.StartTime.Scan(normalizeTime(raw.StartTime)); err != nil || !sess.StartTime.Valid {
+			return nil, fmt.Errorf("heure de début de session invalide")
+		}
+		if err := sess.EndTime.Scan(normalizeTime(raw.EndTime)); err != nil || !sess.EndTime.Valid {
+			return nil, fmt.Errorf("heure de fin de session invalide")
+		}
+
+		if sess.SessionDate.Time.Before(today) {
+			return nil, fmt.Errorf("une date de session ne peut pas être dans le passé")
+		}
+		if sess.SessionDate.Time.Equal(today) && sess.StartTime.Microseconds < nowMicros {
+			return nil, fmt.Errorf("une heure de session ne peut pas être dans le passé")
+		}
+		if sess.StartTime.Microseconds >= sess.EndTime.Microseconds {
+			return nil, fmt.Errorf("l'heure de fin doit être strictement supérieure à l'heure de début pour chaque session")
+		}
+
+		sessions = append(sessions, sess)
+	}
+
+	sort.Slice(sessions, func(i, j int) bool {
+		if !sessions[i].SessionDate.Time.Equal(sessions[j].SessionDate.Time) {
+			return sessions[i].SessionDate.Time.Before(sessions[j].SessionDate.Time)
+		}
+		return sessions[i].StartTime.Microseconds < sessions[j].StartTime.Microseconds
+	})
+
+	return sessions, nil
+}
 
 type Handler struct {
 	service     *Service
@@ -45,6 +121,16 @@ func (h *Handler) GetAllCatalogue(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	courses, err := h.service.GetAll()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(courses)
+}
+
+func (h *Handler) GetAllForAdmin(w http.ResponseWriter, r *http.Request) {
+	courses, err := h.service.GetAllForAdmin()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -91,19 +177,21 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct {
-		Name        string  `json:"nom"`
-		Title       string  `json:"titre"`
-		Description string  `json:"description"`
-		Prix        float64 `json:"prix"`
-		Price       float64 `json:"price"`
-		Categorie   string  `json:"categorie"`
-		Actif       bool    `json:"actif"`
-		Statut      string  `json:"statut"`
-		Date        string  `json:"date"`
-		StartTime   string  `json:"start_time"`
-		EndTime     string  `json:"end_time"`
-		MaxCapacity *int32  `json:"max_capacity"`
-		Duree       string  `json:"duree"`
+		Name        string         `json:"nom"`
+		Title       string         `json:"titre"`
+		Description string         `json:"description"`
+		Prix        float64        `json:"prix"`
+		Price       float64        `json:"price"`
+		Categorie   string         `json:"categorie"`
+		Actif       bool           `json:"actif"`
+		Statut      string         `json:"statut"`
+		Date        string         `json:"date"`
+		StartTime   string         `json:"start_time"`
+		EndTime     string         `json:"end_time"`
+		MaxCapacity *int32         `json:"max_capacity"`
+		Type        string         `json:"type"`
+		SessionLink string         `json:"session_link"`
+		Sessions    []sessionInput `json:"sessions"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -115,59 +203,48 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if name == "" {
 		name = input.Title
 	}
-	approved := input.Actif
-	if input.Statut == "publiee" {
-		approved = true
-	} else if input.Statut == "brouillon" {
-		approved = false
-	}
+	status, approved := deriveStatus(input.Statut, input.Actif)
 	price := input.Prix
 	if price == 0 {
 		price = input.Price
 	}
-	desc := input.Description
-	if input.Duree != "" {
-		desc = desc + "\n\nDurée: " + input.Duree
+
+	courseType := CourseType(input.Type)
+	if courseType != EnLigne {
+		courseType = Presentiel
+	}
+
+	sessions, err := buildSessions(input.Sessions, input.Date, input.StartTime, input.EndTime)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	c := Course{
 		Name:        name,
-		Description: desc,
+		Description: input.Description,
+		Status:      status,
 		Approved:    approved,
+		Type:        courseType,
+		SessionLink: pgtype.Text{String: input.SessionLink, Valid: input.SessionLink != ""},
+		Date:        sessions[0].SessionDate,
+		EndDate:     sessions[len(sessions)-1].SessionDate,
+		StartTime:   sessions[0].StartTime,
+		EndTime:     sessions[0].EndTime,
 	}
 	if input.MaxCapacity != nil {
 		c.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}
 	}
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
 	c.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
-	c.Date.Scan(input.Date)
-	c.StartTime.Scan(input.StartTime)
-	c.EndTime.Scan(input.EndTime)
-
-	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
-		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
-		return
-	}
-
-	if c.Date.Valid && c.StartTime.Valid {
-		now := time.Now()
-		today := now.Truncate(24 * time.Hour)
-		if c.Date.Time.Equal(today) {
-			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
-			if c.StartTime.Microseconds < nowMicros {
-				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
-				return
-			}
-		}
-	}
-
-	if c.StartTime.Valid && c.EndTime.Valid && c.StartTime.Microseconds >= c.EndTime.Microseconds {
-		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
-		return
-	}
 
 	id, err := h.service.Create(c)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.service.ReplaceSessions(id, sessions); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -176,11 +253,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	res := OffreFrontend{
 		Id:          id.Int64,
-		Nom:         input.Name,
+		Nom:         name,
 		Categorie:   input.Categorie,
 		Description: input.Description,
-		Actif:       input.Actif,
-		Prix:        input.Prix,
+		Actif:       approved,
+		Prix:        price,
+		Type:        string(courseType),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -219,19 +297,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct {
-		Name        string  `json:"nom"`
-		Title       string  `json:"titre"`
-		Description string  `json:"description"`
-		Prix        float64 `json:"prix"`
-		Price       float64 `json:"price"`
-		Categorie   string  `json:"categorie"`
-		Actif       bool    `json:"actif"`
-		Statut      string  `json:"statut"`
-		Date        string  `json:"date"`
-		StartTime   string  `json:"start_time"`
-		EndTime     string  `json:"end_time"`
-		MaxCapacity *int32  `json:"max_capacity"`
-		Duree       string  `json:"duree"`
+		Name        string         `json:"nom"`
+		Title       string         `json:"titre"`
+		Description string         `json:"description"`
+		Prix        float64        `json:"prix"`
+		Price       float64        `json:"price"`
+		Categorie   string         `json:"categorie"`
+		Actif       bool           `json:"actif"`
+		Statut      string         `json:"statut"`
+		Date        string         `json:"date"`
+		StartTime   string         `json:"start_time"`
+		EndTime     string         `json:"end_time"`
+		MaxCapacity *int32         `json:"max_capacity"`
+		Type        string         `json:"type"`
+		SessionLink string         `json:"session_link"`
+		Sessions    []sessionInput `json:"sessions"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -243,57 +323,46 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if name == "" {
 		name = input.Title
 	}
-	approved := input.Actif
-	if input.Statut == "publiee" {
-		approved = true
-	} else if input.Statut == "brouillon" {
-		approved = false
-	}
+	status, approved := deriveStatus(input.Statut, input.Actif)
 	price := input.Prix
 	if price == 0 {
 		price = input.Price
 	}
-	desc := input.Description
-	if input.Duree != "" {
-		desc = desc + "\n\nDurée: " + input.Duree
+
+	courseType := CourseType(input.Type)
+	if courseType != EnLigne {
+		courseType = Presentiel
+	}
+
+	sessions, err := buildSessions(input.Sessions, input.Date, input.StartTime, input.EndTime)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	c := Course{
 		Name:        name,
-		Description: desc,
+		Description: input.Description,
+		Status:      status,
 		Approved:    approved,
+		Type:        courseType,
+		SessionLink: pgtype.Text{String: input.SessionLink, Valid: input.SessionLink != ""},
+		Date:        sessions[0].SessionDate,
+		EndDate:     sessions[len(sessions)-1].SessionDate,
+		StartTime:   sessions[0].StartTime,
+		EndTime:     sessions[0].EndTime,
 	}
 	if input.MaxCapacity != nil {
 		c.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}
 	}
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
-	c.Date.Scan(input.Date)
-	c.StartTime.Scan(input.StartTime)
-	c.EndTime.Scan(input.EndTime)
-
-	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
-		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
-		return
-	}
-
-	if c.Date.Valid && c.StartTime.Valid {
-		now := time.Now()
-		today := now.Truncate(24 * time.Hour)
-		if c.Date.Time.Equal(today) {
-			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
-			if c.StartTime.Microseconds < nowMicros {
-				http.Error(w, "L'heure de début ne peut pas être dans le passé", http.StatusBadRequest)
-				return
-			}
-		}
-	}
-
-	if c.StartTime.Valid && c.EndTime.Valid && c.StartTime.Microseconds >= c.EndTime.Microseconds {
-		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
-		return
-	}
 
 	if err := h.service.Update(courseId, c); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.service.ReplaceSessions(courseId, sessions); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -310,6 +379,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Categorie:   input.Categorie,
 		Description: updated.Description,
 		Actif:       updated.Approved,
+		Type:        string(updated.Type),
 	}
 	f, _ := updated.Price.Float64Value()
 	res.Prix = f.Float64
@@ -322,7 +392,20 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	if err := h.service.Approve(pgtype.Int8{Int64: id, Valid: true}, pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.Approve(pgtype.Int8{Int64: id, Valid: true}, pgtype.Int8{Int64: int64(sub), Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -389,13 +472,159 @@ func (h *Handler) GetMyCourses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courses, err := h.service.GetUserCourses(pgtype.Int8{Int64: int64(sub), Valid: true})
+	courses, err := h.service.GetCoursesByCreator(pgtype.Int8{Int64: int64(sub), Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(courses)
+}
+
+func (h *Handler) UploadDocument(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	courseId := pgtype.Int8{Int64: id, Valid: true}
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+	role, _ := claims["role"].(string)
+
+	existing, err := h.service.GetById(courseId)
+	if err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
+		return
+	}
+	if role != "admin" && existing.CreatedBy.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this course", http.StatusForbidden)
+		return
+	}
+
+	filename, originalName, err := utils.SaveDocument(r, "document")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	docId, err := h.service.CreateDocument(CourseDocument{
+		CourseId:     courseId,
+		Filename:     filename,
+		OriginalName: originalName,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	logs.AddFromRequest(r, "Ajout document formation", fmt.Sprintf("Formation #%d: document %s ajouté", id, originalName), "info")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{"id": docId.Int64, "filename": filename, "original_name": originalName})
+}
+
+func (h *Handler) GetDocuments(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	courseId := pgtype.Int8{Int64: id, Valid: true}
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+	role, _ := claims["role"].(string)
+
+	existing, err := h.service.GetById(courseId)
+	if err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
+		return
+	}
+
+	if role != "admin" && existing.CreatedBy.Int64 != int64(sub) {
+		enrolled, err := h.service.IsUserEnrolled(courseId, pgtype.Int8{Int64: int64(sub), Valid: true})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !enrolled {
+			http.Error(w, "Forbidden: you must join this course to view its documents", http.StatusForbidden)
+			return
+		}
+	}
+
+	docs, err := h.service.GetDocumentsByCourseId(courseId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(docs)
+}
+
+func (h *Handler) GetSessions(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+
+	sessions, err := h.service.GetSessionsByCourseId(pgtype.Int8{Int64: id, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sessions)
+}
+
+func (h *Handler) DeleteDocument(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("docId")
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+	role, _ := claims["role"].(string)
+
+	doc, err := h.service.GetDocumentById(pgtype.Int8{Int64: id, Valid: true})
+	if err != nil {
+		http.Error(w, "Document not found", http.StatusNotFound)
+		return
+	}
+
+	existingCourse, err := h.service.GetById(doc.CourseId)
+	if err != nil {
+		http.Error(w, "Course not found", http.StatusNotFound)
+		return
+	}
+	if role != "admin" && existingCourse.CreatedBy.Int64 != int64(sub) {
+		http.Error(w, "Forbidden: you do not own this course", http.StatusForbidden)
+		return
+	}
+
+	if err := h.service.DeleteDocument(pgtype.Int8{Int64: id, Valid: true}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) ProposeModification(w http.ResponseWriter, r *http.Request) {
@@ -438,10 +667,10 @@ func (h *Handler) ProposeModification(w http.ResponseWriter, r *http.Request) {
 		existing.Date.Scan(input.Date)
 	}
 	if input.StartTime != "" {
-		existing.StartTime.Scan(input.StartTime)
+		existing.StartTime.Scan(normalizeTime(input.StartTime))
 	}
 	if input.EndTime != "" {
-		existing.EndTime.Scan(input.EndTime)
+		existing.EndTime.Scan(normalizeTime(input.EndTime))
 	}
 	if input.MaxCapacity != nil {
 		existing.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}

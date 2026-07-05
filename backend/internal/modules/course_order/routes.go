@@ -4,6 +4,7 @@ import (
 	"backend/internal/middlewares"
 	"backend/internal/modules/course"
 	"backend/internal/modules/financial"
+	"backend/internal/modules/users"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,7 +19,10 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	courseRepo := course.NewRepository(db)
 	courseSvc := course.NewService(courseRepo)
 
-	service := NewService(repo, finSvc, courseSvc)
+	userRepo := users.NewRepository(db)
+	userSvc := users.NewService(userRepo)
+
+	service := NewService(repo, finSvc, courseSvc, userSvc)
 	handler := NewHandler(service)
 
 	r.HandleFunc("GET /course-order/me", middlewares.Authenticated(handler.GetByUserId))

@@ -2,19 +2,26 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE } from '@/config'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 const HOUR_HEIGHT = 60
 const DAY_START = 7
 const DAY_END = 21
-const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const DAY_NAMES = computed(() => [
+    t('salarie.planning.dayMon'), t('salarie.planning.dayTue'), t('salarie.planning.dayWed'),
+    t('salarie.planning.dayThu'), t('salarie.planning.dayFri'), t('salarie.planning.daySat'), t('salarie.planning.daySun'),
+])
+const dateLocale = computed(() => locale.value === 'en' ? 'en-US' : 'fr-FR')
 
 const viewMode = ref<'month' | 'week'>('week')
 const currentDate = ref(new Date())
 const selectedDate = ref<string | null>(null)
 const rawItems = ref<any[]>([])
 const isLoading = ref(false)
+const error = ref('')
 
 function toISO(d: Date): string {
     const y = d.getFullYear()
@@ -100,17 +107,17 @@ function eventsForDate(date: Date) {
     return items.value.filter(e => e.date === iso)
 }
 
-const TYPE: Record<string, { bg: string; border: string; text: string; label: string }> = {
-    formation: { bg: '#e8f8f5', border: '#1abc9c', text: '#0e6655', label: 'Formation' },
-    atelier:   { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Atelier' },
-    depot:     { bg: '#fef3c7', border: '#f59e0b', text: '#92400e', label: 'Dépôt' },
-    collecte:  { bg: '#ede9fe', border: '#8b5cf6', text: '#5b21b6', label: 'Collecte' },
-    workshop:  { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Atelier' },
-    event:     { bg: '#fef9e7', border: '#f39c12', text: '#9a6200', label: 'Événement' },
-}
+const TYPE = computed<Record<string, { bg: string; border: string; text: string; label: string }>>(() => ({
+    formation: { bg: '#e8f8f5', border: '#1abc9c', text: '#0e6655', label: t('salarie.planning.typeFormation') },
+    atelier:   { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: t('salarie.planning.typeAtelier') },
+    depot:     { bg: '#fef3c7', border: '#f59e0b', text: '#92400e', label: t('salarie.planning.typeDepot') },
+    collecte:  { bg: '#ede9fe', border: '#8b5cf6', text: '#5b21b6', label: t('salarie.planning.typeCollecte') },
+    workshop:  { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: t('salarie.planning.typeAtelier') },
+    event:     { bg: '#fef9e7', border: '#f39c12', text: '#9a6200', label: t('salarie.planning.typeEvent') },
+}))
 
 function ts(type: string) {
-    return TYPE[type] || { bg: '#f5f5f5', border: '#aaa', text: '#555', label: 'Autre' }
+    return TYPE.value[type] || { bg: '#f5f5f5', border: '#aaa', text: '#555', label: t('salarie.planning.typeOther') }
 }
 
 function parseHour(t: string): number {
@@ -135,11 +142,11 @@ function eventStyle(ev: any): Record<string, string> {
 
 const periodLabel = computed(() => {
     if (viewMode.value === 'month') {
-        return currentDate.value.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+        return currentDate.value.toLocaleDateString(dateLocale.value, { month: 'long', year: 'numeric' })
     }
     const days = weekDays.value
-    const s = days[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-    const e = days[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    const s = days[0].toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'short' })
+    const e = days[6].toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'short', year: 'numeric' })
     return `${s} – ${e}`
 })
 
@@ -154,7 +161,7 @@ const selectedEvents = computed(() =>
 
 const selectedDateLabel = computed(() => {
     if (!selectedDate.value) return ''
-    return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString('fr-FR', {
+    return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString(dateLocale.value, {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     })
 })
@@ -167,11 +174,15 @@ const gridHeight = (DAY_END - DAY_START) * HOUR_HEIGHT
 
 onMounted(async () => {
     isLoading.value = true
+    error.value = ''
     try {
         const res = await fetch(`${API_BASE}/salarie/planning`, {
             headers: { Authorization: `Bearer ${authStore.token}` },
         })
-        if (res.ok) rawItems.value = await res.json()
+        if (!res.ok) throw new Error(t('salarie.planning.errorLoad'))
+        rawItems.value = await res.json()
+    } catch (e: any) {
+        error.value = e.message || t('salarie.planning.errorLoad')
     } finally {
         isLoading.value = false
     }
@@ -192,15 +203,17 @@ onMounted(async () => {
             </div>
 
             <div class="control-group">
-                <button class="today-btn" @click="goToday">Aujourd'hui</button>
+                <button class="today-btn" @click="goToday">{{ t('salarie.planning.today') }}</button>
                 <div class="view-toggle">
-                    <button :class="{ active: viewMode === 'month' }" @click="switchView('month')">Mois</button>
-                    <button :class="{ active: viewMode === 'week' }" @click="switchView('week')">Semaine</button>
+                    <button :class="{ active: viewMode === 'month' }" @click="switchView('month')">{{ t('salarie.planning.month') }}</button>
+                    <button :class="{ active: viewMode === 'week' }" @click="switchView('week')">{{ t('salarie.planning.week') }}</button>
                 </div>
             </div>
         </div>
 
-        <div v-if="isLoading" class="cal-loading">Chargement…</div>
+        <div v-if="error" class="cal-error">{{ error }}</div>
+
+        <div v-if="isLoading" class="cal-loading">{{ t('salarie.planning.loading') }}</div>
 
         <template v-else-if="viewMode === 'month'">
             <div class="month-view">
@@ -231,7 +244,7 @@ onMounted(async () => {
                                 <span class="chip-title">{{ ev.title }}</span>
                             </div>
                             <div v-if="eventsForDate(cell.date).length > 3" class="event-more">
-                                +{{ eventsForDate(cell.date).length - 3 }} autres
+                                {{ t('salarie.planning.more', { count: eventsForDate(cell.date).length - 3 }) }}
                             </div>
                         </div>
                     </div>
@@ -243,7 +256,7 @@ onMounted(async () => {
                     <span class="day-panel-label">{{ selectedDateLabel }}</span>
                     <button class="close-btn" @click="selectedDate = null">×</button>
                 </div>
-                <div v-if="selectedEvents.length === 0" class="day-panel-empty">Aucun créneau ce jour.</div>
+                <div v-if="selectedEvents.length === 0" class="day-panel-empty">{{ t('salarie.planning.noSlotsToday') }}</div>
                 <div v-else class="day-panel-list">
                     <div v-for="ev in selectedEvents" :key="ev.id" class="day-ev-row" :style="{ borderLeft: `3px solid ${ts(ev.type).border}` }">
                         <div class="day-ev-time">{{ ft(ev.start_time) }} – {{ ft(ev.end_time) }}</div>
@@ -315,7 +328,7 @@ onMounted(async () => {
                     <span class="day-panel-label">{{ selectedDateLabel }}</span>
                     <button class="close-btn" @click="selectedDate = null">×</button>
                 </div>
-                <div v-if="selectedEvents.length === 0" class="day-panel-empty">Aucun créneau ce jour.</div>
+                <div v-if="selectedEvents.length === 0" class="day-panel-empty">{{ t('salarie.planning.noSlotsToday') }}</div>
                 <div v-else class="day-panel-list">
                     <div v-for="ev in selectedEvents" :key="ev.id" class="day-ev-row" :style="{ borderLeft: `3px solid ${ts(ev.type).border}` }">
                         <div class="day-ev-time">{{ ft(ev.start_time) }} – {{ ft(ev.end_time) }}</div>
@@ -384,6 +397,7 @@ onMounted(async () => {
 .view-toggle button.active { background: var(--green-dark); color: white; }
 
 .cal-loading { text-align: center; padding: 60px; opacity: 0.5; }
+.cal-error { background: rgba(229, 62, 62, 0.08); border: 1px solid rgba(229, 62, 62, 0.25); border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; color: #c53030; margin-bottom: 16px; }
 
 .month-view {
     border: 1.5px solid rgba(53,53,53,0.1); border-radius: 14px;

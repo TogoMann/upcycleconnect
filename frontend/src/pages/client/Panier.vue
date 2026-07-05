@@ -3,7 +3,9 @@ import { API_BASE } from '@/config'
 import { onMounted, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const clientStore = useClientStore()
 const router = useRouter()
 
@@ -41,12 +43,12 @@ async function handleCheckout() {
     const hasDirectPay = clientStore.cart.some((item: any) => item.event_id?.Valid || item.course_id?.Valid)
 
     if (hasListing && !hasDirectPay) {
-        alert("Les annonces nécessitent un accord préalable avec le vendeur via la messagerie. Veuillez finaliser le paiement depuis vos conversations.")
+        alert(t('client.panier.listingsNeedAgreement'))
         return
     }
 
     if (hasListing && hasDirectPay) {
-        if (!confirm("Votre panier contient des annonces (paiement via chat) et des ateliers/événements (paiement direct). Voulez-vous payer les ateliers/événements maintenant ?")) {
+        if (!confirm(t('client.panier.mixedCartConfirm'))) {
             return
         }
     }
@@ -62,7 +64,7 @@ async function handleCheckout() {
         query: {
             type: 'cart',
             price: directPayTotal.toFixed(2),
-            name: hasListing ? 'Ateliers & Événements' : 'Panier',
+            name: hasListing ? t('client.panier.workshopsAndEvents') : t('client.panier.cart'),
         },
     })
 }
@@ -80,24 +82,36 @@ async function handleRemove(item: any) {
         alert(e.message)
     }
 }
+
+async function handleClearCart() {
+    if (!confirm(t('client.panier.confirmClearCart'))) return
+    try {
+        await clientStore.clearCart()
+    } catch (e: any) {
+        alert(e.message)
+    }
+}
 </script>
 
 <template>
     <div class="panier">
         <div class="page-header">
-            <h1 class="page-title">Mon Panier.</h1>
-            <p class="page-subtitle">Centralisez vos trouvailles avant de valider.</p>
+            <div class="page-header-text">
+                <h1 class="page-title">{{ t('client.panier.pageTitle') }}</h1>
+                <p class="page-subtitle">{{ t('client.panier.subtitle') }}</p>
+            </div>
+            <button v-if="clientStore.cart.length > 0" class="btn-clear-cart" @click="handleClearCart">{{ t('client.panier.clearCart') }}</button>
         </div>
 
         <div v-if="clientStore.isLoading && clientStore.cart.length === 0" class="loading">
-            Chargement du panier...
+            {{ t('client.panier.loading') }}
         </div>
 
         <div v-else-if="clientStore.cart.length === 0" class="empty-cart">
             <div class="empty-icon">🛒</div>
-            <h2>Votre panier est vide</h2>
-            <p>Parcourez le catalogue pour trouver des objets uniques.</p>
-            <router-link to="/particulier/catalogue" class="btn-primary">Voir le catalogue</router-link>
+            <h2>{{ t('client.panier.emptyTitle') }}</h2>
+            <p>{{ t('client.panier.emptySubtitle') }}</p>
+            <router-link to="/particulier/catalogue" class="btn-primary">{{ t('client.panier.viewCatalogue') }}</router-link>
         </div>
 
         <div v-else class="cart-content">
@@ -110,8 +124,8 @@ async function handleRemove(item: any) {
                         <img v-else src="https://via.placeholder.com/100" :alt="item.listing.name" class="item-img">
                         <div class="item-details">
                             <h3 class="item-name">{{ item.listing.name }}</h3>
-                            <p class="item-category">Objet • {{ item.listing.category }}</p>
-                            <p class="item-warning">⚠️ Accord avec le vendeur requis</p>
+                            <p class="item-category">{{ t('client.panier.item') }} • {{ item.listing.category }}</p>
+                            <p class="item-warning">{{ t('client.panier.sellerAgreementRequired') }}</p>
                         </div>
                         <div class="item-price">{{ item.listing.price }}€</div>
                         <div class="item-actions">
@@ -119,9 +133,9 @@ async function handleRemove(item: any) {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                                 </svg>
-                                Message
+                                {{ t('client.panier.message') }}
                             </button>
-                            <button class="btn-remove" @click="handleRemove(item)">Supprimer</button>
+                            <button class="btn-remove" @click="handleRemove(item)">{{ t('client.panier.remove') }}</button>
                         </div>
                     </template>
 
@@ -129,13 +143,13 @@ async function handleRemove(item: any) {
                     <template v-else-if="item.event">
                         <div class="item-icon">📅</div>
                         <div class="item-details">
-                            <h3 class="item-name">Événement</h3>
-                            <p class="item-category">Participation • {{ item.event.location }}</p>
+                            <h3 class="item-name">{{ t('client.panier.event') }}</h3>
+                            <p class="item-category">{{ t('client.panier.participation') }} • {{ item.event.location }}</p>
                             <p class="item-info">📅 {{ item.event.date }} • {{ item.event.start_time }} - {{ item.event.end_time }}</p>
                         </div>
                         <div class="item-price">{{ item.event.price }}€</div>
                         <div class="item-actions">
-                            <button class="btn-remove" @click="handleRemove(item)">Supprimer</button>
+                            <button class="btn-remove" @click="handleRemove(item)">{{ t('client.panier.remove') }}</button>
                         </div>
                     </template>
 
@@ -144,12 +158,12 @@ async function handleRemove(item: any) {
                         <div class="item-icon">🛠️</div>
                         <div class="item-details">
                             <h3 class="item-name">{{ item.course.name }}</h3>
-                            <p class="item-category">Atelier • Capacité: {{ item.course.max_capacity?.Int32 }}</p>
+                            <p class="item-category">{{ t('client.panier.training') }} • {{ t('client.panier.capacity') }}: {{ item.course.max_capacity?.Int32 }}</p>
                             <p class="item-info">📅 {{ item.course.date }} • {{ item.course.start_time }} - {{ item.course.end_time }}</p>
                         </div>
                         <div class="item-price">{{ item.course.price }}€</div>
                         <div class="item-actions">
-                            <button class="btn-remove" @click="handleRemove(item)">Supprimer</button>
+                            <button class="btn-remove" @click="handleRemove(item)">{{ t('client.panier.remove') }}</button>
                         </div>
                     </template>
                 </div>
@@ -157,17 +171,17 @@ async function handleRemove(item: any) {
 
             <div class="cart-summary">
                 <div class="summary-card">
-                    <h3>Récapitulatif</h3>
+                    <h3>{{ t('client.panier.summary') }}</h3>
                     <div class="summary-line">
-                        <span>Articles ({{ clientStore.cart.length }})</span>
+                        <span>{{ t('client.panier.items', { count: clientStore.cart.length }) }}</span>
                         <span>{{ total.toFixed(2) }}€</span>
                     </div>
                     <div class="summary-line total">
-                        <span>Total estimé</span>
+                        <span>{{ t('client.panier.estimatedTotal') }}</span>
                         <span>{{ total.toFixed(2) }}€</span>
                     </div>
-                    <p class="summary-note">Les objets sont payés après accord. Les ateliers et événements sont payés immédiatement.</p>
-                    <button class="btn-checkout" @click="handleCheckout">Payer maintenant</button>
+                    <p class="summary-note">{{ t('client.panier.summaryNote') }}</p>
+                    <button class="btn-checkout" @click="handleCheckout">{{ t('client.panier.payNow') }}</button>
                 </div>
             </div>
         </div>
@@ -178,9 +192,11 @@ async function handleRemove(item: any) {
 .item-icon { font-size: 2.5rem; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: #f0f0f0; border-radius: 12px; }
 .item-info { font-size: 0.85rem; opacity: 0.7; margin: 4px 0 0; }
 
-.page-header { margin-bottom: 32px; }
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 32px; }
 .page-title { font-size: 2.6rem; font-weight: 800; color: var(--charcoal); letter-spacing: -0.03em; margin: 0 0 8px; }
 .page-subtitle { font-size: 1rem; color: var(--charcoal); opacity: 0.6; }
+.btn-clear-cart { flex-shrink: 0; padding: 10px 18px; border: 1px solid #d9534f; border-radius: 8px; background: transparent; color: #d9534f; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.btn-clear-cart:hover { background: #d9534f; color: #fff; }
 
 .empty-cart { text-align: center; padding: 60px 20px; background: var(--white); border-radius: 20px; border: 1.5px solid rgba(53,53,53,0.08); }
 .empty-icon { font-size: 4rem; margin-bottom: 20px; }

@@ -13,16 +13,16 @@ type Service struct {
 	repo          *Repository
 	orderService  *listingorder.Service
 	eventPartRepo *eventparticipation.Repository
-	courseOrdRepo *courseorder.Repository
+	courseOrdSvc  *courseorder.Service
 	financialSvc  *financial.Service
 }
 
-func NewService(repo *Repository, orderService *listingorder.Service, eventPartRepo *eventparticipation.Repository, courseOrdRepo *courseorder.Repository, financialSvc *financial.Service) *Service {
+func NewService(repo *Repository, orderService *listingorder.Service, eventPartRepo *eventparticipation.Repository, courseOrdSvc *courseorder.Service, financialSvc *financial.Service) *Service {
 	return &Service{
 		repo:          repo,
 		orderService:  orderService,
 		eventPartRepo: eventPartRepo,
-		courseOrdRepo: courseOrdRepo,
+		courseOrdSvc:  courseOrdSvc,
 		financialSvc:  financialSvc,
 	}
 }
@@ -39,6 +39,10 @@ func (s *Service) Remove(userId, listingId, eventId, courseId pgtype.Int8) error
 	return s.repo.Remove(userId, listingId, eventId, courseId)
 }
 
+func (s *Service) Clear(userId pgtype.Int8) error {
+	return s.repo.Clear(userId)
+}
+
 func (s *Service) Checkout(userId pgtype.Int8) error {
 	items, err := s.repo.GetByUserId(userId)
 	if err != nil {
@@ -48,7 +52,19 @@ func (s *Service) Checkout(userId pgtype.Int8) error {
 	fmt.Printf("Starting checkout for user %d with %d items\n", userId.Int64, len(items))
 
 	for _, item := range items {
-		if item.EventId.Valid {
+		if item.ListingId.Valid && item.Listing != nil {
+			price, _ := item.Listing.Price.Float64Value()
+			if price.Float64 == 0 {
+				_, err := s.orderService.CreateFromRequest(userId.Int64, listingorder.CreateListingOrderRequest{
+					ListingId: item.ListingId.Int64,
+				})
+				if err != nil {
+					fmt.Printf("Warning: listing order for listing %d failed: %v\n", item.ListingId.Int64, err)
+				} else {
+					_ = s.repo.Remove(userId, item.ListingId, pgtype.Int8{}, pgtype.Int8{})
+				}
+			}
+		} else if item.EventId.Valid {
 			fmt.Printf("Processing event %d\n", item.EventId.Int64)
 			participation := eventparticipation.EventParticipation{
 				EventId: item.EventId,
@@ -69,7 +85,7 @@ func (s *Service) Checkout(userId pgtype.Int8) error {
 				BuyerId:  userId,
 				Price:    item.Course.Price,
 			}
-			id, err := s.courseOrdRepo.Create(order)
+			id, err := s.courseOrdSvc.Create(order)
 			if err != nil {
 				fmt.Printf("Warning: course order for course %d might already exist or failed: %v\n", item.CourseId.Int64, err)
 			} else if item.Course != nil {

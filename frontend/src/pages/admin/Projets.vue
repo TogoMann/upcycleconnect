@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Projet {
@@ -56,49 +58,53 @@ async function toggleMisEnAvant(p: Projet) {
 
 function statusConfig(s: string) {
     const map: Record<string, { label: string; class: string }> = {
-        'en_cours': { label: 'En cours', class: 'badge--progress' },
-        'termine': { label: 'Terminé', class: 'badge--done' },
+        'en_cours': { label: t('admin.projets.statusInProgress'), class: 'badge--progress' },
+        'termine': { label: t('admin.projets.statusDone'), class: 'badge--done' },
     }
     return map[s] || { label: s, class: 'badge--default' }
+}
+
+function filterLabel(f: string): string {
+    if (f === 'all') return t('admin.projets.filterAll')
+    if (f === 'mis_en_avant') return t('admin.projets.filterFeatured')
+    return statusConfig(f).label
 }
 </script>
 
 <template>
     <div class="projets">
         <div class="page-header">
-            <h1 class="page-title">Projets.</h1>
-            <p class="page-subtitle">Supervision des projets d'upcycling et mise en avant.</p>
+            <h1 class="page-title">{{ t('admin.projets.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.projets.subtitle') }}</p>
         </div>
 
-        <div v-if="loading" class="loading-state">Chargement...</div>
+        <div v-if="loading" class="loading-state">{{ t('admin.projets.loading') }}</div>
 
         <template v-else>
-            <!-- KPIs -->
             <div class="kpi-row">
                 <div class="kpi-sm">
                     <div class="kpi-sm-value">{{ stats.total }}</div>
-                    <div class="kpi-sm-label">Total</div>
+                    <div class="kpi-sm-label">{{ t('admin.projets.kpiTotal') }}</div>
                 </div>
                 <div class="kpi-sm kpi-sm--blue">
                     <div class="kpi-sm-value">{{ stats.enCours }}</div>
-                    <div class="kpi-sm-label">En cours</div>
+                    <div class="kpi-sm-label">{{ t('admin.projets.kpiInProgress') }}</div>
                 </div>
                 <div class="kpi-sm kpi-sm--green">
                     <div class="kpi-sm-value">{{ stats.termines }}</div>
-                    <div class="kpi-sm-label">Terminés</div>
+                    <div class="kpi-sm-label">{{ t('admin.projets.kpiDone') }}</div>
                 </div>
                 <div class="kpi-sm kpi-sm--yellow">
                     <div class="kpi-sm-value">{{ stats.featured }}</div>
-                    <div class="kpi-sm-label">Mis en avant</div>
+                    <div class="kpi-sm-label">{{ t('admin.projets.kpiFeatured') }}</div>
                 </div>
             </div>
 
-            <!-- Filtres -->
             <div class="filter-row">
                 <button v-for="f in ['all', 'en_cours', 'termine', 'mis_en_avant']" :key="f"
                     class="filter-btn" :class="{ 'filter-btn--active': filter === f }"
                     @click="filter = f">
-                    {{ f === 'all' ? 'Tous' : f === 'mis_en_avant' ? 'Mis en avant' : statusConfig(f).label }}
+                    {{ filterLabel(f) }}
                 </button>
             </div>
 
@@ -106,17 +112,17 @@ function statusConfig(s: string) {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Nom</th>
-                            <th>Auteur</th>
-                            <th>Date</th>
-                            <th>Statut</th>
-                            <th>Mise en avant</th>
-                            <th>Actions</th>
+                            <th>{{ t('admin.projets.colName') }}</th>
+                            <th>{{ t('admin.projets.colAuthor') }}</th>
+                            <th>{{ t('admin.projets.colDate') }}</th>
+                            <th>{{ t('admin.projets.colStatus') }}</th>
+                            <th>{{ t('admin.projets.colFeatured') }}</th>
+                            <th>{{ t('admin.projets.colActions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="filteredProjets.length === 0">
-                            <td colspan="6" class="empty">Aucun projet.</td>
+                            <td colspan="6" class="empty">{{ t('admin.projets.empty') }}</td>
                         </tr>
                         <tr v-for="p in filteredProjets" :key="p.id">
                             <td class="td-bold">{{ p.nom }}</td>
@@ -132,7 +138,7 @@ function statusConfig(s: string) {
                                     class="toggle-btn"
                                     :class="{ 'toggle-btn--on': p.mis_en_avant }"
                                     @click="toggleMisEnAvant(p)"
-                                    :title="p.mis_en_avant ? 'Retirer la mise en avant' : 'Mettre en avant'"
+                                    :title="p.mis_en_avant ? t('admin.projets.removeFeatured') : t('admin.projets.setFeatured')"
                                 >
                                     <span class="toggle-track">
                                         <span class="toggle-thumb"></span>
@@ -140,9 +146,9 @@ function statusConfig(s: string) {
                                 </button>
                             </td>
                             <td>
-                                <button class="btn-detail" @click="selectedProjet = p" title="Voir détails">
+                                <button class="btn-detail" @click="selectedProjet = p" :title="t('admin.projets.details')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    Détails
+                                    {{ t('admin.projets.details') }}
                                 </button>
                             </td>
                         </tr>
@@ -151,7 +157,6 @@ function statusConfig(s: string) {
             </div>
         </template>
 
-        <!-- Modal détail -->
         <Teleport to="body">
             <div v-if="selectedProjet" class="modal-overlay" @click.self="selectedProjet = null">
                 <div class="modal-card">
@@ -163,28 +168,28 @@ function statusConfig(s: string) {
                     </div>
                     <div class="detail-grid">
                         <div class="detail-item">
-                            <span class="detail-label">Auteur</span>
+                            <span class="detail-label">{{ t('admin.projets.colAuthor') }}</span>
                             <span class="detail-value">{{ selectedProjet.auteur }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Date de création</span>
+                            <span class="detail-label">{{ t('admin.projets.dateCreated') }}</span>
                             <span class="detail-value">{{ selectedProjet.date }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Statut</span>
+                            <span class="detail-label">{{ t('admin.projets.colStatus') }}</span>
                             <span class="badge" :class="statusConfig(selectedProjet.statut).class">{{ statusConfig(selectedProjet.statut).label }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Mise en avant</span>
-                            <span :class="selectedProjet.mis_en_avant ? 'detail-yes' : 'detail-no'">{{ selectedProjet.mis_en_avant ? 'Oui' : 'Non' }}</span>
+                            <span class="detail-label">{{ t('admin.projets.colFeatured') }}</span>
+                            <span :class="selectedProjet.mis_en_avant ? 'detail-yes' : 'detail-no'">{{ selectedProjet.mis_en_avant ? t('admin.projets.yes') : t('admin.projets.no') }}</span>
                         </div>
                     </div>
                     <div class="modal-actions">
                         <button class="btn-toggle" :class="selectedProjet.mis_en_avant ? 'btn-toggle--off' : 'btn-toggle--on'"
                             @click="toggleMisEnAvant(selectedProjet)">
-                            {{ selectedProjet.mis_en_avant ? 'Retirer la mise en avant' : 'Mettre en avant' }}
+                            {{ selectedProjet.mis_en_avant ? t('admin.projets.removeFeatured') : t('admin.projets.setFeatured') }}
                         </button>
-                        <button class="btn-secondary" @click="selectedProjet = null">Fermer</button>
+                        <button class="btn-secondary" @click="selectedProjet = null">{{ t('admin.projets.close') }}</button>
                     </div>
                 </div>
             </div>

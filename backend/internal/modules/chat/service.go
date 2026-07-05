@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"backend/internal/modules/course"
 	"backend/internal/modules/listing"
 	"fmt"
 
@@ -10,10 +11,11 @@ import (
 type Service struct {
 	repo           *Repository
 	listingService *listing.Service
+	courseService  *course.Service
 }
 
-func NewService(repo *Repository, listingService *listing.Service) *Service {
-	return &Service{repo: repo, listingService: listingService}
+func NewService(repo *Repository, listingService *listing.Service, courseService *course.Service) *Service {
+	return &Service{repo: repo, listingService: listingService, courseService: courseService}
 }
 
 func (s *Service) SendMessage(senderId int64, req CreateMessageRequest) (*Message, error) {
@@ -30,6 +32,21 @@ func (s *Service) SendMessage(senderId int64, req CreateMessageRequest) (*Messag
 		}
 		if conv.BuyerId != senderId && conv.SellerId != senderId {
 			return nil, fmt.Errorf("unauthorized to send message to this conversation")
+		}
+	} else if req.CourseId > 0 {
+		c, err := s.courseService.GetById(pgtype.Int8{Int64: req.CourseId, Valid: true})
+		if err != nil {
+			return nil, fmt.Errorf("course not found: %w", err)
+		}
+		sellerId := c.CreatedBy.Int64
+
+		if senderId != sellerId {
+			conv, err = s.repo.GetOrCreateCourseConversation(req.CourseId, senderId, sellerId)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("formateur ne peut pas initier une conversation sans destinataire précis")
 		}
 	} else {
 		l, err := s.listingService.GetById(pgtype.Int8{Int64: req.ListingId, Valid: true})

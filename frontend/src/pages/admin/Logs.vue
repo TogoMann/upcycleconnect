@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Log {
@@ -39,16 +41,16 @@ function niveauClass(n: string) {
 <template>
     <div class="logs">
         <div class="page-header">
-            <h1 class="page-title">Logs.</h1>
-            <p class="page-subtitle">Audit trail : qui a fait quoi et quand.</p>
+            <h1 class="page-title">{{ t('admin.logs.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.logs.subtitle') }}</p>
         </div>
 
         <div class="filter-row">
             <select v-model="filterNiveau" class="filter-select">
-                <option value="">Tous les niveaux</option>
-                <option value="info">Info</option>
-                <option value="warning">Warning</option>
-                <option value="error">Error</option>
+                <option value="">{{ t('admin.logs.allLevels') }}</option>
+                <option value="info">{{ t('admin.logs.levelInfo') }}</option>
+                <option value="warning">{{ t('admin.logs.levelWarning') }}</option>
+                <option value="error">{{ t('admin.logs.levelError') }}</option>
             </select>
         </div>
 
@@ -56,17 +58,17 @@ function niveauClass(n: string) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Utilisateur</th>
-                        <th>Action</th>
-                        <th>Ressource</th>
-                        <th>IP</th>
-                        <th>Niveau</th>
+                        <th>{{ t('admin.logs.colDate') }}</th>
+                        <th>{{ t('admin.logs.colUser') }}</th>
+                        <th>{{ t('admin.logs.colAction') }}</th>
+                        <th>{{ t('admin.logs.colResource') }}</th>
+                        <th>{{ t('admin.logs.colIp') }}</th>
+                        <th>{{ t('admin.logs.colLevel') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="filtered.length === 0">
-                        <td colspan="6" class="empty">Aucun log.</td>
+                        <td colspan="6" class="empty">{{ t('admin.logs.empty') }}</td>
                     </tr>
                     <tr v-for="l in filtered" :key="l.id">
                         <td class="td-mono">{{ l.date }}</td>

@@ -16,7 +16,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("GET /post/{id}", handler.GetById)
 	r.HandleFunc("GET /thread/{thread_id}/posts", handler.GetThreadPosts)
 	r.HandleFunc("POST /thread/{thread_id}/posts", middlewares.Authenticated(handler.CreateInThread))
-	r.HandleFunc("POST /post", handler.Create)
+	r.HandleFunc("POST /post", middlewares.Authenticated(handler.Create))
 	r.HandleFunc("POST /post/{id}/upvote", middlewares.Authenticated(handler.Upvote))
 	r.HandleFunc("POST /post/{id}/downvote", middlewares.Authenticated(handler.Downvote))
 	r.HandleFunc("PUT /post/{id}", middlewares.StaffOnly(handler.Update))

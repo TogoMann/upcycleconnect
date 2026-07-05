@@ -2,22 +2,29 @@ package listingorder
 
 import (
 	"backend/internal/modules/chat"
+	"backend/internal/modules/container"
 	"backend/internal/modules/financial"
+	"backend/internal/modules/item"
 	"backend/internal/modules/listing"
+	"backend/internal/modules/users"
+	"backend/internal/utils"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service struct {
-	repo           *Repository
-	financialSvc   *financial.Service
-	listingService *listing.Service
-	chatRepo       *chat.Repository
+	repo             *Repository
+	financialSvc     *financial.Service
+	listingService   *listing.Service
+	chatRepo         *chat.Repository
+	containerService *container.Service
+	itemService      *item.Service
+	userService      *users.Service
 }
 
-func NewService(repo *Repository, financialSvc *financial.Service, listingService *listing.Service, chatRepo *chat.Repository) *Service {
-	return &Service{repo: repo, financialSvc: financialSvc, listingService: listingService, chatRepo: chatRepo}
+func NewService(repo *Repository, financialSvc *financial.Service, listingService *listing.Service, chatRepo *chat.Repository, containerService *container.Service, itemService *item.Service, userService *users.Service) *Service {
+	return &Service{repo: repo, financialSvc: financialSvc, listingService: listingService, chatRepo: chatRepo, containerService: containerService, itemService: itemService, userService: userService}
 }
 
 func (s *Service) GetAll() ([]ListingOrder, error) {
@@ -40,19 +47,44 @@ func (s *Service) GetByUserId(userId pgtype.Int8) ([]ListingOrderWithListing, er
 }
 
 func (s *Service) CreateFromRequest(userId int64, req CreateListingOrderRequest) (pgtype.Int8, error) {
-	var price pgtype.Numeric
-	price.Scan(fmt.Sprintf("%.2f", req.Price))
-
 	l, err := s.listingService.GetById(pgtype.Int8{Int64: req.ListingId, Valid: true})
 	if err != nil {
 		return pgtype.Int8{}, fmt.Errorf("listing not found: %w", err)
 	}
+
+	realPrice, err := l.Price.Float64Value()
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("prix de l'annonce invalide")
+	}
+
+	if realPrice.Float64 > 0 {
+		return pgtype.Int8{}, fmt.Errorf("cette annonce est payante, utilisez /listing-order/checkout")
+	}
+
+	return s.createConfirmedOrder(userId, l)
+}
+
+func (s *Service) CreatePaidOrder(userId int64, listingId int64) (pgtype.Int8, error) {
+	l, err := s.listingService.GetById(pgtype.Int8{Int64: listingId, Valid: true})
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("listing not found: %w", err)
+	}
+
+	return s.createConfirmedOrder(userId, l)
+}
+
+func (s *Service) createConfirmedOrder(userId int64, l *listing.Listing) (pgtype.Int8, error) {
 	sellerId := l.CreatedBy.Int64
 
+	realPrice, err := l.Price.Float64Value()
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("prix de l'annonce invalide")
+	}
+
 	lo := ListingOrder{
-		ListingId: pgtype.Int8{Int64: req.ListingId, Valid: true},
+		ListingId: l.Id,
 		UserId:    pgtype.Int8{Int64: userId, Valid: true},
-		Price:     price,
+		Price:     l.Price,
 		Status:    Paid,
 	}
 
@@ -61,10 +93,30 @@ func (s *Service) CreateFromRequest(userId int64, req CreateListingOrderRequest)
 		return id, err
 	}
 
-	s.financialSvc.GenerateInvoiceForOrder(userId, &sellerId, id.Int64, "listing", req.Price)
+	s.financialSvc.GenerateInvoiceForOrder(userId, &sellerId, id.Int64, "listing", realPrice.Float64)
 
-	s.listingService.UpdateStatus(pgtype.Int8{Int64: req.ListingId, Valid: true}, "sold")
-	s.chatRepo.CloseConversationsByListingId(req.ListingId)
+	s.listingService.UpdateStatus(l.Id, "sold")
+	s.chatRepo.CloseConversationsByListingId(l.Id.Int64)
+
+	if l.HandoffMode == listing.Locker {
+		lockerId, err := s.containerService.FindAvailableLocker(l.CityId)
+		if err == nil {
+			_, err = s.containerService.CreateLockerAccess(lockerId, l.ItemId, pgtype.Int8{Int64: userId, Valid: true})
+			if err == nil {
+				s.containerService.UpdateLockerStatus(lockerId, "Occupied")
+			}
+		}
+	}
+
+	points := utils.ActionSaleCompleted.Points
+	if l.ItemId.Valid {
+		if itm, err := s.itemService.GetById(l.ItemId); err == nil && itm.Weight.Valid {
+			if w, err := itm.Weight.Float64Value(); err == nil {
+				points += int32(w.Float64 * utils.PointsPerKg)
+			}
+		}
+	}
+	s.userService.AddScore(pgtype.Int8{Int64: sellerId, Valid: true}, points, utils.ActionSaleCompleted.Description)
 
 	return id, nil
 }

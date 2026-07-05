@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"backend/internal/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,8 @@ func TestCompaniesAPI(t *testing.T) {
 	pool := GetPool()
 	router := SetupTestRouter(pool)
 
+	token, _ := utils.GenerateJWT(1, "admin_companies_test", "admin")
+
 	validSiret := "44306184100047"
 	invalidSiret := "12345678901234"
 	wrongLengthSiret := "123"
@@ -21,6 +24,7 @@ func TestCompaniesAPI(t *testing.T) {
 
 	t.Run("Create_ValidCompany", func(t *testing.T) {
 		reqGet, _ := http.NewRequest("GET", "/companies/siret?siret="+validSiret, nil)
+		reqGet.Header.Set("Authorization", "Bearer "+token)
 		rrGet := httptest.NewRecorder()
 		router.ServeHTTP(rrGet, reqGet)
 
@@ -39,6 +43,8 @@ func TestCompaniesAPI(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/companies", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -60,6 +66,8 @@ func TestCompaniesAPI(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/companies", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -75,6 +83,8 @@ func TestCompaniesAPI(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/companies", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -90,6 +100,8 @@ func TestCompaniesAPI(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/companies", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -100,6 +112,8 @@ func TestCompaniesAPI(t *testing.T) {
 
 	t.Run("Create_InvalidJSON", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/companies", bytes.NewBufferString("{invalid json"))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -113,6 +127,7 @@ func TestCompaniesAPI(t *testing.T) {
 			t.Skip("No company created")
 		}
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/companies/%d", createdCompanyId), nil)
+		req.Header.Set("Authorization", "Bearer "+token)
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -123,6 +138,7 @@ func TestCompaniesAPI(t *testing.T) {
 
 	t.Run("GetCompany_ById_NotFound", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/companies/999999", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -133,6 +149,7 @@ func TestCompaniesAPI(t *testing.T) {
 
 	t.Run("GetCompany_BySiret_Success", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/companies/siret?siret="+validSiret, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
@@ -143,6 +160,7 @@ func TestCompaniesAPI(t *testing.T) {
 
 	t.Run("GetCompany_BySiret_NotFound", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/companies/siret?siret=00000000000000", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 

@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Reporting from '@/pages/admin/Reporting.vue'
 import { createPinia, setActivePinia } from 'pinia'
+import { createI18n } from 'vue-i18n'
+import fr from '../src/i18n/locales/fr.json'
+import en from '../src/i18n/locales/en.json'
+
+const i18n = createI18n({ legacy: false, locale: 'fr', fallbackLocale: 'fr', messages: { fr, en } })
 
 // Mock Chart.js to avoid issues in test environment
 vi.mock('chart.js', () => ({
@@ -83,12 +88,12 @@ describe('Reporting.vue', () => {
   })
 
   it('renders loading state initially', () => {
-    const wrapper = mount(Reporting)
+    const wrapper = mount(Reporting, { global: { plugins: [i18n] } })
     expect(wrapper.text()).toContain('Chargement des données...')
   })
 
   it('renders charts and table after fetching data', async () => {
-    const wrapper = mount(Reporting)
+    const wrapper = mount(Reporting, { global: { plugins: [i18n] } })
     
     // Wait for async setup
     await new Promise(resolve => setTimeout(resolve, 0))

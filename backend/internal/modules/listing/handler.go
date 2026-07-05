@@ -91,9 +91,22 @@ func (h *Handler) Disapprove(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetAllApproved(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	listings, err := h.service.GetAllApproved()
+
+	excludeUserId := pgtype.Int8{}
+	if claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims); ok {
+		if sub, ok := claims["sub"].(float64); ok {
+			excludeUserId = pgtype.Int8{Int64: int64(sub), Valid: true}
+		}
+	}
+
+	minLevel, _ := strconv.ParseInt(r.URL.Query().Get("min_level"), 10, 32)
+
+	listings, err := h.service.GetAllApproved(excludeUserId, int32(minLevel))
 	if err != nil {
 		fmt.Println(err.Error())
+	}
+	for i := range listings {
+		listings[i].SellerLevel = utils.LevelFromScore(listings[i].SellerScore)
 	}
 	res, _ := json.Marshal(listings)
 	fmt.Fprintf(w, "%s", string(res))
@@ -118,6 +131,10 @@ func (h *Handler) GetByUserId(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	for i := range listings {
+		listings[i].SellerLevel = utils.LevelFromScore(listings[i].SellerScore)
 	}
 
 	json.NewEncoder(w).Encode(listings)
@@ -164,6 +181,8 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	listing.SellerLevel = utils.LevelFromScore(listing.SellerScore)
+
 	json.NewEncoder(w).Encode(listing)
 }
 
@@ -181,18 +200,29 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct {
-		Name        string  `json:"name"`
-		Description string  `json:"description"`
-		Price       float64 `json:"price"`
-		Category    string  `json:"category"`
-		CityId      int64   `json:"city_id"`
-		ImageUrl    string  `json:"image_url"`
+		Name          string  `json:"name"`
+		Description   string  `json:"description"`
+		Price         float64 `json:"price"`
+		Category      string  `json:"category"`
+		CityId        int64   `json:"city_id"`
+		ImageUrl      string  `json:"image_url"`
+		HandoffMode   string  `json:"handoff_mode"`
+		Address       string  `json:"address"`
+		Weight        float64 `json:"weight"`
+		LockerId      int64   `json:"locker_id"`
+		PhysicalState string  `json:"physical_state"`
+		Size          string  `json:"size"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
+	}
+
+	handoffMode := ListingHandoffMode(input.HandoffMode)
+	if handoffMode != Locker {
+		handoffMode = HandDelivery
 	}
 
 	listingDto := Listing{
@@ -204,10 +234,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Status:      Active,
 		Approved:    false,
 		ImageUrl:    pgtype.Text{String: input.ImageUrl, Valid: input.ImageUrl != ""},
+		HandoffMode: handoffMode,
+		Address:     pgtype.Text{String: input.Address, Valid: input.Address != ""},
 	}
 	listingDto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
+	listingDto.Weight.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Weight)))
 
-	id, err := h.service.Create(listingDto)
+	lockerId := pgtype.Int8{Int64: input.LockerId, Valid: input.LockerId > 0}
+	id, err := h.service.Create(listingDto, lockerId, input.PhysicalState, input.Size)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -262,12 +296,20 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Status      string  `json:"status"`
 		CityId      int64   `json:"city_id"`
 		ImageUrl    string  `json:"image_url"`
+		HandoffMode string  `json:"handoff_mode"`
+		Address     string  `json:"address"`
+		Weight      float64 `json:"weight"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
+	}
+
+	handoffMode := ListingHandoffMode(input.HandoffMode)
+	if handoffMode != Locker {
+		handoffMode = HandDelivery
 	}
 
 	dto := Listing{
@@ -277,8 +319,11 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Status:      ListingStatus(input.Status),
 		CityId:      pgtype.Int8{Int64: input.CityId, Valid: input.CityId > 0},
 		ImageUrl:    pgtype.Text{String: input.ImageUrl, Valid: input.ImageUrl != ""},
+		HandoffMode: handoffMode,
+		Address:     pgtype.Text{String: input.Address, Valid: input.Address != ""},
 	}
 	dto.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Price)))
+	dto.Weight.UnmarshalJSON([]byte(fmt.Sprintf("%f", input.Weight)))
 
 	err = h.service.Update(pgtype.Int8{Int64: idInt, Valid: true}, dto)
 	if err != nil {

@@ -24,7 +24,9 @@ import ForumThreadPage from '@/pages/home/ForumThreadPage.vue'
 import ForumCreatePage from '@/pages/home/ForumCreatePage.vue'
 import AboutPage from '@/pages/home/AboutPage.vue'
 import ConseilsPage from '@/pages/home/ConseilsPage.vue'
+import FormationsPage from '@/pages/home/FormationsPage.vue'
 import AnnonceDetailPage from '@/pages/home/AnnonceDetailPage.vue'
+import LegalPage from '@/pages/home/LegalPage.vue'
 
 import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
@@ -44,6 +46,7 @@ import AdminFinancier from '@/pages/admin/Financier.vue'
 import AdminCommissions from '@/pages/admin/Commissions.vue'
 import AdminPublicites from '@/pages/admin/Publicites.vue'
 import AdminCatalogue from '@/pages/admin/Catalogue.vue'
+import AdminFormations from '@/pages/admin/Formations.vue'
 import AdminNotifications from '@/pages/admin/Notifications.vue'
 import AdminDocuments from '@/pages/admin/Documents.vue'
 import AdminPlannings from '@/pages/admin/Plannings.vue'
@@ -63,6 +66,7 @@ import AdminChatReview from '@/pages/admin/ChatReview.vue'
 
 import ClientDashboard from '@/pages/client/Dashboard.vue'
 import MesAnnonces from '@/pages/client/MesAnnonces.vue'
+import ClientMesFormations from '@/pages/client/MesFormations.vue'
 import NouvelleAnnonce from '@/pages/client/NouvelleAnnonce.vue'
 import MesDepots from '@/pages/client/MesDepots.vue'
 import DeposerObjet from '@/pages/client/DeposerObjet.vue'
@@ -96,6 +100,7 @@ import SalarieEditFormation from '@/pages/salarie/EditFormation.vue'
 import SalariePlanning from '@/pages/salarie/Planning.vue'
 import SalarieConseils from '@/pages/salarie/Conseils.vue'
 import SalarieForum from '@/pages/salarie/Forum.vue'
+import SalarieChat from '@/pages/salarie/Chat.vue'
 import SalarieProfil from '@/pages/salarie/Profil.vue'
 
 const router = createRouter({
@@ -116,6 +121,8 @@ const router = createRouter({
                 { path: 'forum/:id', component: ForumThreadPage },
                 { path: 'a-propos', component: AboutPage },
                 { path: 'conseils', component: ConseilsPage },
+                { path: 'formations', component: FormationsPage },
+                { path: 'mentions-legales', component: LegalPage },
                 { path: 'auth/login', component: Login },
                 { path: 'auth/register', component: Register },
                 { path: 'auth/forgot-password', component: ForgotPassword },
@@ -137,6 +144,7 @@ const router = createRouter({
                 { path: 'score', component: UpcyclingScore },
                 { path: 'planning', component: Planning },
                 { path: 'catalogue', component: Catalogue },
+                { path: 'formations', component: ClientMesFormations },
                 { path: 'panier', component: Panier, name: 'Panier' },
                 { path: 'paiement', component: Paiement },
                 { path: 'paiement/confirmation', component: ConfirmationPaiement, name: 'ConfirmationPaiement' },
@@ -177,6 +185,7 @@ const router = createRouter({
                 { path: 'planning', component: SalariePlanning },
                 { path: 'conseils', component: SalarieConseils },
                 { path: 'forum', component: SalarieForum },
+                { path: 'chat', component: SalarieChat },
                 { path: 'profil', component: SalarieProfil },
             ],
         },
@@ -196,6 +205,7 @@ const router = createRouter({
                 { path: 'commissions', component: AdminCommissions },
                 { path: 'publicites', component: AdminPublicites },
                 { path: 'catalogue', component: AdminCatalogue },
+                { path: 'formations', component: AdminFormations },
                 { path: 'notifications', component: AdminNotifications },
                 { path: 'documents', component: AdminDocuments },
                 { path: 'plannings', component: AdminPlannings },

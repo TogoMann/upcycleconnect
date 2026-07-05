@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Conteneur {
@@ -102,7 +104,7 @@ async function saveLocker() {
 }
 
 async function deleteLocker(id: number) {
-    if (!confirm('Supprimer ce casier ?')) return
+    if (!confirm(t('admin.conteneurs.confirmDeleteLocker'))) return
     try {
         const res = await fetch(`${API_BASE}/admin/lockers/${id}`, {
             method: 'DELETE',
@@ -120,14 +122,25 @@ function etatClass(e: string) {
     if (e === 'plein' || e === 'Occupied') return 'badge badge--warn'
     return 'badge badge--inactive'
 }
+
+function etatLabel(e: string): string {
+    switch (e) {
+        case 'actif': return t('admin.conteneurs.stateActive')
+        case 'plein': return t('admin.conteneurs.stateFull')
+        case 'Available': return t('admin.conteneurs.statusAvailable')
+        case 'Occupied': return t('admin.conteneurs.statusOccupied')
+        case 'HS': return t('admin.conteneurs.statusHs')
+        default: return e
+    }
+}
 </script>
 
 <template>
     <div class="conteneurs">
         <div class="page-header">
             <div class="header-main">
-                <h1 class="page-title">Conteneurs.</h1>
-                <p class="page-subtitle">Gestion des box et des casiers individuels.</p>
+                <h1 class="page-title">{{ t('admin.conteneurs.pageTitle') }}</h1>
+                <p class="page-subtitle">{{ t('admin.conteneurs.subtitle') }}</p>
             </div>
         </div>
 
@@ -135,16 +148,16 @@ function etatClass(e: string) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Code-barres</th>
-                        <th>Localisation</th>
-                        <th>Objets / Capacité</th>
-                        <th>État</th>
-                        <th>Actions</th>
+                        <th>{{ t('admin.conteneurs.colBarcode') }}</th>
+                        <th>{{ t('admin.conteneurs.colLocation') }}</th>
+                        <th>{{ t('admin.conteneurs.colItemsCapacity') }}</th>
+                        <th>{{ t('admin.conteneurs.colState') }}</th>
+                        <th>{{ t('admin.conteneurs.colActions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="conteneurs.length === 0">
-                        <td colspan="5" class="empty">Aucun conteneur.</td>
+                        <td colspan="5" class="empty">{{ t('admin.conteneurs.empty') }}</td>
                     </tr>
                     <tr v-for="c in conteneurs" :key="c.id">
                         <td class="td-mono">{{ c.code_barres }}</td>
@@ -157,20 +170,19 @@ function etatClass(e: string) {
                                 <span class="progress-label">{{ c.objets }} / {{ c.capacite }}</span>
                             </div>
                         </td>
-                        <td><span :class="etatClass(c.etat)">{{ c.etat }}</span></td>
+                        <td><span :class="etatClass(c.etat)">{{ etatLabel(c.etat) }}</span></td>
                         <td>
-                            <button class="btn-text" @click="selectContainer(c)">Gérer les casiers</button>
+                            <button class="btn-text" @click="selectContainer(c)">{{ t('admin.conteneurs.manageLockers') }}</button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Locker Management Modal -->
         <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Casiers : {{ selectedContainer?.code_barres }}</h2>
+                    <h2>{{ t('admin.conteneurs.lockersOf', { code: selectedContainer?.code_barres }) }}</h2>
                     <button class="btn-close" @click="showModal = false">&times;</button>
                 </div>
 
@@ -179,8 +191,8 @@ function etatClass(e: string) {
                         <div v-for="l in lockers" :key="l.id" class="locker-card">
                             <div class="locker-info">
                                 <span class="locker-label">{{ l.label }}</span>
-                                <span class="locker-size">Taille: {{ l.size }}</span>
-                                <span :class="etatClass(l.status)">{{ l.status }}</span>
+                                <span class="locker-size">{{ t('admin.conteneurs.size', { size: l.size }) }}</span>
+                                <span :class="etatClass(l.status)">{{ etatLabel(l.status) }}</span>
                             </div>
                             <div class="locker-actions">
                                 <button class="btn-icon" @click="openLockerForm(l)">✎</button>
@@ -188,40 +200,39 @@ function etatClass(e: string) {
                             </div>
                         </div>
                         <button class="locker-add" @click="openLockerForm()">
-                            <span>+ Ajouter un casier</span>
+                            <span>{{ t('admin.conteneurs.addLocker') }}</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Locker Form Modal -->
         <div v-if="showLockerForm" class="modal-overlay modal-overlay--sub" @click.self="showLockerForm = false">
             <div class="modal-content modal-content--small">
-                <h3>{{ editingLocker ? 'Modifier' : 'Nouveau' }} casier</h3>
+                <h3>{{ editingLocker ? t('admin.conteneurs.editLocker') : t('admin.conteneurs.newLocker') }}</h3>
                 <div class="form-group">
-                    <label>Label</label>
-                    <input v-model="lockerForm.label" type="text" placeholder="Ex: A1, B2...">
+                    <label>{{ t('admin.conteneurs.label') }}</label>
+                    <input v-model="lockerForm.label" type="text" :placeholder="t('admin.conteneurs.labelPlaceholder')">
                 </div>
                 <div class="form-group">
-                    <label>Taille</label>
+                    <label>{{ t('admin.conteneurs.sizeLabel') }}</label>
                     <select v-model="lockerForm.size">
-                        <option value="S">Small (10 pts)</option>
-                        <option value="M">Medium (20 pts)</option>
-                        <option value="L">Large (50 pts)</option>
+                        <option value="S">{{ t('admin.conteneurs.sizeSmall') }}</option>
+                        <option value="M">{{ t('admin.conteneurs.sizeMedium') }}</option>
+                        <option value="L">{{ t('admin.conteneurs.sizeLarge') }}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Statut</label>
+                    <label>{{ t('admin.conteneurs.statusLabel') }}</label>
                     <select v-model="lockerForm.status">
-                        <option value="Available">Disponible</option>
-                        <option value="Occupied">Occupé</option>
-                        <option value="HS">Hors-service</option>
+                        <option value="Available">{{ t('admin.conteneurs.statusAvailable') }}</option>
+                        <option value="Occupied">{{ t('admin.conteneurs.statusOccupied') }}</option>
+                        <option value="HS">{{ t('admin.conteneurs.statusHs') }}</option>
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-secondary" @click="showLockerForm = false">Annuler</button>
-                    <button class="btn-primary" @click="saveLocker">Enregistrer</button>
+                    <button class="btn-secondary" @click="showLockerForm = false">{{ t('admin.conteneurs.cancel') }}</button>
+                    <button class="btn-primary" @click="saveLocker">{{ t('admin.conteneurs.save') }}</button>
                 </div>
             </div>
         </div>

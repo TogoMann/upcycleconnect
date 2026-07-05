@@ -16,15 +16,16 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) GetCommissions() ([]Commission, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
+		SELECT
 			1 as id,
 			'Ventes catalogue' as type,
 			10 as taux,
 			CAST(COALESCE(SUM(price), 0) * 0.10 AS FLOAT8) as montant_total,
 			CAST(COUNT(*) AS INTEGER) as nb_transactions,
-			'Avril 2026' as periode
+			TO_CHAR(CURRENT_DATE, 'TMMonth YYYY') as periode
 		FROM listing_order
-		WHERE status = 'paid' OR status = 'completed'
+		WHERE (status = 'paid' OR status = 'completed')
+		AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
 	`)
 	if err != nil {
 		return nil, err
@@ -48,15 +49,81 @@ func (r *Repository) GetFinancier() (*FinancierData, error) {
 
 	data.CaTotal += courseCa
 
-	data.CaMois = data.CaTotal * 0.15
-	data.Charges = data.CaTotal * 0.4
+	err = r.db.QueryRow(db.Ctx, `
+		SELECT CAST(COALESCE(SUM(price), 0) AS FLOAT8) FROM (
+			SELECT price, created_at FROM listing_order WHERE status = 'paid' OR status = 'completed'
+			UNION ALL
+			SELECT price, booked_at as created_at FROM course_order
+		) t
+		WHERE date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
+	`).Scan(&data.CaMois)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(amount), 0) AS FLOAT8) FROM expenses").Scan(&data.Charges)
+	if err != nil {
+		return nil, err
+	}
+
 	data.Marge = data.CaTotal - data.Charges
 
-	data.Evolution = []Evolution{
-		{Mois: "Jan", Ca: 1200, Charges: 500},
-		{Mois: "Feb", Ca: 1500, Charges: 600},
-		{Mois: "Mar", Ca: 1100, Charges: 450},
-		{Mois: "Apr", Ca: data.CaTotal, Charges: data.Charges},
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT mois, CAST(COALESCE(SUM(ca), 0) AS FLOAT8) as ca
+		FROM (
+			SELECT TO_CHAR(date_trunc('month', created_at), 'TMMon') as mois, date_trunc('month', created_at) as m, price as ca
+			FROM listing_order WHERE status = 'paid' OR status = 'completed'
+			UNION ALL
+			SELECT TO_CHAR(date_trunc('month', booked_at), 'TMMon') as mois, date_trunc('month', booked_at) as m, price as ca
+			FROM course_order
+		) t
+		WHERE m >= date_trunc('month', CURRENT_DATE) - INTERVAL '3 months'
+		GROUP BY mois, m
+		ORDER BY m
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	revenueByMonth := map[string]float64{}
+	var monthOrder []string
+	for rows.Next() {
+		var mois string
+		var ca float64
+		if err := rows.Scan(&mois, &ca); err != nil {
+			return nil, err
+		}
+		revenueByMonth[mois] = ca
+		monthOrder = append(monthOrder, mois)
+	}
+
+	expenseRows, err := r.db.Query(db.Ctx, `
+		SELECT TO_CHAR(date_trunc('month', created_at), 'TMMon') as mois, CAST(COALESCE(SUM(amount), 0) AS FLOAT8) as charges
+		FROM expenses
+		WHERE date_trunc('month', created_at) >= date_trunc('month', CURRENT_DATE) - INTERVAL '3 months'
+		GROUP BY mois
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	expensesByMonth := map[string]float64{}
+	for expenseRows.Next() {
+		var mois string
+		var charges float64
+		if err := expenseRows.Scan(&mois, &charges); err != nil {
+			return nil, err
+		}
+		expensesByMonth[mois] = charges
+	}
+
+	data.Evolution = make([]Evolution, 0, len(monthOrder))
+	for _, mois := range monthOrder {
+		data.Evolution = append(data.Evolution, Evolution{
+			Mois:    mois,
+			Ca:      revenueByMonth[mois],
+			Charges: expensesByMonth[mois],
+		})
 	}
 
 	return &data, nil
@@ -90,6 +157,25 @@ func (r *Repository) GetReport() (*FinancialReport, error) {
 	report.TotalRevenue = report.ListingRevenue + report.CourseRevenue + report.SubscriptionRevenue + report.AdRevenue
 
 	return &report, nil
+}
+
+func (r *Repository) CreateExpense(e Expense) error {
+	_, err := r.db.Exec(db.Ctx,
+		"INSERT INTO expenses (label, amount, category, created_by) VALUES ($1, $2, $3, $4)",
+		e.Label, e.Amount, e.Category, e.CreatedBy)
+	return err
+}
+
+func (r *Repository) GetAllExpenses() ([]Expense, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT id, label, CAST(amount AS FLOAT8) as amount, COALESCE(category, '') as category, created_by,
+		TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM expenses ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[Expense])
 }
 
 func (r *Repository) CreateInvoice(inv Invoice) error {

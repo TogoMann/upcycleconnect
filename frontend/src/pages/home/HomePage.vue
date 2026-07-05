@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const courseCount = ref(0)
 
 onMounted(async () => {
@@ -14,43 +16,47 @@ onMounted(async () => {
     } catch {}
 })
 
-const categories = [
+const categories = computed(() => [
     {
         id: 'recycler',
-        label: 'RECYCLER',
-        description:
-            'Donnez une nouvelle utilité à vos matériaux en fin de vie grâce à notre réseau de collecte et de tri optimisé.',
+        label: t('home.categories.recycle.label'),
+        description: t('home.categories.recycle.description'),
         img: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
-        alt: 'Recycler',
+        alt: t('home.categories.recycle.label'),
     },
     {
         id: 'reparer',
-        label: 'RÉPARER',
-        description:
-            "Prolongez la durée de vie de vos objets en accédant à l'expertise de nos artisans spécialisés dans la restauration.",
+        label: t('home.categories.repair.label'),
+        description: t('home.categories.repair.description'),
         img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80',
-        alt: 'Réparer',
+        alt: t('home.categories.repair.label'),
     },
     {
         id: 'transformer',
-        label: 'TRANSFORMER',
-        description: 'Métamorphosez vos anciens produits en pièces uniques et design.',
+        label: t('home.categories.transform.label'),
+        description: t('home.categories.transform.description'),
         img: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80',
-        alt: 'Transformer',
+        alt: t('home.categories.transform.label'),
     },
-]
+])
+
+const arguments_ = computed(() => [
+    { num: '01', title: t('home.arguments.item1.title'), text: t('home.arguments.item1.text') },
+    { num: '02', title: t('home.arguments.item2.title'), text: t('home.arguments.item2.text') },
+    { num: '03', title: t('home.arguments.item3.title'), text: t('home.arguments.item3.text') },
+])
 </script>
 
 <template>
     <div class="home-page">
         <section class="hero">
             <div class="hero-text-wrap">
-                <h1 class="hero-title">L'art de transformer vos objets.</h1>
+                <h1 class="hero-title">{{ t('home.hero.title') }}</h1>
             </div>
             <div class="hero-image-wrap">
                 <img
                     src="https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=1400&q=85"
-                    alt="Vue aérienne nature verte"
+                    :alt="t('home.hero.imageAlt')"
                     class="hero-img"
                 />
             </div>
@@ -59,8 +65,8 @@ const categories = [
         <section class="categories-section">
             <div class="container">
                 <p class="tagline">
-                    Valorisons nos ressources pour un avenir plus
-                    <span class="tagline-accent">durable.</span>
+                    {{ t('home.tagline.text') }}
+                    <span class="tagline-accent">{{ t('home.tagline.accent') }}</span>
                 </p>
                 <div class="categories-grid">
                     <div v-for="cat in categories" :key="cat.id" class="category-card">
@@ -73,11 +79,11 @@ const categories = [
 
                     <router-link to="/prestations" class="category-card">
                         <div class="category-img-wrap">
-                            <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=400&q=80" alt="Se former" class="category-img" />
+                            <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=400&q=80" :alt="t('home.categories.learn.label')" class="category-img" />
                         </div>
-                        <h3 class="category-label">SE FORMER</h3>
+                        <h3 class="category-label">{{ t('home.categories.learn.label') }}</h3>
                         <p class="category-desc">
-                            Apprenez les gestes de demain avec nos {{ courseCount }} ateliers disponibles et développez vos compétences.
+                            {{ t('home.categories.learn.description', { count: courseCount }) }}
                         </p>
                     </router-link>
                 </div>
@@ -88,11 +94,10 @@ const categories = [
             <div class="container arguments-inner">
                 <div class="arguments-content">
                     <h2 class="arguments-title">
-                        Transformez l'existant, préservez l'<span class="green">avenir.</span>
+                        {{ t('home.arguments.title') }} <span class="green">{{ t('home.arguments.titleAccent') }}</span>
                     </h2>
                     <p class="arguments-subtitle">
-                        UpCycleConnect accompagne chaque étape de votre démarche éco-responsable, de
-                        l'idée à la réalisation, dans chaque région.
+                        {{ t('home.arguments.subtitle') }}
                     </p>
                     <ul class="arguments-list">
                         <li v-for="arg in arguments_" :key="arg.num" class="argument-item">
@@ -105,17 +110,17 @@ const categories = [
                     </ul>
                     <div class="arguments-ctas">
                         <router-link to="/prestations" class="btn btn-primary-dark">
-                            Nos prestations
+                            {{ t('home.arguments.ctaPrestations') }}
                         </router-link>
                         <router-link to="/evenements" class="btn btn-outline-dark">
-                            Nos événements
+                            {{ t('home.arguments.ctaEvents') }}
                         </router-link>
                     </div>
                 </div>
                 <div class="arguments-image-wrap">
                     <img
                         src="https://images.unsplash.com/photo-1582738412745-8660e269a986?w=700&q=80"
-                        alt="Étagère skateboards upcyclés"
+                        :alt="t('home.arguments.imageAlt')"
                         class="arguments-img"
                     />
                 </div>
@@ -131,16 +136,14 @@ const categories = [
         <section class="why-section">
             <div class="container why-inner">
                 <h2 class="why-title">
-                    Pourquoi rejoindre
+                    {{ t('home.why.title') }}
                     <span class="green">UpcycleConnect</span> ?
                 </h2>
                 <p class="why-subtitle">
-                    Parce que chaque objet mérite une seconde chance. Nous avons créé un écosystème
-                    où la créativité rencontre la durabilité pour transformer notre façon de
-                    consommer et d'agir ensemble.
+                    {{ t('home.why.subtitle') }}
                 </p>
                 <router-link to="/auth/login" class="btn btn-green-filled">
-                    Découvrir la communauté
+                    {{ t('home.why.cta') }}
                 </router-link>
             </div>
         </section>
@@ -150,16 +153,13 @@ const categories = [
                 <div class="testimonial-img-wrap">
                     <img
                         src="https://images.unsplash.com/photo-1559827291-72ee739d0d9a?w=700&q=80"
-                        alt="Installation lumineuse upcyclée"
+                        :alt="t('home.testimonial.imageAlt')"
                         class="testimonial-img"
                     />
                 </div>
                 <blockquote class="testimonial-quote">
                     <p>
-                        "J'étais à la recherche d'une manière unique de décorer mon café sans
-                        acheter du neuf. Grâce à UpcycleConnect, j'ai trouvé l'inspiration et les
-                        artisans pour transformer de simples tasses en une installation lumineuse
-                        qui fascine mes clients tous les jours !!"
+                        {{ t('home.testimonial.quote') }}
                     </p>
                     <footer class="testimonial-author">Mario L.</footer>
                 </blockquote>

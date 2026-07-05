@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Notification {
@@ -47,59 +49,69 @@ async function envoyer() {
     } catch {}
     loading.value = false
 }
+
+function targetLabel(cible: string): string {
+    switch (cible) {
+        case 'tous': return t('admin.notifications.targetAll')
+        case 'client': return t('admin.notifications.targetClient')
+        case 'pro': return t('admin.notifications.targetPro')
+        case 'salarie': return t('admin.notifications.targetSalarie')
+        default: return cible
+    }
+}
 </script>
 
 <template>
     <div class="notifications">
         <div class="page-header">
-            <h1 class="page-title">Notifications.</h1>
-            <p class="page-subtitle">Envoi push OneSignal et historique.</p>
+            <h1 class="page-title">{{ t('admin.notifications.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.notifications.subtitle') }}</p>
         </div>
 
         <div class="send-card">
-            <h3 class="card-title">Envoyer une notification</h3>
-            <div v-if="success" class="alert alert--success">Notification envoyée.</div>
+            <h3 class="card-title">{{ t('admin.notifications.sendTitle') }}</h3>
+            <div v-if="success" class="alert alert--success">{{ t('admin.notifications.sent') }}</div>
 
             <div class="form-group">
-                <label class="form-label">Titre</label>
-                <input v-model="form.titre" type="text" class="form-input" placeholder="Titre de la notification" />
+                <label class="form-label">{{ t('admin.notifications.titleLabel') }}</label>
+                <input v-model="form.titre" type="text" class="form-input" :placeholder="t('admin.notifications.titlePlaceholder')" />
             </div>
             <div class="form-group">
-                <label class="form-label">Message</label>
-                <textarea v-model="form.message" class="form-input form-textarea" rows="3" placeholder="Corps du message…"></textarea>
+                <label class="form-label">{{ t('admin.notifications.messageLabel') }}</label>
+                <textarea v-model="form.message" class="form-input form-textarea" rows="3" :placeholder="t('admin.notifications.messagePlaceholder')"></textarea>
             </div>
             <div class="form-group">
-                <label class="form-label">Cible</label>
+                <label class="form-label">{{ t('admin.notifications.targetLabel') }}</label>
                 <select v-model="form.cible" class="form-input">
-                    <option value="tous">Tous les utilisateurs</option>
-                    <option value="client">Particuliers</option>
-                    <option value="pro">Professionnels</option>
-                    <option value="salarie">Salariés</option>
+                    <option value="tous">{{ t('admin.notifications.targetAll') }}</option>
+                    <option value="client">{{ t('admin.notifications.targetClient') }}</option>
+                    <option value="pro">{{ t('admin.notifications.targetPro') }}</option>
+                    <option value="salarie">{{ t('admin.notifications.targetSalarie') }}</option>
                 </select>
             </div>
             <button class="btn-primary" :disabled="loading || !form.titre || !form.message" @click="envoyer">
-                {{ loading ? 'Envoi…' : 'Envoyer la notification' }}
+                {{ loading ? t('admin.notifications.sending') : t('admin.notifications.send') }}
             </button>
         </div>
 
-        <h3 class="section-title">Historique</h3>
+        <h3 class="section-title">{{ t('admin.notifications.historyTitle') }}</h3>
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Titre</th>
-                        <th>Cible</th>
-                        <th>Date</th>
-                        <th>Envoyés</th>
+                        <th>{{ t('admin.notifications.colTitle') }}</th>
+                        <th>{{ t('admin.notifications.colTarget') }}</th>
+                        <th>{{ t('admin.notifications.colDate') }}</th>
+                        <th>{{ t('admin.notifications.colSent') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="historique.length === 0">
-                        <td colspan="4" class="empty">Aucune notification envoyée.</td>
+                        <td colspan="4" class="empty">{{ t('admin.notifications.empty') }}</td>
                     </tr>
                     <tr v-for="n in historique" :key="n.id">
                         <td class="td-bold">{{ n.titre }}</td>
-                        <td class="td-muted">{{ n.cible }}</td>
+                        <td class="td-muted">{{ targetLabel(n.cible) }}</td>
                         <td class="td-muted">{{ n.date }}</td>
                         <td>{{ n.envoyes }}</td>
                     </tr>

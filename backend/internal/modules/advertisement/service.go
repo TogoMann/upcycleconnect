@@ -43,3 +43,7 @@ func (s *Service) Reject(id pgtype.Int8) error {
 func (s *Service) Delete(id pgtype.Int8) error {
 	return s.repo.Delete(id)
 }
+
+func (s *Service) SetStripePaymentIntentId(id pgtype.Int8, stripeId string) error {
+	return s.repo.SetStripePaymentIntentId(id, stripeId)
+}

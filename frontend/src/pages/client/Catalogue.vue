@@ -4,7 +4,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const clientStore = useClientStore()
 const authStore = useAuthStore()
 const router = useRouter()
@@ -76,14 +78,14 @@ function getItemId(item: any): number {
 function formatDate(ts: any): string {
     if (!ts) return '—'
     const date = new Date(ts.Time ?? ts)
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 function formatPrice(price: any): string {
-    if (!price) return 'Gratuit'
+    if (!price) return t('client.catalogue.free')
     const val = typeof price === 'object' ? price.Float64 ?? price.Int64 : price
     const num = Number(val)
-    return num > 0 ? `${num.toFixed(2)} €` : 'Gratuit'
+    return num > 0 ? `${num.toFixed(2)} €` : t('client.catalogue.free')
 }
 
 function getItemName(item: any): string {
@@ -91,20 +93,34 @@ function getItemName(item: any): string {
     if (name) return name
     if (item._type === 'event') {
         const d = item.date ?? item.created_at
-        return d ? `Événement du ${formatDate(d)}` : 'Événement'
+        return d ? t('client.catalogue.eventOn', { date: formatDate(d) }) : t('client.catalogue.untitledEvent')
     }
-    return 'Atelier sans titre'
+    return t('client.catalogue.untitledWorkshop')
 }
 
 function getItemDesc(item: any): string {
     const desc = item.description ?? item.desc
     if (desc) return desc
-    if (item._type === 'event') return 'Aucune description disponible for cet événement.'
-    return 'Aucune description disponible for cet atelier.'
+    if (item._type === 'event') return t('client.catalogue.noDescriptionEvent')
+    return t('client.catalogue.noDescriptionWorkshop')
 }
 
 function getItemPrice(item: any): any {
     return item.price ?? item.prix
+}
+
+function rawDateVal(d: any): string | null {
+    if (!d) return null
+    if (typeof d === 'object') return d.Valid ? d.Time : null
+    return d
+}
+
+function getCourseDateRange(item: any): string | null {
+    const start = rawDateVal(item.date)
+    if (!start) return null
+    const end = rawDateVal(item.end_date)
+    if (!end || end === start) return formatDate(start)
+    return t('client.catalogue.dateRange', { start: formatDate(start), end: formatDate(end) })
 }
 
 function handleContactSeller(item: any) {
@@ -112,23 +128,24 @@ function handleContactSeller(item: any) {
         router.push('/auth/login')
         return
     }
-    
-    let listingId = ''
+
     const id = getItemId(item)
-    if (typeof id === 'object' && id !== null) {
-        listingId = id.Int64?.toString() || id.id?.toString() || ''
-    } else {
-        listingId = id?.toString() || ''
+    if (!id) {
+        console.error('No item ID found')
+        return
     }
 
-    if (!listingId) {
-        console.error('No listing ID found')
+    if (item._type === 'course') {
+        router.push({
+            path: '/particulier/chat',
+            query: { courseId: id.toString() }
+        })
         return
     }
 
     router.push({
         path: '/particulier/chat',
-        query: { listingId }
+        query: { listingId: id.toString() }
     })
 }
 
@@ -146,11 +163,11 @@ async function handleAddToCart(item: any) {
         else if (item._type === 'course') payload.courseId = id
         
         await clientStore.addToCart(payload)
-        toastMessage.value = `"${getItemName(item)}" ajouté au panier !`
+        toastMessage.value = t('client.catalogue.addedToCart', { name: getItemName(item) })
         showToast.value = true
         setTimeout(() => { showToast.value = false }, 3000)
     } catch (e: any) {
-        toastMessage.value = "Erreur lors de l'ajout"
+        toastMessage.value = t('client.catalogue.addError')
         showToast.value = true
         setTimeout(() => { showToast.value = false }, 3000)
     }
@@ -170,7 +187,7 @@ onMounted(() => {
 
 <template>
     <div class="page">
-        <h1 class="page-title">Catalogue.</h1>
+        <h1 class="page-title">{{ t('client.catalogue.pageTitle') }}</h1>
 
         <div class="tabs">
             <button
@@ -178,33 +195,33 @@ onMounted(() => {
                 :class="{ 'tab-btn--active': activeTab === 'all' }"
                 @click="activeTab = 'all'"
             >
-                Tout ({{ allItems.length }})
+                {{ t('client.catalogue.all', { count: allItems.length }) }}
             </button>
             <button
                 class="tab-btn"
                 :class="{ 'tab-btn--active': activeTab === 'events' }"
                 @click="activeTab = 'events'"
             >
-                Événements ({{ clientStore.events.length }})
+                {{ t('client.catalogue.events', { count: clientStore.events.length }) }}
             </button>
             <button
                 class="tab-btn"
                 :class="{ 'tab-btn--active': activeTab === 'courses' }"
                 @click="activeTab = 'courses'"
             >
-                Ateliers ({{ clientStore.courses.length }})
+                {{ t('client.catalogue.workshops', { count: clientStore.courses.length }) }}
             </button>
             <button
                 class="tab-btn"
                 :class="{ 'tab-btn--active': activeTab === 'annonces' }"
                 @click="activeTab = 'annonces'"
             >
-                Annonces ({{ clientStore.allAnnonces.length }})
+                {{ t('client.catalogue.listings', { count: clientStore.allAnnonces.length }) }}
             </button>
         </div>
 
         <div v-if="clientStore.isLoading" class="state-empty">
-            <p>Chargement…</p>
+            <p>{{ t('client.catalogue.loading') }}</p>
         </div>
 
         <div v-else-if="filtered.length === 0" class="state-empty">
@@ -216,8 +233,8 @@ onMounted(() => {
                     <rect x="3" y="14" width="7" height="7" />
                 </svg>
             </div>
-            <p class="empty-title">Aucun élément disponible</p>
-            <p class="empty-sub">Revenez bientôt for découvrir nos prochains événements et ateliers.</p>
+            <p class="empty-title">{{ t('client.catalogue.emptyTitle') }}</p>
+            <p class="empty-sub">{{ t('client.catalogue.emptySubtitle') }}</p>
         </div>
 
         <div v-else class="catalogue-grid">
@@ -238,16 +255,24 @@ onMounted(() => {
                         'type-badge--course': item._type === 'course',
                         'type-badge--annonce': item._type === 'annonce'
                     }">
-                        {{ item._type === 'event' ? 'Événement' : item._type === 'course' ? 'Atelier' : 'Annonce' }}
+                        {{ item._type === 'event' ? t('client.catalogue.event') : item._type === 'course' ? t('client.catalogue.workshop') : t('client.catalogue.listing') }}
                     </span>
                     <span class="card-price">{{ formatPrice(getItemPrice(item)) }}</span>
                 </div>
 
+                <span v-if="item._type === 'course' && item.type" class="course-type-badge">
+                    {{ item.type === 'en_ligne' ? t('client.catalogue.online') : t('client.catalogue.inPerson') }}
+                </span>
+
                 <h3 class="card-name">{{ getItemName(item) }}</h3>
+                <p v-if="item._type === 'course' && item.organisateur" class="card-organizer">{{ t('client.catalogue.by', { name: item.organisateur }) }}</p>
                 <p class="card-desc">{{ getItemDesc(item) }}</p>
 
                 <div class="card-footer">
-                    <span v-if="item.created_at" class="card-date">
+                    <span v-if="item._type === 'course' && getCourseDateRange(item)" class="card-date">
+                        {{ getCourseDateRange(item) }}
+                    </span>
+                    <span v-else-if="item.created_at" class="card-date">
                         {{ formatDate(item.created_at) }}
                     </span>
                     <span v-if="item.max_capacity" class="card-capacity">
@@ -255,21 +280,29 @@ onMounted(() => {
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
                         </svg>
-                        {{ item.max_capacity?.Int32 ?? item.max_capacity }} places
+                        {{ t('client.catalogue.spots', { count: item.max_capacity?.Int32 ?? item.max_capacity }) }}
                     </span>
                 </div>
 
                 <div class="card-actions">
                     <template v-if="item._type === 'annonce'">
                         <button v-if="clientStore.isChattingWith(getItemId(item))" class="btn-chat btn-chat--active" @click="handleContactSeller(item)">
-                            💬 Continuer la discussion
+                            {{ t('client.catalogue.continueChat') }}
                         </button>
                         <button v-else class="btn-cart btn-cart--full" @click="handleAddToCart(item)">
-                            🛒 Ajouter au panier
+                            {{ t('client.catalogue.addToCart') }}
+                        </button>
+                    </template>
+                    <template v-else-if="item._type === 'course'">
+                        <button class="btn-cart btn-split" @click="handleAddToCart(item)">
+                            {{ t('client.catalogue.addToCart') }}
+                        </button>
+                        <button class="btn-chat-organizer btn-split" @click="handleContactSeller(item)">
+                            {{ t('client.catalogue.contactTrainer') }}
                         </button>
                     </template>
                     <button v-else class="btn-cart btn-cart--full" @click="handleAddToCart(item)">
-                        🛒 Ajouter au panier
+                        {{ t('client.catalogue.addToCart') }}
                     </button>
                 </div>
             </div>
@@ -282,7 +315,7 @@ onMounted(() => {
                     <span class="toast-icon">✅</span>
                     <span class="toast-text">{{ toastMessage }}</span>
                 </div>
-                <router-link to="/particulier/panier" class="toast-link">Voir panier</router-link>
+                <router-link to="/particulier/panier" class="toast-link">{{ t('client.catalogue.viewCart') }}</router-link>
             </div>
         </Transition>
     </div>
@@ -433,6 +466,12 @@ onMounted(() => {
     margin: 0;
     line-height: 1.3;
 }
+.card-organizer {
+    font-size: 0.78rem;
+    color: var(--green-dark);
+    font-weight: 600;
+    margin: -8px 0 0;
+}
 .card-desc {
     font-size: 0.82rem;
     color: var(--charcoal);
@@ -513,6 +552,34 @@ onMounted(() => {
 }
 .btn-chat--active:hover {
     background: #3569ad;
+}
+.btn-split {
+    width: auto;
+    flex: 1;
+}
+.btn-chat-organizer {
+    padding: 11px;
+    background: #eef4fb;
+    color: #4183d7;
+    border: 1.5px solid rgba(65, 131, 215, 0.25);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.btn-chat-organizer:hover {
+    background: #4183d7;
+    color: white;
+}
+.course-type-badge {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--charcoal);
+    opacity: 0.7;
+    margin-top: -8px;
 }
 
 /* Toast Styles */

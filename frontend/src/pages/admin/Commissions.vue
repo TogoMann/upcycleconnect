@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 interface Commission {
@@ -33,36 +35,36 @@ onMounted(async () => {
 <template>
     <div class="commissions">
         <div class="page-header">
-            <h1 class="page-title">Commissions.</h1>
-            <p class="page-subtitle">Suivi des commissions par type de transaction.</p>
+            <h1 class="page-title">{{ t('admin.commissions.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.commissions.subtitle') }}</p>
         </div>
 
         <div class="total-card">
-            <div class="total-label">Total des commissions perçues</div>
-            <div class="total-value">{{ total.toLocaleString('fr-FR') }} €</div>
+            <div class="total-label">{{ t('admin.commissions.totalLabel') }}</div>
+            <div class="total-value">{{ total.toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR') }} €</div>
         </div>
 
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Type</th>
-                        <th>Taux</th>
-                        <th>Transactions</th>
-                        <th>Période</th>
-                        <th>Montant total</th>
+                        <th>{{ t('admin.commissions.colType') }}</th>
+                        <th>{{ t('admin.commissions.colRate') }}</th>
+                        <th>{{ t('admin.commissions.colTransactions') }}</th>
+                        <th>{{ t('admin.commissions.colPeriod') }}</th>
+                        <th>{{ t('admin.commissions.colTotalAmount') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="commissions.length === 0">
-                        <td colspan="5" class="empty">Aucune commission.</td>
+                        <td colspan="5" class="empty">{{ t('admin.commissions.empty') }}</td>
                     </tr>
                     <tr v-for="c in commissions" :key="c.id">
                         <td class="td-bold">{{ c.type }}</td>
                         <td>{{ c.taux }} %</td>
                         <td>{{ c.nb_transactions }}</td>
                         <td class="td-muted">{{ c.periode }}</td>
-                        <td class="td-amount">{{ c.montant_total.toLocaleString('fr-FR') }} €</td>
+                        <td class="td-amount">{{ c.montant_total.toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR') }} €</td>
                     </tr>
                 </tbody>
             </table>

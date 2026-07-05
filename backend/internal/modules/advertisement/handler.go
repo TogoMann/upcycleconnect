@@ -104,6 +104,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
+
+	adminId, err := getUserIdFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var body struct {
 		Statut string `json:"statut"`
 	}
@@ -115,7 +122,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if body.Statut == "active" {
 		dbStatus = "validated"
 	}
-	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, dbStatus, pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, dbStatus, pgtype.Int8{Int64: adminId, Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -125,7 +132,14 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, "validated", pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+
+	adminId, err := getUserIdFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, "validated", pgtype.Int8{Int64: adminId, Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -135,7 +149,14 @@ func (h *Handler) Approve(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Reject(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, _ := strconv.ParseInt(idStr, 10, 64)
-	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, "rejected", pgtype.Int8{Int64: 1, Valid: true}); err != nil {
+
+	adminId, err := getUserIdFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.UpdateStatus(pgtype.Int8{Int64: id, Valid: true}, "rejected", pgtype.Int8{Int64: adminId, Valid: true}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

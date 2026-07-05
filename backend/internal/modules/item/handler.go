@@ -216,6 +216,18 @@ func (h *Handler) Collect(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	idInt, _ := strconv.ParseInt(idStr, 10, 64)
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
 	var req struct {
 		Code string `json:"code"`
 	}
@@ -224,7 +236,7 @@ func (h *Handler) Collect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	proId := pgtype.Int8{Int64: 1, Valid: true}
+	proId := pgtype.Int8{Int64: int64(sub), Valid: true}
 
 	err := h.service.Collect(pgtype.Int8{Int64: idInt, Valid: true}, proId, req.Code)
 	if err != nil {

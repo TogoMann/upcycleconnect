@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Traduction {
@@ -25,19 +27,19 @@ onMounted(async () => {
     } catch {}
 })
 
-const filtered = computed(() => traductions.value.filter(t =>
-    !search.value || t.cle.toLowerCase().includes(search.value.toLowerCase()) || t.fr.toLowerCase().includes(search.value.toLowerCase())
+const filtered = computed(() => traductions.value.filter(entry =>
+    !search.value || entry.cle.toLowerCase().includes(search.value.toLowerCase()) || entry.fr.toLowerCase().includes(search.value.toLowerCase())
 ))
 
-async function save(t: Traduction) {
-    saving.value = t.cle
+async function save(entry: Traduction) {
+    saving.value = entry.cle
     try {
-        await fetch(`${API_BASE}/admin/langues/${t.cle}`, {
+        await fetch(`${API_BASE}/admin/langues/${entry.cle}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-            body: JSON.stringify({ fr: t.fr, en: t.en }),
+            body: JSON.stringify({ fr: entry.fr, en: entry.en }),
         })
-        t.modifie = false
+        entry.modifie = false
     } catch {}
     saving.value = null
 }
@@ -46,54 +48,54 @@ async function save(t: Traduction) {
 <template>
     <div class="langues">
         <div class="page-header">
-            <h1 class="page-title">Langues.</h1>
-            <p class="page-subtitle">Gérez les traductions de l'interface sans toucher au code.</p>
+            <h1 class="page-title">{{ t('admin.langues.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.langues.subtitle') }}</p>
         </div>
 
         <div class="search-row">
-            <input v-model="search" type="text" class="search-input" placeholder="Rechercher une clé ou un texte…" />
+            <input v-model="search" type="text" class="search-input" :placeholder="t('admin.langues.searchPlaceholder')" />
         </div>
 
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Clé</th>
-                        <th>Français</th>
-                        <th>English</th>
+                        <th>{{ t('admin.langues.colKey') }}</th>
+                        <th>{{ t('admin.langues.colFrench') }}</th>
+                        <th>{{ t('admin.langues.colEnglish') }}</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="filtered.length === 0">
-                        <td colspan="4" class="empty">Aucune traduction trouvée.</td>
+                        <td colspan="4" class="empty">{{ t('admin.langues.empty') }}</td>
                     </tr>
-                    <tr v-for="t in filtered" :key="t.cle" :class="{ 'row-modified': t.modifie }">
-                        <td class="td-key">{{ t.cle }}</td>
+                    <tr v-for="entry in filtered" :key="entry.cle" :class="{ 'row-modified': entry.modifie }">
+                        <td class="td-key">{{ entry.cle }}</td>
                         <td>
                             <input
-                                v-model="t.fr"
+                                v-model="entry.fr"
                                 type="text"
                                 class="inline-input"
-                                @input="t.modifie = true"
+                                @input="entry.modifie = true"
                             />
                         </td>
                         <td>
                             <input
-                                v-model="t.en"
+                                v-model="entry.en"
                                 type="text"
                                 class="inline-input"
-                                @input="t.modifie = true"
+                                @input="entry.modifie = true"
                             />
                         </td>
                         <td>
                             <button
-                                v-if="t.modifie"
+                                v-if="entry.modifie"
                                 class="btn-save"
-                                :disabled="saving === t.cle"
-                                @click="save(t)"
+                                :disabled="saving === entry.cle"
+                                @click="save(entry)"
                             >
-                                {{ saving === t.cle ? '…' : 'Sauv.' }}
+                                {{ saving === entry.cle ? '…' : t('admin.langues.save') }}
                             </button>
                         </td>
                     </tr>

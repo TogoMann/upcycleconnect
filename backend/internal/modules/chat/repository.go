@@ -22,17 +22,39 @@ func (r *Repository) GetOrCreateConversation(listingId, buyerId, sellerId int64)
 		WITH ins AS (
 			INSERT INTO chat_conversation (listing_id, buyer_id, seller_id)
 			VALUES ($1, $2, $3)
-			ON CONFLICT (listing_id, buyer_id, seller_id) DO UPDATE 
+			ON CONFLICT (listing_id, buyer_id, seller_id) DO UPDATE
 			SET updated_at = NOW()
-			RETURNING id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
+			RETURNING id, listing_id, course_id, buyer_id, seller_id, is_closed, created_at, updated_at
 		)
-		SELECT ins.id, ins.listing_id, ins.buyer_id, ins.seller_id, ins.is_closed, ins.created_at, ins.updated_at, COALESCE(l.name, '')
+		SELECT ins.id, ins.listing_id, ins.course_id, ins.buyer_id, ins.seller_id, ins.is_closed, ins.created_at, ins.updated_at, COALESCE(l.name, '')
 		FROM ins
 		LEFT JOIN listing l ON ins.listing_id = l.id
-	`, listingId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt, &conv.ListingTitle)
+	`, listingId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.CourseId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt, &conv.ListingTitle)
 
 	if err != nil {
 		return nil, fmt.Errorf("package chat/repo GetOrCreateConversation: %w", err)
+	}
+
+	return &conv, nil
+}
+
+func (r *Repository) GetOrCreateCourseConversation(courseId, buyerId, sellerId int64) (*Conversation, error) {
+	var conv Conversation
+	err := r.db.QueryRow(db.Ctx, `
+		WITH ins AS (
+			INSERT INTO chat_conversation (course_id, buyer_id, seller_id)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (course_id, buyer_id, seller_id) DO UPDATE
+			SET updated_at = NOW()
+			RETURNING id, listing_id, course_id, buyer_id, seller_id, is_closed, created_at, updated_at
+		)
+		SELECT ins.id, ins.listing_id, ins.course_id, ins.buyer_id, ins.seller_id, ins.is_closed, ins.created_at, ins.updated_at, COALESCE(c.name, '')
+		FROM ins
+		LEFT JOIN course c ON ins.course_id = c.id
+	`, courseId, buyerId, sellerId).Scan(&conv.Id, &conv.ListingId, &conv.CourseId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt, &conv.CourseTitle)
+
+	if err != nil {
+		return nil, fmt.Errorf("package chat/repo GetOrCreateCourseConversation: %w", err)
 	}
 
 	return &conv, nil
@@ -62,10 +84,10 @@ func (r *Repository) GetConversationByListingAndUsers(listingId, userId1, userId
 func (r *Repository) GetConversationById(id int64) (*Conversation, error) {
 	var conv Conversation
 	err := r.db.QueryRow(db.Ctx, `
-		SELECT id, listing_id, buyer_id, seller_id, is_closed, created_at, updated_at
+		SELECT id, listing_id, course_id, buyer_id, seller_id, is_closed, created_at, updated_at
 		FROM chat_conversation
 		WHERE id = $1
-	`, id).Scan(&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt)
+	`, id).Scan(&conv.Id, &conv.ListingId, &conv.CourseId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -164,11 +186,17 @@ func (r *Repository) UpdateMessage(id int64, oldContent string, oldPrice *float6
 
 func (r *Repository) GetConversationsByUserId(userId int64) ([]Conversation, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			c.id, c.listing_id, c.buyer_id, c.seller_id, c.is_closed, c.created_at, c.updated_at,
-			COALESCE(l.name, '') as listing_title
+		SELECT
+			c.id, c.listing_id, c.course_id, c.buyer_id, c.seller_id, c.is_closed, c.created_at, c.updated_at,
+			COALESCE(l.name, '') as listing_title,
+			COALESCE(co.name, '') as course_title,
+			COALESCE(u1.first_name || ' ' || u1.last_name, '') as buyer_name,
+			COALESCE(u2.first_name || ' ' || u2.last_name, '') as seller_name
 		FROM chat_conversation c
 		LEFT JOIN listing l ON c.listing_id = l.id
+		LEFT JOIN course co ON c.course_id = co.id
+		LEFT JOIN users u1 ON c.buyer_id = u1.id
+		LEFT JOIN users u2 ON c.seller_id = u2.id
 		WHERE c.buyer_id = $1 OR c.seller_id = $1
 		ORDER BY c.updated_at DESC
 	`, userId)
@@ -181,8 +209,8 @@ func (r *Repository) GetConversationsByUserId(userId int64) ([]Conversation, err
 	for rows.Next() {
 		var conv Conversation
 		err := rows.Scan(
-			&conv.Id, &conv.ListingId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt,
-			&conv.ListingTitle,
+			&conv.Id, &conv.ListingId, &conv.CourseId, &conv.BuyerId, &conv.SellerId, &conv.IsClosed, &conv.CreatedAt, &conv.UpdatedAt,
+			&conv.ListingTitle, &conv.CourseTitle, &conv.BuyerName, &conv.SellerName,
 		)
 		if err != nil {
 			return nil, err
@@ -200,13 +228,15 @@ func (r *Repository) CloseConversationsByListingId(listingId int64) error {
 
 func (r *Repository) GetAdminConversationReviews() ([]AdminConversationReview, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			c.id, c.listing_id, c.buyer_id, c.seller_id, c.created_at, c.updated_at,
-			l.name as listing_title,
+		SELECT
+			c.id, c.listing_id, c.course_id, c.buyer_id, c.seller_id, c.created_at, c.updated_at,
+			COALESCE(l.name, '') as listing_title,
+			COALESCE(co.name, '') as course_title,
 			u1.username as buyer_name,
 			u2.username as seller_name
 		FROM chat_conversation c
-		JOIN listing l ON c.listing_id = l.id
+		LEFT JOIN listing l ON c.listing_id = l.id
+		LEFT JOIN course co ON c.course_id = co.id
 		JOIN users u1 ON c.buyer_id = u1.id
 		JOIN users u2 ON c.seller_id = u2.id
 		ORDER BY c.updated_at DESC
@@ -220,8 +250,8 @@ func (r *Repository) GetAdminConversationReviews() ([]AdminConversationReview, e
 	for rows.Next() {
 		var rev AdminConversationReview
 		err := rows.Scan(
-			&rev.Id, &rev.ListingId, &rev.BuyerId, &rev.SellerId, &rev.CreatedAt, &rev.UpdatedAt,
-			&rev.ListingTitle, &rev.BuyerName, &rev.SellerName,
+			&rev.Id, &rev.ListingId, &rev.CourseId, &rev.BuyerId, &rev.SellerId, &rev.CreatedAt, &rev.UpdatedAt,
+			&rev.ListingTitle, &rev.CourseTitle, &rev.BuyerName, &rev.SellerName,
 		)
 		if err != nil {
 			return nil, err

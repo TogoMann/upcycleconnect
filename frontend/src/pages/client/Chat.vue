@@ -4,8 +4,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { useChatStore, type Conversation, type Message } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 import { API_BASE } from '@/config'
 
+const { t } = useI18n()
 const chatStore = useChatStore()
 const authStore = useAuthStore()
 const clientStore = useClientStore()
@@ -37,7 +39,7 @@ async function handleRemoveFromCart() {
     if (currentId) {
         try {
             await clientStore.removeFromCart('listing', currentId)
-            alert('Objet retiré du panier avec succès.')
+            alert(t('client.chat.removedFromCart'))
         } catch (e: any) {
             alert(e.message)
         }
@@ -50,6 +52,8 @@ async function loadConversations() {
         conversations.value = Array.isArray(data) ? data : []
 
         const queryListingId = route.query.listingId
+        const queryCourseId = route.query.courseId
+
         if (queryListingId) {
             const lid = parseInt(queryListingId as string)
             const existing = conversations.value.find((c) => getNumericId(c.listing_id) === lid)
@@ -73,11 +77,46 @@ async function loadConversations() {
                     })
                     .catch((e) => console.error('Bg title fetch error:', e))
             }
+        } else if (queryCourseId) {
+            const cid = parseInt(queryCourseId as string)
+            const existing = conversations.value.find((c) => getNumericId(c.course_id) === cid)
+
+            if (existing) {
+                selectConversation(existing)
+            } else {
+                selectedConv.value = {
+                    course_id: cid,
+                    course_title: '',
+                    seller_name: '',
+                    id: 0,
+                }
+                messages.value = []
+
+                fetch(`${API_BASE}/course/${cid}`)
+                    .then((res) => (res.ok ? res.json() : null))
+                    .then((c) => {
+                        if (c && selectedConv.value && selectedConv.value.id === 0) {
+                            selectedConv.value.course_title = c.name
+                            selectedConv.value.seller_name = c.created_by_name
+                        }
+                    })
+                    .catch((e) => console.error('Bg title fetch error:', e))
+            }
         }
     } catch (e) {
         console.error('Error loading conversations:', e)
         conversations.value = []
     }
+}
+
+function isCourseConv(conv: Partial<Conversation> | null): boolean {
+    return !!conv && getNumericId(conv.course_id) !== undefined
+}
+
+function conversationTitle(conv: Partial<Conversation> | null): string {
+    if (!conv) return ''
+    if (isCourseConv(conv)) return conv.course_title || t('client.chat.untitledEvent', { id: getNumericId(conv.course_id) })
+    return conv.listing_title || t('client.chat.untitledListing', { id: getNumericId(conv.listing_id) })
 }
 
 async function selectConversation(conv: Partial<Conversation>) {
@@ -110,6 +149,10 @@ async function send() {
                 proposedPrice.value ?? undefined,
             )
             editingMessage.value = null
+        } else if (isCourseConv(selectedConv.value)) {
+            const courseId = getNumericId(selectedConv.value.course_id)!
+            const convId = getNumericId(selectedConv.value.id)
+            await chatStore.sendMessage(undefined, newMessage.value, 'text', undefined, convId, courseId)
         } else {
             const type = proposedPrice.value ? 'price_proposal' : 'text'
             const listingId = getNumericId(selectedConv.value.listing_id)!
@@ -185,7 +228,7 @@ onMounted(() => {
 })
 
 watch(
-    () => route.query.listingId,
+    () => [route.query.listingId, route.query.courseId],
     () => {
         loadConversations()
     },
@@ -195,7 +238,7 @@ watch(
 <template>
     <div class="chat-container">
         <div class="conv-list">
-            <h3>Mes Conversations</h3>
+            <h3>{{ t('client.chat.myConversations') }}</h3>
             <div
                 v-for="conv in conversations"
                 :key="conv.id"
@@ -203,7 +246,8 @@ watch(
                 :class="{ active: selectedConv?.id === conv.id }"
                 @click="selectConversation(conv)"
             >
-                <p>{{ conv.listing_title || `Objet #${getNumericId(conv.listing_id)}` }}</p>
+                <p>{{ conversationTitle(conv) }}</p>
+                <small v-if="isCourseConv(conv) && conv.seller_name" class="conv-organizer">Formateur : {{ conv.seller_name }}</small>
                 <small
                     >Mis à jour :
                     {{ new Date(conv.updated_at.Time ?? conv.updated_at).toLocaleString() }}</small
@@ -213,16 +257,19 @@ watch(
         <div class="chat-window" v-if="selectedConv">
             <div class="chat-header">
                 <div class="header-title-area">
-                    <h3>
-                        {{ selectedConv.id === 0 ? 'Nouvelle conversation' : 'Conversation' }} -
-                        {{ selectedConv.listing_title || `Objet #${getNumericId(selectedConv.listing_id)}` }}
-                    </h3>
-                    <button v-if="isCurrentListingInCart" @click="handleRemoveFromCart" class="btn-remove-cart">
-                        Retirer du panier
+                    <div>
+                        <h3>
+                            {{ selectedConv.id === 0 ? t('client.chat.newConversation') : t('client.chat.conversation') }} -
+                            {{ conversationTitle(selectedConv) }}
+                        </h3>
+                        <span v-if="isCourseConv(selectedConv) && selectedConv.seller_name" class="header-organizer">{{ t('client.chat.trainer', { name: selectedConv.seller_name }) }}</span>
+                    </div>
+                    <button v-if="!isCourseConv(selectedConv) && isCurrentListingInCart" @click="handleRemoveFromCart" class="btn-remove-cart">
+                        {{ t('client.chat.removeFromCart') }}
                     </button>
                 </div>
                 <span v-if="selectedConv.is_closed" class="status-closed"
-                    >Discussion fermée (Objet vendu)</span
+                    >{{ t('client.chat.closedDiscussion') }}</span
                 >
             </div>
 
@@ -237,9 +284,9 @@ watch(
                         <p v-if="msg.content">{{ msg.content }}</p>
 
                         <div v-if="msg.message_type === 'price_proposal'" class="proposal-box">
-                            <strong>Proposition de prix : {{ msg.proposed_price }}€</strong>
+                            <strong>{{ t('client.chat.priceProposal', { price: msg.proposed_price }) }}</strong>
                             <div v-if="msg.proposal_status === 'pending'">
-                                <span class="badge pending">En attente</span>
+                                <span class="badge pending">{{ t('client.chat.pending') }}</span>
                                 <div
                                     v-if="msg.sender_id !== authStore.user?.id && !selectedConv.is_closed"
                                     class="actions"
@@ -248,18 +295,18 @@ watch(
                                         @click="respondToProposal(msg.id, true)"
                                         class="btn-accept"
                                     >
-                                        Accepter
+                                        {{ t('client.chat.accept') }}
                                     </button>
                                     <button
                                         @click="respondToProposal(msg.id, false)"
                                         class="btn-decline"
                                     >
-                                        Refuser
+                                        {{ t('client.chat.decline') }}
                                     </button>
                                 </div>
                             </div>
                             <div v-else-if="msg.proposal_status === 'accepted'">
-                                <span class="badge accepted">Acceptée</span>
+                                <span class="badge accepted">{{ t('client.chat.accepted') }}</span>
                                 <div
                                     v-if="msg.sender_id === authStore.user?.id && !selectedConv.is_closed"
                                     class="buy-now"
@@ -268,28 +315,28 @@ watch(
                                         @click="goToPayment(msg.proposed_price!)"
                                         class="btn-pay"
                                     >
-                                        Payer {{ msg.proposed_price }}€
+                                        {{ t('client.chat.pay', { price: msg.proposed_price }) }}
                                     </button>
                                 </div>
                             </div>
                             <span
                                 v-else-if="msg.proposal_status === 'declined'"
                                 class="badge declined"
-                                >Refusée</span
+                                >{{ t('client.chat.declined') }}</span
                             >
                         </div>
                         <small class="time">
                             {{
                                 new Date(msg.created_at.Time ?? msg.created_at).toLocaleTimeString()
                             }}
-                            <span v-if="msg.is_edited" class="edited-label">(modifié)</span>
+                            <span v-if="msg.is_edited" class="edited-label">{{ t('client.chat.edited') }}</span>
                         </small>
 
                         <div
                             v-if="msg.sender_id === authStore.user?.id && !editingMessage && !selectedConv.is_closed"
                             class="msg-actions"
                         >
-                            <button @click="startEdit(msg)" class="btn-text">Modifier</button>
+                            <button @click="startEdit(msg)" class="btn-text">{{ t('client.chat.edit') }}</button>
                         </div>
                     </div>
                 </div>
@@ -297,36 +344,37 @@ watch(
 
             <div class="input-area" v-if="!selectedConv.is_closed">
                 <div v-if="editingMessage" class="edit-banner">
-                    Mode édition <button @click="cancelEdit" class="btn-text">Annuler</button>
+                    {{ t('client.chat.editMode') }} <button @click="cancelEdit" class="btn-text">{{ t('client.chat.cancel') }}</button>
                 </div>
                 <textarea
                     v-model="newMessage"
-                    :placeholder="editingMessage ? 'Modifier votre message...' : 'Votre message...'"
+                    :placeholder="editingMessage ? t('client.chat.editPlaceholder') : t('client.chat.messagePlaceholder')"
                 ></textarea>
                 <div class="controls">
                     <button
+                        v-if="!isCourseConv(selectedConv)"
                         @click="showProposalInput = !showProposalInput"
                         class="btn-alt"
                         :disabled="editingMessage && editingMessage.message_type === 'text'"
                     >
-                        {{ showProposalInput ? 'Annuler proposition' : 'Négocier prix' }}
+                        {{ showProposalInput ? t('client.chat.cancelProposal') : t('client.chat.negotiatePrice') }}
                     </button>
                     <input
-                        v-if="showProposalInput"
+                        v-if="showProposalInput && !isCourseConv(selectedConv)"
                         type="number"
                         v-model="proposedPrice"
-                        placeholder="Prix (€)"
+                        :placeholder="t('client.chat.priceLabel')"
                     />
                     <button @click="send" class="btn-send">
-                        {{ editingMessage ? 'Mettre à jour' : 'Envoyer' }}
+                        {{ editingMessage ? t('client.chat.update') : t('client.chat.send') }}
                     </button>
                 </div>
             </div>
             <div class="input-area closed-notice" v-else>
-                Cette discussion est terminée car l'objet a été vendu.
+                {{ t('client.chat.closedNotice') }}
             </div>
         </div>
-        <div class="no-chat" v-else>Sélectionnez une conversation pour commencer.</div>
+        <div class="no-chat" v-else>{{ t('client.chat.selectConversation') }}</div>
     </div>
 </template>
 
@@ -387,6 +435,18 @@ watch(
 .conv-item small {
     font-size: 0.75rem;
     color: rgba(53, 53, 53, 0.5);
+}
+
+.conv-organizer {
+    font-size: 0.75rem;
+    color: var(--green-dark);
+    font-weight: 600;
+}
+
+.header-organizer {
+    font-size: 0.8rem;
+    color: var(--charcoal);
+    opacity: 0.6;
 }
 
 .chat-window {

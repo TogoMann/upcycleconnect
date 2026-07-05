@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -26,7 +28,7 @@ async function handleLogin() {
         else if (role === 'interne') router.push('/salarie')
         else router.push('/particulier')
     } catch (e: any) {
-        error.value = 'Identifiants invalides.'
+        error.value = t('auth.login.invalidCredentials')
     }
     loading.value = false
 }
@@ -35,7 +37,7 @@ async function handleLogin() {
 <template>
     <div class="page-content">
         <div class="container">
-            <h1 class="page-title">Se connecter.</h1>
+            <h1 class="page-title">{{ t('auth.login.title') }}</h1>
 
             <form class="login-form" @submit.prevent="handleLogin">
                 <div v-if="error" class="form-error">{{ error }}</div>
@@ -43,7 +45,7 @@ async function handleLogin() {
                     id="username"
                     v-model="form.username"
                     type="text"
-                    placeholder="Nom d'utilisateur"
+                    :placeholder="t('auth.login.username')"
                     class="form-input"
                     autocomplete="username"
                 />
@@ -53,23 +55,23 @@ async function handleLogin() {
                         id="password"
                         v-model="form.password"
                         :type="showPassword ? 'text' : 'password'"
-                        placeholder="Mot de passe"
+                        :placeholder="t('auth.login.password')"
                         class="form-input"
                         autocomplete="current-password"
                     />
                     <router-link to="/auth/forgot-password" class="forgot-link">
-                        Mot de passe oublié
+                        {{ t('auth.login.forgotPassword') }}
                     </router-link>
                 </div>
 
                 <button type="submit" class="btn-submit" :disabled="loading">
-                    {{ loading ? 'Connexion…' : 'Se connecter' }}
+                    {{ loading ? t('auth.login.loggingIn') : t('auth.login.submit') }}
                 </button>
             </form>
 
             <div class="create-account">
                 <router-link to="/auth/register" class="create-link">
-                    Créer un compte
+                    {{ t('auth.login.createAccount') }}
                 </router-link>
             </div>
         </div>

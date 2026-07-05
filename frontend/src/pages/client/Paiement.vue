@@ -3,15 +3,40 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 import { useCartStore } from '@/stores/cart'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const clientStore = useClientStore()
 const cartStore = useCartStore()
 
-const itemName = computed(() => (route.query.name as string) || 'Article')
+const itemName = computed(() => (route.query.name as string) || t('client.paiement.defaultItem'))
 const itemPrice = computed(() => Number(route.query.price) || 0)
 const itemId = computed(() => Number(route.query.id) || 0)
+const paymentType = computed(() => (route.query.type as string) || '')
+const isStripeCheckout = computed(() => paymentType.value === 'listing')
+const redirecting = ref(false)
+const stripeError = ref('')
+
+async function handleStripeCheckout() {
+    redirecting.value = true
+    stripeError.value = ''
+    try {
+        const data = await clientStore.createOrderCheckout(itemId.value)
+        if (data.free) {
+            router.push({
+                path: '/particulier/paiement/confirmation',
+                query: { name: itemName.value, price: '0', type: 'listing', order_id: data.order_id },
+            })
+            return
+        }
+        if (data.url) window.location.href = data.url
+    } catch (e: any) {
+        stripeError.value = e.message
+        redirecting.value = false
+    }
+}
 
 const form = reactive({
     cardNumber: '',
@@ -58,10 +83,10 @@ function onExpiryInput(e: Event) {
 
 function validate(): boolean {
     const raw = form.cardNumber.replace(/\s/g, '')
-    errors.cardNumber = raw.length === 16 ? '' : 'Numéro de carte invalide (16 chiffres requis)'
-    errors.cardName = form.cardName.trim().length >= 2 ? '' : 'Nom sur la carte requis'
-    errors.expiry = /^\d{2}\/\d{2}$/.test(form.expiry) ? '' : 'Date d\'expiration invalide (MM/AA)'
-    errors.cvc = /^\d{3,4}$/.test(form.cvc) ? '' : 'CVC invalide'
+    errors.cardNumber = raw.length === 16 ? '' : t('client.paiement.errorCardNumber')
+    errors.cardName = form.cardName.trim().length >= 2 ? '' : t('client.paiement.errorCardName')
+    errors.expiry = /^\d{2}\/\d{2}$/.test(form.expiry) ? '' : t('client.paiement.errorExpiry')
+    errors.cvc = /^\d{3,4}$/.test(form.cvc) ? '' : t('client.paiement.errorCvc')
     return !errors.cardNumber && !errors.cardName && !errors.expiry && !errors.cvc
 }
 
@@ -70,15 +95,12 @@ async function handleSubmit() {
     submitting.value = true
     errors.global = ''
     try {
-        const type = route.query.type as string
-        if (type === 'cart') {
+        if (paymentType.value === 'cart') {
             await cartStore.checkoutCart()
-        } else if (type === 'course') {
+        } else if (paymentType.value === 'course') {
             await clientStore.createCourseOrder(itemId.value, itemPrice.value)
-        } else if (type === 'event') {
+        } else if (paymentType.value === 'event') {
             await clientStore.createEventParticipation(itemId.value)
-        } else {
-            await clientStore.createOrder(itemId.value, itemPrice.value)
         }
 
         router.push({
@@ -108,25 +130,51 @@ onMounted(() => {
                     <line x1="19" y1="12" x2="5" y2="12" />
                     <polyline points="12 19 5 12 12 5" />
                 </svg>
-                Catalogue
+                {{ t('client.paiement.catalogue') }}
             </router-link>
-            <h1 class="page-title">Paiement.</h1>
+            <h1 class="page-title">{{ t('client.paiement.pageTitle') }}</h1>
         </div>
 
         <div class="checkout-layout">
-            <form class="checkout-form" @submit.prevent="handleSubmit">
-                <div class="form-section-title">Informations de paiement</div>
+            <div v-if="isStripeCheckout" class="checkout-form checkout-form--stripe">
+                <div class="form-section-title">{{ t('client.paiement.stripeSectionTitle') }}</div>
 
                 <div class="stripe-badge">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                         <line x1="1" y1="10" x2="23" y2="10" />
                     </svg>
-                    Paiement sécurisé
+                    {{ t('client.paiement.stripeRedirect') }}
+                </div>
+
+                <p class="stripe-explain">
+                    {{ t('client.paiement.stripeExplain') }}
+                </p>
+
+                <div v-if="stripeError" class="error-banner">{{ stripeError }}</div>
+
+                <button type="button" class="btn-pay" :disabled="redirecting" @click="handleStripeCheckout">
+                    <svg v-if="!redirecting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    {{ redirecting ? t('client.paiement.redirecting') : t('client.paiement.pay', { price: itemPrice.toFixed(2) }) }}
+                </button>
+            </div>
+
+            <form v-else class="checkout-form" @submit.prevent="handleSubmit">
+                <div class="form-section-title">{{ t('client.paiement.paymentInfoTitle') }}</div>
+
+                <div class="stripe-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    {{ t('client.paiement.securePayment') }}
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Numéro de carte</label>
+                    <label class="form-label">{{ t('client.paiement.cardNumber') }}</label>
                     <input
                         :value="form.cardNumber"
                         type="text"
@@ -141,7 +189,7 @@ onMounted(() => {
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Nom sur la carte</label>
+                    <label class="form-label">{{ t('client.paiement.cardName') }}</label>
                     <input
                         v-model="form.cardName"
                         type="text"
@@ -155,7 +203,7 @@ onMounted(() => {
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Date d'expiration</label>
+                        <label class="form-label">{{ t('client.paiement.expiryDate') }}</label>
                         <input
                             :value="form.expiry"
                             type="text"
@@ -170,7 +218,7 @@ onMounted(() => {
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">CVC</label>
+                        <label class="form-label">{{ t('client.paiement.cvc') }}</label>
                         <input
                             v-model="form.cvc"
                             type="text"
@@ -191,7 +239,7 @@ onMounted(() => {
                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                         <line x1="1" y1="10" x2="23" y2="10" />
                     </svg>
-                    {{ submitting ? 'Traitement…' : `Payer ${itemPrice.toFixed(2)} €` }}
+                    {{ submitting ? t('client.paiement.processing') : t('client.paiement.pay', { price: itemPrice.toFixed(2) }) }}
                 </button>
 
                 <p class="secure-note">
@@ -199,19 +247,19 @@ onMounted(() => {
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    Vos données sont chiffrées et sécurisées.
+                    {{ t('client.paiement.secureNote') }}
                 </p>
             </form>
 
             <aside class="order-summary">
-                <div class="summary-title">Récapitulatif</div>
+                <div class="summary-title">{{ t('client.paiement.summary') }}</div>
                 <div class="summary-item">
                     <span class="summary-item-name">{{ itemName }}</span>
                     <span class="summary-item-price">{{ itemPrice.toFixed(2) }} €</span>
                 </div>
                 <div class="summary-divider"></div>
                 <div class="summary-total">
-                    <span>Total</span>
+                    <span>{{ t('client.paiement.total') }}</span>
                     <span class="summary-total-amount">{{ itemPrice.toFixed(2) }} €</span>
                 </div>
             </aside>
@@ -292,6 +340,17 @@ onMounted(() => {
 .stripe-badge svg {
     width: 14px;
     height: 14px;
+}
+.checkout-form--stripe {
+    align-items: center;
+    text-align: center;
+}
+.stripe-explain {
+    font-size: 0.88rem;
+    color: var(--charcoal);
+    opacity: 0.7;
+    line-height: 1.6;
+    margin: 0;
 }
 
 .form-group {

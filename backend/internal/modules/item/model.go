@@ -1,6 +1,10 @@
 package item
 
-import "github.com/jackc/pgx/v5/pgtype"
+import (
+	"strings"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type ItemStatus string
 
@@ -13,11 +17,40 @@ const (
 type ItemState string
 
 const (
-	Neuf    ItemState = "Neuf"
-	BonEtat ItemState = "Bon état"
-	Abime   ItemState = "Abimé"
-	Casse   ItemState = "Cassé"
+	Neuf    ItemState = "neuf"
+	BonEtat ItemState = "bon etat"
+	Abime   ItemState = "abime"
+	Casse   ItemState = "casse"
 )
+
+func NormalizeState(input string) ItemState {
+	switch strings.ToLower(strings.TrimSpace(input)) {
+	case "neuf":
+		return Neuf
+	case "bon état", "bon etat":
+		return BonEtat
+	case "abimé", "abime":
+		return Abime
+	case "cassé", "casse":
+		return Casse
+	default:
+		return BonEtat
+	}
+}
+
+type ItemSize string
+
+const (
+	SizeS ItemSize = "S"
+	SizeM ItemSize = "M"
+	SizeL ItemSize = "L"
+)
+
+var SizeRank = map[ItemSize]int{
+	SizeS: 1,
+	SizeM: 2,
+	SizeL: 3,
+}
 
 type Item struct {
 	Id            pgtype.Int8      `db:"id" json:"id"`
@@ -26,6 +59,7 @@ type Item struct {
 	SiteId        pgtype.Int8      `db:"site_id" json:"site_id"`
 	MaterialType  string           `db:"material_type" json:"material_type"`
 	PhysicalState ItemState        `db:"physical_state" json:"physical_state"`
+	Size          ItemSize         `db:"size" json:"size"`
 	Status        ItemStatus       `db:"status" json:"status"`
 	Weight        pgtype.Numeric   `db:"weight" json:"weight"`
 	CreatedAt     pgtype.Timestamp `db:"created_at" json:"created_at"`

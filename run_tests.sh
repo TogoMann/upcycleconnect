@@ -13,6 +13,12 @@ NC='\033[0m'
 
 echo -e "${BLUE} ---------- Starting tests ----------${NC}"
 
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
+
 # 1. Run Backend Tests (Go)
 echo -e "${GREEN}[1/2] Testing backend...${NC}"
 cd backend

@@ -1,78 +1,95 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const clientStore = useClientStore()
 
 const score = computed(() => clientStore.score)
 
+const numericLevel = computed(() => Math.floor(Math.max(score.value, 0) / 100) + 1)
+
 const level = computed(() => {
-    if (score.value >= 500) return { label: 'Expert', color: '#086a35', next: null, threshold: 500 }
-    if (score.value >= 200) return { label: 'Avancé', color: '#34895b', next: 500, threshold: 200 }
-    if (score.value >= 50) return { label: 'Intermédiaire', color: '#8bbd94', next: 200, threshold: 50 }
-    return { label: 'Débutant', color: '#d7ece1', next: 50, threshold: 0 }
+    if (numericLevel.value >= 10) return { label: t('client.score.levelExpert'), color: '#086a35' }
+    if (numericLevel.value >= 5) return { label: t('client.score.levelAdvanced'), color: '#34895b' }
+    if (numericLevel.value >= 2) return { label: t('client.score.levelIntermediate'), color: '#8bbd94' }
+    return { label: t('client.score.levelBeginner'), color: '#d7ece1' }
 })
 
 const progressToNextLevel = computed(() => {
-    if (!level.value.next) return 100
-    const range = level.value.next - level.value.threshold
-    const current = score.value - level.value.threshold
-    return Math.min(100, Math.round((current / range) * 100))
+    return Math.round(score.value % 100)
 })
 
-const milestones = [
-    { label: 'Premier dépôt', points: 10, icon: 'deposit' },
-    { label: 'Première annonce', points: 15, icon: 'listing' },
-    { label: 'Score 50 pts', points: 50, icon: 'star' },
-    { label: 'Score 200 pts', points: 200, icon: 'trophy' },
-    { label: 'Score 500 pts', points: 500, icon: 'expert' },
-]
+const pointsToNextLevel = computed(() => 100 - progressToNextLevel.value)
+
+const milestones = computed(() => [
+    { label: t('client.score.milestoneFirstDeposit'), points: 20, icon: 'deposit' },
+    { label: t('client.score.milestoneFirstListing'), points: 5, icon: 'listing' },
+    { label: t('client.score.milestoneFirstSale'), points: 50, icon: 'star' },
+    { label: t('client.score.milestoneLevel5'), points: 400, icon: 'trophy' },
+    { label: t('client.score.milestoneLevel10'), points: 900, icon: 'expert' },
+])
+
+const quests = computed(() => clientStore.quests)
 
 onMounted(() => {
     clientStore.fetchScore()
+    clientStore.fetchQuests()
 })
 </script>
 
 <template>
     <div class="page">
-        <h1 class="page-title">Mon Score.</h1>
+        <h1 class="page-title">{{ t('client.score.pageTitle') }}</h1>
 
         <div class="score-hero">
             <div class="score-circle">
                 <span class="score-number">{{ score }}</span>
-                <span class="score-unit">pts</span>
+                <span class="score-unit">{{ t('client.score.pts') }}</span>
             </div>
             <div class="score-level-info">
                 <span class="level-badge" :style="{ background: level.color + '22', color: level.color }">
-                    Niveau : {{ level.label }}
+                    {{ t('client.score.levelBadge', { level: numericLevel, label: level.label }) }}
                 </span>
                 <p class="score-desc">
-                    Chaque action éco-responsable vous rapporte des points.
-                    Déposez des objets, créez des annonces, participez à des événements pour progresser.
+                    {{ t('client.score.description') }}
                 </p>
-                <div v-if="level.next" class="progress-section">
+                <div class="progress-section">
                     <div class="progress-labels">
-                        <span>{{ score }} pts</span>
-                        <span>{{ level.next }} pts pour niveau suivant</span>
+                        <span>{{ t('client.score.progressLabel', { progress: progressToNextLevel }) }}</span>
+                        <span>{{ t('client.score.pointsToNext', { points: pointsToNextLevel, level: numericLevel + 1 }) }}</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" :style="{ width: progressToNextLevel + '%' }"></div>
                     </div>
                     <p class="progress-caption">
-                        {{ progressToNextLevel }}% vers le niveau <strong>suivant</strong>
+                        {{ t('client.score.progressCaption', { progress: progressToNextLevel }) }} <strong>{{ numericLevel + 1 }}</strong>
                     </p>
                 </div>
-                <div v-else class="progress-section">
-                    <div class="progress-bar">
-                        <div class="progress-fill progress-fill--max"></div>
+            </div>
+        </div>
+
+        <div class="quests-section" v-if="quests.length > 0">
+            <h2 class="section-title">{{ t('client.score.weeklyQuestsTitle') }}</h2>
+            <div class="quests-list">
+                <div v-for="q in quests" :key="q.description" class="quest-item">
+                    <div class="quest-info">
+                        <strong class="quest-title">{{ q.bonus_description }}</strong>
+                        <p class="quest-sub">{{ q.description }} {{ t('client.score.bonusPoints', { points: q.bonus_points }) }}</p>
                     </div>
-                    <p class="progress-caption">Niveau maximum atteint — vous êtes un expert de l'upcycling !</p>
+                    <div class="quest-progress">
+                        <div class="progress-bar progress-bar--sm">
+                            <div class="progress-fill" :style="{ width: Math.min(100, (q.current / q.threshold) * 100) + '%' }"></div>
+                        </div>
+                        <span class="quest-count">{{ q.current }} / {{ q.threshold }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="how-section">
-            <h2 class="section-title">Comment gagner des points ?</h2>
+            <h2 class="section-title">{{ t('client.score.howToEarnTitle') }}</h2>
             <div class="how-grid">
                 <div class="how-card">
                     <div class="how-icon">
@@ -83,8 +100,8 @@ onMounted(() => {
                         </svg>
                     </div>
                     <div>
-                        <strong class="how-title">Déposer un objet</strong>
-                        <p class="how-pts">+ 10 pts par dépôt validé</p>
+                        <strong class="how-title">{{ t('client.score.depositItem') }}</strong>
+                        <p class="how-pts">{{ t('client.score.depositItemPts') }}</p>
                     </div>
                 </div>
 
@@ -96,8 +113,8 @@ onMounted(() => {
                         </svg>
                     </div>
                     <div>
-                        <strong class="how-title">Créer une annonce</strong>
-                        <p class="how-pts">+ 15 pts par annonce publiée</p>
+                        <strong class="how-title">{{ t('client.score.createListing') }}</strong>
+                        <p class="how-pts">{{ t('client.score.createListingPts') }}</p>
                     </div>
                 </div>
 
@@ -111,8 +128,8 @@ onMounted(() => {
                         </svg>
                     </div>
                     <div>
-                        <strong class="how-title">Participer à un atelier</strong>
-                        <p class="how-pts">+ 25 pts par atelier suivi</p>
+                        <strong class="how-title">{{ t('client.score.joinWorkshop') }}</strong>
+                        <p class="how-pts">{{ t('client.score.joinWorkshopPts') }}</p>
                     </div>
                 </div>
 
@@ -126,15 +143,27 @@ onMounted(() => {
                         </svg>
                     </div>
                     <div>
-                        <strong class="how-title">Parrainer un ami</strong>
-                        <p class="how-pts">+ 50 pts par parrainage</p>
+                        <strong class="how-title">{{ t('client.score.collectedMaterials') }}</strong>
+                        <p class="how-pts">{{ t('client.score.collectedMaterialsPts') }}</p>
+                    </div>
+                </div>
+
+                <div class="how-card">
+                    <div class="how-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <strong class="how-title">{{ t('client.score.sellItem') }}</strong>
+                        <p class="how-pts">{{ t('client.score.sellItemPts') }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="milestones-section">
-            <h2 class="section-title">Jalons</h2>
+            <h2 class="section-title">{{ t('client.score.milestonesTitle') }}</h2>
             <div class="milestones-list">
                 <div
                     v-for="m in milestones"
@@ -149,7 +178,7 @@ onMounted(() => {
                         <span v-else class="milestone-pts-sm">{{ m.points }}</span>
                     </div>
                     <span class="milestone-label">{{ m.label }}</span>
-                    <span class="milestone-pts">{{ m.points }} pts</span>
+                    <span class="milestone-pts">{{ t('client.score.milestonePts', { points: m.points }) }}</span>
                 </div>
             </div>
         </div>
@@ -259,6 +288,56 @@ onMounted(() => {
     color: var(--charcoal);
     margin: 0 0 16px;
     letter-spacing: -0.01em;
+}
+
+.quests-section {
+    margin-bottom: 40px;
+}
+.quests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.quest-item {
+    background: var(--white);
+    border: 1.5px solid rgba(53, 53, 53, 0.1);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.quest-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    display: block;
+    margin-bottom: 3px;
+}
+.quest-sub {
+    font-size: 0.78rem;
+    color: var(--charcoal);
+    opacity: 0.6;
+    margin: 0;
+}
+.quest-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 160px;
+}
+.progress-bar--sm {
+    width: 100px;
+    height: 6px;
+    margin-bottom: 0;
+}
+.quest-count {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    white-space: nowrap;
 }
 
 .how-section {

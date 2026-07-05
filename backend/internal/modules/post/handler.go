@@ -69,6 +69,18 @@ func (h *Handler) GetThreadPosts(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
 	var postDto Post
 
 	err := json.NewDecoder(r.Body).Decode(&postDto)
@@ -76,6 +88,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
+
+	postDto.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
 
 	id, err := h.service.Create(postDto)
 	if err != nil {

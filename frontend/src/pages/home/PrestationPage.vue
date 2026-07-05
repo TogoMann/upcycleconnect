@@ -4,7 +4,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClientStore } from '@/stores/client'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const clientStore = useClientStore()
 const router = useRouter()
@@ -65,46 +67,43 @@ async function handleAddToCart(course: Course) {
         showToast.value = true
         setTimeout(() => { showToast.value = false }, 3000)
     } catch (e: any) {
-        alert("Erreur lors de l'ajout au panier")
+        alert(t('events.addToCartError'))
     }
 }
 
-const prestations = [
+const prestations = computed(() => [
     {
         id: 'recycler',
-        label: 'RECYCLER',
-        description:
-            'Cette prestation inclut un audit de vos matériaux, la mise à disposition de bacs de collecte spécifiques et le transport vers nos centres de tri partenaires où chaque matière est traitée pour réintégrer un cycle de production.',
+        label: t('home.categories.recycle.label'),
+        description: t('prestations.recycle.description'),
         img: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&q=80',
-        alt: 'Recycler — bacs de tri colorés',
+        alt: t('prestations.recycle.imageAlt'),
     },
     {
         id: 'reparer',
-        label: 'RÉPARER',
-        description:
-            "Un service de remise en état sur mesure. Nous diagnostiquons l'origine de la panne ou de l'usure de votre objet et nous le confions à un expert qualifié. La prestation comprend la recherche de pièces détachées de seconde main et une garantie sur la réparation effectuée.",
+        label: t('home.categories.repair.label'),
+        description: t('prestations.repair.description'),
         img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=80',
-        alt: 'Réparer — électronique',
+        alt: t('prestations.repair.imageAlt'),
     },
     {
         id: 'transformer',
-        label: 'TRANSFORMER',
-        description:
-            'Un accompagnement créatif pour vos projets de design. De la conception du croquis à la fabrication finale, nos artisans utilisent des techniques de surcyclage pour créer du mobilier ou des accessoires uniques à partir de vos anciens objets.',
+        label: t('home.categories.transform.label'),
+        description: t('prestations.transform.description'),
         img: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&q=80',
-        alt: 'Transformer — travail du bois',
+        alt: t('prestations.transform.imageAlt'),
     },
-]
+])
 </script>
 
 <template>
     <div class="page-content">
         <section class="hero">
             <div class="container hero-inner">
-                <h1 class="hero-title">Découvrez nos prestations.</h1>
+                <h1 class="hero-title">{{ t('prestations.pageTitle') }}</h1>
                 <p class="hero-subtitle">
-                    Valorisons nos ressources pour un avenir plus
-                    <span class="green-accent">durable</span>.
+                    {{ t('home.tagline.text') }}
+                    <span class="green-accent">{{ t('home.tagline.accent') }}</span>
                 </p>
             </div>
         </section>
@@ -124,7 +123,7 @@ const prestations = [
                         <div class="prestation-content">
                             <h2 class="prestation-label">{{ p.label }}</h2>
                             <p class="prestation-desc">{{ p.description }}</p>
-                            <button class="btn-reserver" @click="router.push('/reparer')">En savoir plus</button>
+                            <button class="btn-reserver" @click="router.push('/reparer')">{{ t('prestations.learnMore') }}</button>
                         </div>
                     </div>
 
@@ -134,30 +133,29 @@ const prestations = [
                         class="prestation-row"
                     >
                         <div class="prestation-img-wrap">
-                            <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=600&q=80" alt="Se former" class="prestation-img" />
+                            <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=600&q=80" :alt="t('home.categories.learn.label')" class="prestation-img" />
                         </div>
                         <div class="prestation-content">
-                            <h2 class="prestation-label">SE FORMER : {{ course.nom }}</h2>
+                            <h2 class="prestation-label">{{ t('home.categories.learn.label') }} : {{ course.nom }}</h2>
                             <p class="prestation-desc">{{ course.description }}</p>
                             <div class="course-meta">
-                                <span class="course-price">{{ course.prix > 0 ? course.prix + ' €' : 'Gratuit' }}</span>
+                                <span class="course-price">{{ course.prix > 0 ? course.prix + ' €' : t('listingDetail.free') }}</span>
                                 <span class="course-cat">{{ course.categorie }}</span>
                             </div>
-                            <button class="btn-reserver" @click="handleAddToCart(course)">Ajouter au panier</button>
+                            <button class="btn-reserver" @click="handleAddToCart(course)">{{ t('events.addToCart') }}</button>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Toast Notification -->
         <Transition name="toast">
             <div v-if="showToast" class="toast-card">
                 <div class="toast-content">
                     <span class="toast-icon">✅</span>
-                    <span class="toast-text">Atelier ajouté au panier !</span>
+                    <span class="toast-text">{{ t('prestations.addedToCart') }}</span>
                 </div>
-                <router-link to="/particulier/panier" class="toast-link">Voir panier</router-link>
+                <router-link to="/particulier/panier" class="toast-link">{{ t('events.viewCart') }}</router-link>
             </div>
         </Transition>
     </div>

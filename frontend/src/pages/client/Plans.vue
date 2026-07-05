@@ -1,19 +1,39 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { usePlansStore, type Plan } from '@/stores/plans';
 import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { API_BASE } from '@/config';
 
+const { t } = useI18n();
 const plansStore = usePlansStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const plans = ref<Plan[]>([]);
 const selectedPlan = ref<Plan | null>(null);
 const siret = ref('');
+const siretStatus = ref<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
 const loading = ref(false);
 const error = ref('');
 const success = ref('');
+
+watch(siret, async (val) => {
+    if (val.length !== 14) {
+        siretStatus.value = 'idle';
+        return;
+    }
+    siretStatus.value = 'checking';
+    try {
+        const res = await fetch(`${API_BASE}/siret/verify?siret=${val}`);
+        const data = await res.json();
+        siretStatus.value = data.valid ? 'valid' : 'invalid';
+    } catch {
+        siretStatus.value = 'invalid';
+    }
+});
 
 async function loadPlans() {
     try {
@@ -30,13 +50,23 @@ async function handleChoosePlan(plan: Plan) {
         return;
     }
 
+    if (plan.name === 'Pro' && siretStatus.value !== 'valid') {
+        error.value = t('client.plans.invalidSiret');
+        return;
+    }
+
     loading.value = true;
     error.value = '';
     success.value = '';
 
     try {
+        if (plan.price > 0) {
+            const url = await plansStore.choosePlanCheckout(plan.id, plan.name === 'Pro' ? siret.value : undefined);
+            window.location.href = url;
+            return;
+        }
         await plansStore.choosePlan(plan.id, plan.name === 'Pro' ? siret.value : undefined);
-        success.value = 'Votre plan a été mis à jour avec succès !';
+        success.value = t('client.plans.planUpdated');
         setTimeout(() => {
             router.push('/particulier');
         }, 2000);
@@ -47,14 +77,38 @@ async function handleChoosePlan(plan: Plan) {
     }
 }
 
-onMounted(loadPlans);
+async function checkStripeReturn() {
+    const sessionId = route.query.session_id as string | undefined
+    if (!sessionId) return
+    try {
+        const res = await fetch(`${API_BASE}/payments/verify?session_id=${sessionId}`, {
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok) {
+            const data = await res.json()
+            if (data.paid) {
+                success.value = t('client.plans.paymentConfirmed')
+                await authStore.fetchCurrentUser()
+            } else {
+                error.value = t('client.plans.paymentNotConfirmed')
+            }
+        }
+    } catch {
+        error.value = t('client.plans.paymentCheckError')
+    }
+}
+
+onMounted(() => {
+    loadPlans()
+    checkStripeReturn()
+});
 </script>
 
 <template>
     <div class="plans-page">
         <header class="page-header">
-            <h1>Choisissez votre forfait</h1>
-            <p>Passez à la vitesse supérieure avec nos offres adaptées à vos besoins.</p>
+            <h1>{{ t('client.plans.pageTitle') }}</h1>
+            <p>{{ t('client.plans.subtitle') }}</p>
         </header>
 
         <div v-if="error" class="alert alert-error">{{ error }}</div>
@@ -62,11 +116,12 @@ onMounted(loadPlans);
 
         <div class="plans-grid">
             <div v-for="plan in plans" :key="plan.id" class="plan-card" :class="{ 'plan-pro': plan.name === 'Pro' }">
+                <span v-if="plan.name === 'Pro'" class="badge-recommended">{{ t('client.plans.recommended') }}</span>
                 <div class="plan-header">
                     <h2>{{ plan.name }}</h2>
                     <div class="plan-price">
                         <span class="amount">{{ plan.price }}€</span>
-                        <span class="cycle">/{{ plan.billing_cycle === 'monthly' ? 'mois' : 'an' }}</span>
+                        <span class="cycle">{{ plan.billing_cycle === 'monthly' ? t('client.plans.perMonth') : t('client.plans.perYear') }}</span>
                     </div>
                 </div>
                 
@@ -82,17 +137,20 @@ onMounted(loadPlans);
                 </ul>
 
                 <div v-if="selectedPlan?.id === plan.id && plan.name === 'Pro'" class="siret-field">
-                    <label for="siret">Numéro SIRET (14 chiffres)</label>
+                    <label for="siret">{{ t('client.plans.siretLabel') }}</label>
                     <input type="text" id="siret" v-model="siret" placeholder="12345678901234" maxlength="14">
-                    <p class="siret-hint">Requis pour les professionnels</p>
+                    <p v-if="siretStatus === 'checking'" class="siret-hint">{{ t('client.plans.siretChecking') }}</p>
+                    <p v-else-if="siretStatus === 'valid'" class="siret-hint siret-hint--valid">{{ t('client.plans.siretValid') }}</p>
+                    <p v-else-if="siretStatus === 'invalid'" class="siret-hint siret-hint--invalid">{{ t('client.plans.siretInvalid') }}</p>
+                    <p v-else class="siret-hint">{{ t('client.plans.siretRequired') }}</p>
                 </div>
 
-                <button 
-                    @click="handleChoosePlan(plan)" 
+                <button
+                    @click="handleChoosePlan(plan)"
                     class="btn-choose"
                     :disabled="loading || (authStore.user?.role === 'pro' && plan.name !== 'Pro')"
                 >
-                    {{ loading ? 'Traitement...' : 'Sélectionner ce plan' }}
+                    {{ loading ? t('client.plans.processing') : t('client.plans.selectPlan') }}
                 </button>
             </div>
         </div>
@@ -160,8 +218,7 @@ onMounted(loadPlans);
     position: relative;
 }
 
-.plan-pro::before {
-    content: "RECOMMANDÉ";
+.badge-recommended {
     position: absolute;
     top: -12px;
     left: 50%;
@@ -243,6 +300,14 @@ onMounted(loadPlans);
     font-size: 0.75rem;
     color: #718096;
     margin-top: 5px;
+}
+.siret-hint--valid {
+    color: var(--green-mid);
+    font-weight: 600;
+}
+.siret-hint--invalid {
+    color: #c53030;
+    font-weight: 600;
 }
 
 .btn-choose {

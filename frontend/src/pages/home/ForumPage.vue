@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t, locale } = useI18n()
 
 interface Thread {
     id: number
@@ -28,14 +31,14 @@ onMounted(async () => {
 
 const threadsFiltres = computed(() =>
     threads.value.filter(
-        (t) =>
-            !searchQuery.value || t.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
+        (th) =>
+            !searchQuery.value || th.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
     ),
 )
 
 function fmtDate(iso: string | null): string {
     if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('fr-FR', {
+    return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -46,17 +49,16 @@ function timeAgo(iso: string | null): string {
     if (!iso) return '—'
     const now = new Date()
     const date = new Date(iso)
-    
-    // Reset hours to compare dates only
+
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
+
     const diffTime = today.getTime() - target.getTime()
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
-    if (diffDays === 0) return "Aujourd'hui"
-    if (diffDays === 1) return "Hier"
-    return `Il y a ${diffDays} jours`
+    if (diffDays === 0) return t('forum.today')
+    if (diffDays === 1) return t('forum.yesterday')
+    return t('forum.daysAgo', { days: diffDays })
 }
 
 function initials(title: string): string {
@@ -73,12 +75,12 @@ function initials(title: string): string {
         <section class="hero">
             <div class="container hero-inner">
                 <div class="hero-text">
-                    <h1 class="hero-title">Forum communautaire.</h1>
+                    <h1 class="hero-title">{{ t('forum.pageTitle') }}</h1>
                     <p class="hero-subtitle">
-                        Échangez, partagez et apprenez avec la communauté UpCycleConnect.
+                        {{ t('forum.subtitle') }}
                     </p>
                 </div>
-                <router-link to="/forum/nouveau" class="btn-nouveau">+ Nouveau sujet</router-link>
+                <router-link to="/forum/nouveau" class="btn-nouveau">{{ t('forum.newThread') }}</router-link>
             </div>
         </section>
 
@@ -102,50 +104,50 @@ function initials(title: string): string {
                         <input
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Rechercher un sujet..."
+                            :placeholder="t('forum.searchPlaceholder')"
                             class="search-input"
                         />
                     </div>
                 </div>
 
-                <div v-if="loading" class="loading">Chargement…</div>
+                <div v-if="loading" class="loading">{{ t('forum.loading') }}</div>
 
                 <div v-else class="forum-table">
                     <div class="forum-header">
-                        <span class="col-sujet">Sujet</span>
-                        <span class="col-stats">Votes</span>
-                        <span class="col-stats">Vues</span>
-                        <span class="col-activite">Activité</span>
+                        <span class="col-sujet">{{ t('forum.colSubject') }}</span>
+                        <span class="col-stats">{{ t('forum.colVotes') }}</span>
+                        <span class="col-stats">{{ t('forum.colViews') }}</span>
+                        <span class="col-activite">{{ t('forum.colActivity') }}</span>
                     </div>
 
                     <router-link
-                        v-for="t in threadsFiltres"
-                        :key="t.id"
-                        :to="`/forum/${t.id}`"
+                        v-for="th in threadsFiltres"
+                        :key="th.id"
+                        :to="`/forum/${th.id}`"
                         class="forum-row"
                     >
                         <div class="col-sujet">
-                            <div class="sujet-avatar">{{ initials(t.title) }}</div>
+                            <div class="sujet-avatar">{{ initials(th.title) }}</div>
                             <div class="sujet-info">
-                                <h3 class="sujet-titre">{{ t.title }}</h3>
+                                <h3 class="sujet-titre">{{ th.title }}</h3>
                                 <div class="sujet-meta">
-                                    <span class="sujet-date">{{ fmtDate(t.created_at) }}</span>
+                                    <span class="sujet-date">{{ fmtDate(th.created_at) }}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-stats">
-                            <span class="stat-value">{{ t.upvotes }}</span>
+                            <span class="stat-value">{{ th.upvotes }}</span>
                         </div>
                         <div class="col-stats">
-                            <span class="stat-value">{{ t.views }}</span>
+                            <span class="stat-value">{{ th.views }}</span>
                         </div>
                         <div class="col-activite">
-                            <span class="activite-text">{{ timeAgo(t.last_post_at) }}</span>
+                            <span class="activite-text">{{ timeAgo(th.last_post_at) }}</span>
                         </div>
                     </router-link>
 
                     <div v-if="threadsFiltres.length === 0" class="empty-state">
-                        <p>Aucun sujet ne correspond à votre recherche.</p>
+                        <p>{{ t('forum.noResults') }}</p>
                     </div>
                 </div>
             </div>
