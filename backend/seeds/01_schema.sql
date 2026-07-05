@@ -527,3 +527,19 @@ CREATE TABLE IF NOT EXISTS course_session (
 CREATE INDEX IF NOT EXISTS idx_course_session_course_id ON course_session(course_id);
 
 CREATE INDEX IF NOT EXISTS idx_course_document_course_id ON course_document(course_id);
+
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_listing_order_status_created_at ON listing_order(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_course_order_booked_at ON course_order(booked_at);
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_financial_summary AS
+SELECT date_trunc('month', created_at) AS mois, SUM(price) AS ca, 'listing' AS source
+FROM listing_order
+WHERE status = 'paid' OR status = 'completed'
+GROUP BY date_trunc('month', created_at)
+UNION ALL
+SELECT date_trunc('month', booked_at) AS mois, SUM(price) AS ca, 'course' AS source
+FROM course_order
+GROUP BY date_trunc('month', booked_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_financial_summary_mois_source ON mv_financial_summary(mois, source);

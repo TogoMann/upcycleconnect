@@ -2,3 +2,5 @@
 tmp
 *.pdf
 practice
+.claude/
+backend/uploads/

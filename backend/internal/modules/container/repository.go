@@ -17,29 +17,23 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) GetAll() ([]ConteneurFrontend, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			c.id, 
+		SELECT
+			c.id,
 			'CONT-' || c.id as code_barres,
 			a.street_number || ' ' || a.street_name || ', ' || ci.name as localisation,
-			CASE 
+			CASE
 				WHEN c.status = 'HS' THEN 'hs'
-				WHEN NOT EXISTS (SELECT 1 FROM locker l WHERE l.container_id = c.id AND l.status = 'Available') THEN 'plein'
+				WHEN COUNT(l.id) FILTER (WHERE l.status = 'Available') = 0 THEN 'plein'
 				ELSE 'actif'
 			END as etat,
-			CAST((
-				SELECT COUNT(*)
-				FROM locker l 
-				WHERE l.container_id = c.id
-			) AS INTEGER) as capacite,
-			CAST((
-				SELECT COUNT(*) 
-				FROM locker l 
-				WHERE l.container_id = c.id AND l.status != 'Available'
-			) AS INTEGER) as objets
+			CAST(COUNT(l.id) AS INTEGER) as capacite,
+			CAST(COUNT(l.id) FILTER (WHERE l.status != 'Available') AS INTEGER) as objets
 		FROM container c
 		JOIN site s ON c.site_id = s.id
 		JOIN address a ON s.address_id = a.id
 		JOIN city ci ON a.city_id = ci.id
+		LEFT JOIN locker l ON l.container_id = c.id
+		GROUP BY c.id, a.street_number, a.street_name, ci.name, c.status
 	`)
 	if err != nil {
 		return nil, err
