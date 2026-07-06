@@ -543,3 +543,18 @@ FROM course_order
 GROUP BY date_trunc('month', booked_at);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_financial_summary_mois_source ON mv_financial_summary(mois, source);
+
+CREATE TABLE IF NOT EXISTS platform_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    nom_site VARCHAR(128) NOT NULL DEFAULT 'UpCycleConnect',
+    logo_url VARCHAR(500) NOT NULL DEFAULT '',
+    email_contact VARCHAR(128) NOT NULL DEFAULT '',
+    telephone VARCHAR(32) NOT NULL DEFAULT '',
+    adresse VARCHAR(255) NOT NULL DEFAULT '',
+    commission_taux DECIMAL(5,2) NOT NULL DEFAULT 15.00,
+    maintenance BOOLEAN NOT NULL DEFAULT FALSE,
+    inscription_ouverte BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT platform_settings_single_row CHECK (id = 1)
+);
+
+INSERT INTO platform_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;

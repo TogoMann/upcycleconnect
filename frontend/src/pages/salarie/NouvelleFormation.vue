@@ -25,6 +25,14 @@ const form = reactive({
 const error = ref('')
 const loading = ref(false)
 
+const step = ref<'form' | 'attachment'>('form')
+const createdCourseId = ref<number | null>(null)
+const documentFile = ref<File | null>(null)
+const uploadingDocument = ref(false)
+const documentError = ref('')
+const documentUploaded = ref(false)
+const wantsAttachmentNow = ref(false)
+
 interface SessionRow {
     date: string
     start_time: string
@@ -91,6 +99,34 @@ function applyFirstRowToAll() {
     sessions.value = sessions.value.map(row => ({ ...row, start_time, end_time }))
 }
 
+function onDocumentFileChange(e: Event) {
+    documentFile.value = (e.target as HTMLInputElement).files?.[0] || null
+}
+
+async function uploadDocument() {
+    if (!documentFile.value || !createdCourseId.value) return
+    uploadingDocument.value = true
+    documentError.value = ''
+    try {
+        const formData = new FormData()
+        formData.append('document', documentFile.value)
+        const res = await fetch(`${API_BASE}/course/${createdCourseId.value}/documents`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+            body: formData,
+        })
+        if (res.ok) {
+            documentUploaded.value = true
+        } else {
+            const text = await res.text()
+            documentError.value = text || t('salarie.formationForm.documentsUploadError')
+        }
+    } catch {
+        documentError.value = t('salarie.formationForm.errorNetwork')
+    }
+    uploadingDocument.value = false
+}
+
 async function submit() {
     if (!form.titre || !form.categorie) {
         error.value = t('salarie.formationForm.errorTitleCategoryRequired')
@@ -138,7 +174,11 @@ async function submit() {
         })
         if (res.ok) {
             const data = await res.json()
-            router.push(`/salarie/formations/${data.id}/edit`)
+            createdCourseId.value = data.id
+            step.value = 'attachment'
+            if (documentFile.value) {
+                await uploadDocument()
+            }
         } else {
             const d = await res.json()
             error.value = d.message ?? t('salarie.formationForm.errorCreate')
@@ -163,7 +203,7 @@ async function submit() {
             <p class="page-subtitle">{{ t('salarie.formationForm.newSubtitle') }}</p>
         </div>
 
-        <form class="form-card" @submit.prevent="submit">
+        <form v-if="step === 'form'" class="form-card" @submit.prevent="submit">
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
             <div class="form-group">
@@ -268,6 +308,12 @@ async function submit() {
                 <p class="form-hint">{{ t('salarie.formationForm.statusHint') }}</p>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">{{ t('salarie.formationForm.attachmentOptionalLabel') }}</label>
+                <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" class="form-input" @change="onDocumentFileChange" />
+                <p class="form-hint">{{ t('salarie.formationForm.attachmentOptionalHint') }}</p>
+            </div>
+
             <div class="form-actions">
                 <router-link to="/salarie/formations" class="btn-secondary">{{ t('salarie.formationForm.cancel') }}</router-link>
                 <button type="submit" class="btn-primary" :disabled="loading">
@@ -275,6 +321,48 @@ async function submit() {
                 </button>
             </div>
         </form>
+
+        <div v-else class="form-card attachment-step">
+            <div class="attachment-success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="attachment-success-icon">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <h3 class="modal-title">{{ t('salarie.formationForm.createdSuccessTitle') }}</h3>
+                <p class="form-hint">
+                    {{ documentUploaded ? t('salarie.formationForm.createdWithAttachment') : t('salarie.formationForm.createdNoAttachment') }}
+                </p>
+            </div>
+
+            <div v-if="documentError" class="alert alert--error">{{ documentError }}</div>
+
+            <template v-if="!documentUploaded">
+                <p v-if="!wantsAttachmentNow" class="form-hint">{{ t('salarie.formationForm.askAttachmentPrompt') }}</p>
+
+                <div v-if="wantsAttachmentNow" class="form-group">
+                    <label class="form-label">{{ t('salarie.formationForm.attachmentOptionalLabel') }}</label>
+                    <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" class="form-input" @change="onDocumentFileChange" />
+                    <button type="button" class="btn-primary" :disabled="!documentFile || uploadingDocument" @click="uploadDocument">
+                        {{ uploadingDocument ? t('salarie.formationForm.documentsUploading') : t('salarie.formationForm.documentsAdd') }}
+                    </button>
+                </div>
+
+                <div v-else class="form-actions">
+                    <button type="button" class="btn-secondary" @click="router.push('/salarie/formations')">
+                        {{ t('salarie.formationForm.skipAttachment') }}
+                    </button>
+                    <button type="button" class="btn-primary" @click="wantsAttachmentNow = true">
+                        {{ t('salarie.formationForm.addAttachmentNow') }}
+                    </button>
+                </div>
+            </template>
+
+            <div v-else class="form-actions">
+                <router-link to="/salarie/formations" class="btn-secondary">{{ t('salarie.formationForm.goToList') }}</router-link>
+                <router-link :to="`/salarie/formations/${createdCourseId}/edit`" class="btn-primary">
+                    {{ t('salarie.formationForm.continueEditing') }}
+                </router-link>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -305,11 +393,15 @@ async function submit() {
 .session-sep { font-size: 0.8rem; color: var(--charcoal); opacity: 0.5; }
 .session-duration { flex: 0 0 70px; font-size: 0.78rem; font-weight: 600; color: var(--green-dark); text-align: right; }
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 8px; }
-.btn-primary { padding: 12px 24px; background: var(--green-dark); color: var(--white); border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.btn-primary { padding: 12px 24px; background: var(--green-dark); color: var(--white); border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .btn-primary:hover:not(:disabled) { background: var(--green-mid); }
 .btn-primary:disabled { opacity: 0.5; cursor: default; }
 .btn-secondary { padding: 12px 24px; background: transparent; color: var(--charcoal); border: 1.5px solid rgba(53,53,53,0.2); border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
 .btn-secondary:hover { border-color: var(--charcoal); }
 .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 500; background: #fee2e2; color: #991b1b; }
+.attachment-step { align-items: stretch; }
+.attachment-success { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 8px 0 16px; }
+.attachment-success-icon { width: 40px; height: 40px; color: var(--green-dark); background: var(--green-pale); border-radius: 50%; padding: 8px; box-sizing: border-box; }
+.modal-title { font-size: 1.1rem; font-weight: 700; color: var(--charcoal); margin: 0; }
 @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
 </style>

@@ -960,7 +960,17 @@
       "documentsEmpty": "Aucun document ajouté.",
       "documentsDelete": "Supprimer",
       "documentsUploadError": "Erreur lors de l'envoi du document.",
-      "confirmDeleteDocument": "Supprimer ce document ?"
+      "confirmDeleteDocument": "Supprimer ce document ?",
+      "attachmentOptionalLabel": "Pièce jointe (optionnel)",
+      "attachmentOptionalHint": "Vous pourrez aussi l'ajouter juste après la création.",
+      "createdSuccessTitle": "Formation créée !",
+      "createdWithAttachment": "Votre formation a été créée et le document a été ajouté.",
+      "createdNoAttachment": "Votre formation a été créée.",
+      "askAttachmentPrompt": "Souhaitez-vous ajouter une pièce jointe à cette formation maintenant ?",
+      "addAttachmentNow": "Oui, ajouter maintenant",
+      "skipAttachment": "Non, plus tard",
+      "goToList": "Retour à mes formations",
+      "continueEditing": "Modifier la formation"
     },
     "planning": {
       "today": "Aujourd'hui",
@@ -1056,7 +1066,6 @@
       "news": "Actualités",
       "forum": "Forum",
       "chatModeration": "Modération Chat",
-      "languages": "Langues",
       "logs": "Logs",
       "settings": "Paramètres"
     }
@@ -1446,16 +1455,6 @@
       "colActions": "Actions",
       "empty": "Aucune annonce.",
       "confirmDelete": "Supprimer cette annonce ?"
-    },
-    "langues": {
-      "pageTitle": "Langues.",
-      "subtitle": "Gérez les traductions de l'interface sans toucher au code.",
-      "searchPlaceholder": "Rechercher une clé ou un texte…",
-      "colKey": "Clé",
-      "colFrench": "Français",
-      "colEnglish": "English",
-      "empty": "Aucune traduction trouvée.",
-      "save": "Sauv."
     },
     "depots": {
       "pageTitle": "Dépôts.",
