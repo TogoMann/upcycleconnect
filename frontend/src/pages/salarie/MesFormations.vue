@@ -37,7 +37,10 @@ async function fetchFormations() {
         const res = await fetch(`${API_BASE}/salarie/formations`, {
             headers: { Authorization: `Bearer ${token}` },
         })
-        if (!res.ok) throw new Error(t('salarie.mesFormations.errorLoad'))
+        if (!res.ok) {
+            const detail = await res.text().catch(() => '')
+            throw new Error(detail ? `${t('salarie.mesFormations.errorLoad')} (${res.status} ${detail})` : `${t('salarie.mesFormations.errorLoad')} (${res.status})`)
+        }
         formations.value = await res.json()
     } catch (e: any) {
         error.value = e.message || t('salarie.mesFormations.errorLoad')

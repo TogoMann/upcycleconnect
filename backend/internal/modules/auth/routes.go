@@ -4,6 +4,7 @@ import (
 	"backend/internal/middlewares"
 	"backend/internal/modules/companies"
 	"backend/internal/modules/plans"
+	"backend/internal/modules/settings"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"net/http"
@@ -17,7 +18,8 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	subRepo := subscriptions.NewRepository(db)
 	planRepo := plans.NewRepository(db)
 	compRepo := companies.NewRepository(db)
-	service := NewService(userRepo, userService, subRepo, planRepo, compRepo)
+	settingsRepo := settings.NewRepository(db)
+	service := NewService(userRepo, userService, subRepo, planRepo, compRepo, settingsRepo)
 	handler := NewHandler(service)
 
 	r.HandleFunc("POST /login/", handler.Login)

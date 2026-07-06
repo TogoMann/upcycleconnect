@@ -960,7 +960,17 @@
       "documentsEmpty": "No documents added.",
       "documentsDelete": "Delete",
       "documentsUploadError": "Error uploading the document.",
-      "confirmDeleteDocument": "Delete this document?"
+      "confirmDeleteDocument": "Delete this document?",
+      "attachmentOptionalLabel": "Attachment (optional)",
+      "attachmentOptionalHint": "You can also add it right after creation.",
+      "createdSuccessTitle": "Training created!",
+      "createdWithAttachment": "Your training has been created and the document was added.",
+      "createdNoAttachment": "Your training has been created.",
+      "askAttachmentPrompt": "Would you like to add an attachment to this training now?",
+      "addAttachmentNow": "Yes, add now",
+      "skipAttachment": "No, later",
+      "goToList": "Back to my trainings",
+      "continueEditing": "Edit training"
     },
     "planning": {
       "today": "Today",
@@ -1056,7 +1066,6 @@
       "news": "News",
       "forum": "Forum",
       "chatModeration": "Chat Moderation",
-      "languages": "Languages",
       "logs": "Logs",
       "settings": "Settings"
     }
@@ -1446,16 +1455,6 @@
       "colActions": "Actions",
       "empty": "No listings.",
       "confirmDelete": "Delete this listing?"
-    },
-    "langues": {
-      "pageTitle": "Languages.",
-      "subtitle": "Manage interface translations without touching the code.",
-      "searchPlaceholder": "Search a key or text…",
-      "colKey": "Key",
-      "colFrench": "French",
-      "colEnglish": "English",
-      "empty": "No translations found.",
-      "save": "Save"
     },
     "depots": {
       "pageTitle": "Deposits.",

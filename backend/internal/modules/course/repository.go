@@ -88,7 +88,13 @@ func (r *Repository) GetAllForAdmin() ([]AdminCourseView, error) {
 }
 
 func (r *Repository) GetAll() ([]Course, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price, date, start_time, end_time, status, correction_comment, type, session_link, end_date FROM course")
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at,
+			c.price, c.date, c.start_time, c.end_time, c.status, c.correction_comment, c.type, c.session_link, c.end_date,
+			COALESCE(u.first_name || ' ' || u.last_name, '') as created_by_name
+		FROM course c
+		JOIN users u ON c.created_by = u.id
+	`)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +121,15 @@ func (r *Repository) GetById(id pgtype.Int8) (*Course, error) {
 }
 
 func (r *Repository) GetCoursesByCreator(userId pgtype.Int8) ([]Course, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price, date, start_time, end_time, status, correction_comment, type, session_link, end_date FROM course WHERE created_by = $1 ORDER BY created_at DESC", userId)
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at,
+			c.price, c.date, c.start_time, c.end_time, c.status, c.correction_comment, c.type, c.session_link, c.end_date,
+			COALESCE(u.first_name || ' ' || u.last_name, '') as created_by_name
+		FROM course c
+		JOIN users u ON c.created_by = u.id
+		WHERE c.created_by = $1
+		ORDER BY c.created_at DESC
+	`, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -124,9 +138,13 @@ func (r *Repository) GetCoursesByCreator(userId pgtype.Int8) ([]Course, error) {
 
 func (r *Repository) GetUserCourses(userId pgtype.Int8) ([]UserCourse, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at, c.price, c.date, c.start_time, c.end_time, c.status, c.correction_comment, c.type, c.session_link, c.end_date, co.buyer_id, co.booked_at
+		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at,
+			c.price, c.date, c.start_time, c.end_time, c.status, c.correction_comment, c.type, c.session_link, c.end_date,
+			COALESCE(u.first_name || ' ' || u.last_name, '') as created_by_name,
+			co.buyer_id, co.booked_at
 		FROM course c
 		JOIN course_order co ON c.id = co.course_id
+		JOIN users u ON c.created_by = u.id
 		WHERE co.buyer_id = $1`, userId)
 	if err != nil {
 		return nil, err

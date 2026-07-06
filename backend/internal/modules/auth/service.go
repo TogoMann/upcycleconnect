@@ -3,6 +3,7 @@ package auth
 import (
 	"backend/internal/modules/companies"
 	"backend/internal/modules/plans"
+	"backend/internal/modules/settings"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"backend/internal/utils"
@@ -25,15 +26,16 @@ func frontendURL() string {
 }
 
 type Service struct {
-	userRepo    *users.Repository
-	userService *users.Service
-	subRepo     *subscriptions.Repository
-	planRepo    *plans.Repository
-	compRepo    *companies.Repository
+	userRepo     *users.Repository
+	userService  *users.Service
+	subRepo      *subscriptions.Repository
+	planRepo     *plans.Repository
+	compRepo     *companies.Repository
+	settingsRepo *settings.Repository
 }
 
-func NewService(userRepo *users.Repository, userService *users.Service, subRepo *subscriptions.Repository, planRepo *plans.Repository, compRepo *companies.Repository) *Service {
-	return &Service{userRepo: userRepo, userService: userService, subRepo: subRepo, planRepo: planRepo, compRepo: compRepo}
+func NewService(userRepo *users.Repository, userService *users.Service, subRepo *subscriptions.Repository, planRepo *plans.Repository, compRepo *companies.Repository, settingsRepo *settings.Repository) *Service {
+	return &Service{userRepo: userRepo, userService: userService, subRepo: subRepo, planRepo: planRepo, compRepo: compRepo, settingsRepo: settingsRepo}
 }
 
 func (s *Service) Login(username, password string) (*LoginResponse, error) {
@@ -62,6 +64,11 @@ func (s *Service) Login(username, password string) (*LoginResponse, error) {
 }
 
 func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
+	open, err := s.settingsRepo.IsRegistrationOpen()
+	if err == nil && !open {
+		return nil, errors.New("les inscriptions sont temporairement fermées")
+	}
+
 	req.Username = strings.TrimSpace(req.Username)
 	req.Email = strings.TrimSpace(req.Email)
 
