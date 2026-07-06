@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { API_BASE } from '@/config'
 
 const filterCategorie = ref('')
 
@@ -71,6 +72,24 @@ const categories = ['Bois & Mobilier', 'Textile', 'Ressources', 'Réparation']
 const articlesFiltres = computed(() => {
     if (!filterCategorie.value) return articles.value
     return articles.value.filter((a) => a.categorie === filterCategorie.value)
+})
+onMounted(async () => {
+    try {
+        const res = await fetch(`${API_BASE}/news`)
+        if (!res.ok) return
+        const data = await res.json()
+        const reels = data.map((n: any) => ({
+            id: 'news-' + n.id,
+            titre: n.title,
+            categorie: n.categorie || 'Conseils',
+            auteur: 'Équipe UpcycleConnect',
+            date: (n.created_at || '').substring(0, 10),
+            duree: '3 min',
+            img: 'https://images.unsplash.com/photo-1516414447565-b14be0adf13e?w=600&q=80',
+            extrait: (n.content || '').slice(0, 140),
+        }))
+        articles.value = [...reels, ...articles.value]
+    } catch {}
 })
 </script>
 

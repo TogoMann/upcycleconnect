@@ -7,6 +7,9 @@ const authStore = useAuthStore()
 
 interface Article {
     id: number
+    title: string
+    content: string
+    created_at: string
     titre: string
     categorie: string
     date: string
@@ -16,10 +19,12 @@ interface Article {
 const articles = ref<Article[]>([])
 const showForm = ref(false)
 const editId = ref<number | null>(null)
-const form = ref({ titre: '', categorie: '', statut: 'publie' })
+const form = ref({ titre: '', categorie: '', statut: 'publie', contenu: '' })
 const loading = ref(false)
 
-onMounted(async () => {
+onMounted(load)
+
+async function load() {
     const token = authStore.token
     if (!token) return
     try {
@@ -28,44 +33,38 @@ onMounted(async () => {
         })
         if (res.ok) articles.value = await res.json()
     } catch {}
-})
+}
 
 function openCreate() {
     editId.value = null
-    form.value = { titre: '', categorie: '', statut: 'publie' }
+    form.value = { titre: '', categorie: '', statut: 'publie', contenu: '' }
     showForm.value = true
 }
 
 function openEdit(a: Article) {
     editId.value = a.id
-    form.value = { titre: a.titre, categorie: a.categorie, statut: a.statut }
+    form.value = { titre: a.title || a.titre, categorie: a.categorie || '', statut: a.statut || 'publie', contenu: a.content || '' }
     showForm.value = true
 }
 
 async function save() {
+    if (!form.value.titre.trim()) {
+        alert('Le titre est obligatoire')
+        return
+    }
     loading.value = true
+    const payload = { title: form.value.titre, content: form.value.contenu, statut: form.value.statut, categorie: form.value.categorie }
     try {
-        if (editId.value) {
-            const res = await fetch(`${API_BASE}/salarie/conseils/${editId.value}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-                body: JSON.stringify(form.value),
-            })
-            if (res.ok) {
-                const updated = await res.json()
-                const idx = articles.value.findIndex(a => a.id === editId.value)
-                if (idx !== -1) articles.value[idx] = updated
-            }
-        } else {
-            const res = await fetch(`${API_BASE}/salarie/conseils`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-                body: JSON.stringify(form.value),
-            })
-            if (res.ok) articles.value.unshift(await res.json())
+        const res = await fetch(`${API_BASE}/salarie/conseils`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
+            body: JSON.stringify(payload),
+        })
+        if (res.ok) {
+            showForm.value = false
+            await load()
         }
     } catch {}
-    showForm.value = false
     loading.value = false
 }
 
@@ -99,6 +98,10 @@ async function supprimer(id: number) {
                     <input v-model="form.titre" type="text" class="form-input" />
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Contenu</label>
+                    <textarea v-model="form.contenu" class="form-input" rows="6" placeholder="Écrivez votre article ici…"></textarea>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Catégorie</label>
                     <select v-model="form.categorie" class="form-input">
                         <option value="">Choisir</option>
@@ -110,7 +113,7 @@ async function supprimer(id: number) {
                 <div class="form-group">
                     <label class="form-label">Statut</label>
                     <select v-model="form.statut" class="form-input">
-                        <option value="publie">Publié</option>
+                        <option value="publie">Publier immédiatement</option>
                         <option value="brouillon">Brouillon</option>
                     </select>
                 </div>
@@ -139,9 +142,9 @@ async function supprimer(id: number) {
                         <td colspan="5" class="empty">Aucun article.</td>
                     </tr>
                     <tr v-for="a in articles" :key="a.id">
-                        <td class="td-bold">{{ a.titre }}</td>
+                        <td class="td-bold">{{ a.title || a.titre }}</td>
                         <td class="td-muted">{{ a.categorie }}</td>
-                        <td class="td-muted">{{ a.date }}</td>
+                        <td class="td-muted">{{ (a.created_at || '').substring(0, 10) }}</td>
                         <td>
                             <span class="badge" :class="a.statut === 'publie' ? 'badge--active' : 'badge--draft'">
                                 {{ a.statut === 'publie' ? 'Publié' : 'Brouillon' }}

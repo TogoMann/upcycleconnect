@@ -164,7 +164,7 @@ func (r *Repository) GetSalarieStats(ctx context.Context, userId int64) (map[str
 	}
 	stats["formations"] = countFormations
 
-	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM personal_event WHERE user_id = $1", userId).Scan(&countCreneaux)
+	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM course WHERE created_by = $1 AND approved = true", userId).Scan(&countCreneaux)
 	if err != nil {
 		return nil, err
 	}

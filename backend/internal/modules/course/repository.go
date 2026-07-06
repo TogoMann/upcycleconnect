@@ -2,6 +2,7 @@ package course
 
 import (
 	db "backend/internal/database"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -82,9 +83,24 @@ func (r *Repository) GetUserCourses(userId pgtype.Int8) ([]UserCourse, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[UserCourse])
 }
 
-func (r *Repository) Create(c Course) (pgtype.Int8, error) {
+func (r *Repository) GetCreatedByUser(userId pgtype.Int8) ([]FormationListItem, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT id, name, description, max_capacity, created_by, created_at, approved, approved_by, approved_at, price, date, start_time, end_time, status, correction_comment,
+		       COALESCE(categorie, '') as categorie,
+		       COALESCE(duree, '') as duree,
+		       (SELECT COUNT(*) FROM course_order WHERE course_id = course.id)::int as inscrits
+		FROM course
+		WHERE created_by = $1
+		ORDER BY date DESC NULLS LAST`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[FormationListItem])
+}
+
+func (r *Repository) Create(c Course, categorie string, duree string) (pgtype.Int8, error) {
 	var id int64
-	err := r.db.QueryRow(db.Ctx, "INSERT INTO course (name, description, max_capacity, created_by, price, date, start_time, end_time, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending') RETURNING id", c.Name, c.Description, c.MaxCapacity, c.CreatedBy, c.Price, c.Date, c.StartTime, c.EndTime).Scan(&id)
+	err := r.db.QueryRow(db.Ctx, "INSERT INTO course (name, description, max_capacity, created_by, price, date, start_time, end_time, categorie, duree, approved, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending') RETURNING id", c.Name, c.Description, c.MaxCapacity, c.CreatedBy, c.Price, c.Date, c.StartTime, c.EndTime, categorie, duree, c.Approved).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}

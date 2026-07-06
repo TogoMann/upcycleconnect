@@ -18,7 +18,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetAll() ([]NewsFrontend, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, upvotes, downvotes FROM news")
+	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, upvotes, downvotes, COALESCE(status, 'publie') as status, COALESCE(categorie, '') as categorie FROM news ORDER BY created_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("package news/repo GetAll query: %w", err)
 	}
@@ -26,8 +26,16 @@ func (r *Repository) GetAll() ([]NewsFrontend, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[NewsFrontend])
 }
 
+func (r *Repository) GetAllPublished() ([]NewsFrontend, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, upvotes, downvotes, COALESCE(status, 'publie') as status, COALESCE(categorie, '') as categorie FROM news WHERE status = 'publie' ORDER BY created_at DESC")
+	if err != nil {
+		return nil, fmt.Errorf("package news/repo GetAllPublished query: %w", err)
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[NewsFrontend])
+}
+
 func (r *Repository) GetById(id pgtype.Int8) (*News, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, created_at, upvotes, downvotes FROM news WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, created_at, upvotes, downvotes, COALESCE(status, 'publie') as status, COALESCE(categorie, '') as categorie FROM news WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package news/repo GetById query: %w", err)
 	}
@@ -44,8 +52,8 @@ func (r *Repository) Create(newsDto News) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO news (created_by, title, content) VALUES ($1, $2, $3) RETURNING id",
-		newsDto.CreatedBy, newsDto.Title, newsDto.Content).Scan(&id)
+		"INSERT INTO news (created_by, title, content, status, categorie) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		newsDto.CreatedBy, newsDto.Title, newsDto.Content, newsDto.Status, newsDto.Categorie).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err

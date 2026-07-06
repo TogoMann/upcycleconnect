@@ -147,11 +147,11 @@ async function submit() {
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Prix (€)</label>
-                    <input v-model="form.prix" type="number" step="0.01" class="form-input" placeholder="0.00" />
+                    <input v-model="form.prix" type="number" step="0.01" min="0" class="form-input" placeholder="0.00" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">Capacité maximale</label>
-                    <input v-model="form.max_capacity" type="number" class="form-input" placeholder="Ex: 15" />
+                    <input v-model="form.max_capacity" type="number" min="0" class="form-input" placeholder="Ex: 15" />
                 </div>
             </div>
 

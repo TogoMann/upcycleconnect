@@ -12,7 +12,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	service := NewService(repo)
 	handler := NewHandler(service)
 
-	r.HandleFunc("GET /news", handler.GetAll)
+	r.HandleFunc("GET /news", handler.GetAllPublic)
 	r.HandleFunc("GET /salarie/conseils", handler.GetAll)
 	r.HandleFunc("GET /news/{id}", handler.GetById)
 	r.HandleFunc("POST /news", middlewares.StaffOnly(handler.Create))

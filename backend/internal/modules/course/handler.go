@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"time"
 )
 
 type Handler struct {
@@ -21,6 +22,15 @@ type Handler struct {
 
 func NewHandler(service *Service, userService *users.Service) *Handler {
 	return &Handler{service: service, userService: userService}
+}
+
+// normalizeTime pads an "HH:MM" value (as sent by <input type="time">) to
+// "HH:MM:SS", which is what pgtype.Time.Scan requires to parse successfully.
+func normalizeTime(s string) string {
+	if len(s) == 5 {
+		return s + ":00"
+	}
+	return s
 }
 
 func (h *Handler) GetAllApprovedCatalogue(w http.ResponseWriter, r *http.Request) {
@@ -125,9 +135,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if price == 0 {
 		price = input.Price
 	}
+	if price < 0 {
+		http.Error(w, "Le prix ne peut pas être négatif", http.StatusBadRequest)
+		return
+	}
+	if input.MaxCapacity != nil && *input.MaxCapacity < 0 {
+		http.Error(w, "La capacité maximale ne peut pas être négative", http.StatusBadRequest)
+		return
+	}
 	desc := input.Description
-	if input.Duree != "" {
-		desc = desc + "\n\nDurée: " + input.Duree
+	{
+
 	}
 
 	c := Course{
@@ -141,8 +159,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
 	c.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
 	c.Date.Scan(input.Date)
-	c.StartTime.Scan(input.StartTime)
-	c.EndTime.Scan(input.EndTime)
+	c.StartTime.Scan(normalizeTime(input.StartTime))
+	c.EndTime.Scan(normalizeTime(input.EndTime))
 
 	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
@@ -166,7 +184,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.service.Create(c)
+	id, err := h.service.Create(c, input.Categorie, input.Duree)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -253,6 +271,14 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if price == 0 {
 		price = input.Price
 	}
+	if price < 0 {
+		http.Error(w, "Le prix ne peut pas être négatif", http.StatusBadRequest)
+		return
+	}
+	if input.MaxCapacity != nil && *input.MaxCapacity < 0 {
+		http.Error(w, "La capacité maximale ne peut pas être négative", http.StatusBadRequest)
+		return
+	}
 	desc := input.Description
 	if input.Duree != "" {
 		desc = desc + "\n\nDurée: " + input.Duree
@@ -268,8 +294,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
 	c.Date.Scan(input.Date)
-	c.StartTime.Scan(input.StartTime)
-	c.EndTime.Scan(input.EndTime)
+	c.StartTime.Scan(normalizeTime(input.StartTime))
+	c.EndTime.Scan(normalizeTime(input.EndTime))
 
 	if c.Date.Valid && c.Date.Time.Before(time.Now().Truncate(24*time.Hour)) {
 		http.Error(w, "La date de la formation ne peut pas être dans le passé", http.StatusBadRequest)
@@ -389,7 +415,7 @@ func (h *Handler) GetMyCourses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courses, err := h.service.GetUserCourses(pgtype.Int8{Int64: int64(sub), Valid: true})
+	courses, err := h.service.GetCreatedByUser(pgtype.Int8{Int64: int64(sub), Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -438,10 +464,10 @@ func (h *Handler) ProposeModification(w http.ResponseWriter, r *http.Request) {
 		existing.Date.Scan(input.Date)
 	}
 	if input.StartTime != "" {
-		existing.StartTime.Scan(input.StartTime)
+		existing.StartTime.Scan(normalizeTime(input.StartTime))
 	}
 	if input.EndTime != "" {
-		existing.EndTime.Scan(input.EndTime)
+		existing.EndTime.Scan(normalizeTime(input.EndTime))
 	}
 	if input.MaxCapacity != nil {
 		existing.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}

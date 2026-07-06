@@ -19,6 +19,10 @@ func (s *Service) GetAll() ([]NewsFrontend, error) {
 	return s.repo.GetAll()
 }
 
+func (s *Service) GetAllPublished() ([]NewsFrontend, error) {
+	return s.repo.GetAllPublished()
+}
+
 func (s *Service) GetById(id pgtype.Int8) (*News, error) {
 	if !id.Valid || id.Int64 < 1 {
 		return nil, fmt.Errorf("news/service News ID invalide: %d", id)
