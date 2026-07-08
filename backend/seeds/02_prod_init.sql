@@ -32,6 +32,6 @@ SET description = EXCLUDED.description,
 
 
 INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at) VALUES
-('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2a$10$Lp3TJGSMCLYl1sFOr14C/ummqFAS6avxKrd5mjxJ0qjS.gcb5VzIa', 'admin', NOW())
+('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'admin', NOW())
 ON CONFLICT (username) DO UPDATE
 SET password_hash = EXCLUDED.password_hash;
