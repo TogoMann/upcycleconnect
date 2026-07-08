@@ -1,14 +1,75 @@
 package entry
 
 import (
+	"backend/internal/middlewares"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+func clockToPgTime(s string) pgtype.Time {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return pgtype.Time{Valid: false}
+	}
+	
+	s = strings.ReplaceAll(s, "h", ":")
+	s = strings.ReplaceAll(s, "H", ":")
+	
+	isPM := false
+	isAM := false
+	if strings.HasSuffix(strings.ToUpper(s), "PM") {
+		isPM = true
+		s = strings.TrimSpace(s[:len(s)-2])
+	} else if strings.HasSuffix(strings.ToUpper(s), "AM") {
+		isAM = true
+		s = strings.TrimSpace(s[:len(s)-2])
+	}
+	
+	parts := strings.Split(s, ":")
+	if len(parts) < 2 {
+		return pgtype.Time{Valid: false}
+	}
+	
+	hStr := strings.TrimSpace(parts[0])
+	mStr := strings.TrimSpace(parts[1])
+	
+	h, errH := strconv.Atoi(hStr)
+	m, errM := strconv.Atoi(mStr)
+	if errH != nil || errM != nil {
+		return pgtype.Time{Valid: false}
+	}
+	
+	sec := 0
+	if len(parts) >= 3 {
+		secStr := strings.TrimSpace(parts[2])
+		if idx := strings.IndexAny(secStr, ".,-+"); idx != -1 {
+			secStr = secStr[:idx]
+		}
+		if v, err := strconv.Atoi(secStr); err == nil {
+			sec = v
+		}
+	}
+	
+	if isPM && h < 12 {
+		h += 12
+	} else if isAM && h == 12 {
+		h = 0
+	}
+	
+	if h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59 {
+		return pgtype.Time{Valid: false}
+	}
+	
+	micros := (int64(h)*3600 + int64(m)*60 + int64(sec)) * 1_000_000
+	return pgtype.Time{Microseconds: micros, Valid: true}
+}
 
 type Handler struct {
 	service *Service
@@ -52,20 +113,48 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var e Entry
-	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	var input struct {
+		Schedule string `json:"schedule"`
+		Start    string `json:"start"`
+		Ending   string `json:"ending"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if e.Schedule.Valid && e.Schedule.Time.Before(time.Now().Truncate(24*time.Hour)) {
+	var e Entry
+	e.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+	e.Schedule.Scan(input.Schedule)
+	e.Start = clockToPgTime(input.Start)
+	if input.Ending != "" {
+		e.Ending = clockToPgTime(input.Ending)
+	}
+
+	now := time.Now()
+	if loc, err := time.LoadLocation("Europe/Paris"); err == nil {
+		now = now.In(loc)
+	}
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	if e.Schedule.Valid && e.Schedule.Time.Before(today) {
 		http.Error(w, "La date de dépôt ne peut pas être dans le passé", http.StatusBadRequest)
 		return
 	}
 
 	if e.Schedule.Valid && e.Start.Valid {
-		now := time.Now()
-		today := now.Truncate(24 * time.Hour)
 		if e.Schedule.Time.Equal(today) {
 			nowMicros := int64(now.Hour())*3600*1_000_000 + int64(now.Minute())*60*1_000_000 + int64(now.Second())*1_000_000
 			if e.Start.Microseconds < nowMicros {
@@ -73,11 +162,6 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-	}
-
-	if e.Start.Valid && e.Ending.Valid && e.Start.Microseconds >= e.Ending.Microseconds {
-		http.Error(w, "L'heure de fin doit être strictement supérieure à l'heure de début", http.StatusBadRequest)
-		return
 	}
 
 	id, err := h.service.Create(e)

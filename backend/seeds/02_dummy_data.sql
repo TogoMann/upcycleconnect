@@ -78,9 +78,9 @@ INSERT INTO locker (container_id, label, status, size, created_at) VALUES
 
 INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at, company_id) VALUES
 ('amartin', 'Alice', 'Martin', 'alice@test.com', '$2b$10$hashhashhashhashhashhashhashhashhashhash', 'client', NOW(), NULL),
-('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'pro', NOW(), 1),
-('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'admin', NOW(), NULL),
-('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'interne', NOW(), NULL),
+('bdurand', 'Bob', 'Durand', 'bob@test.com', '$2a$10$VVOZMTmkvqVYnND62JQjbuzg6hnfVmXJO8QJYHohbMGRBgQIHIQX2', 'pro', NOW(), 1),
+('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2a$10$VVOZMTmkvqVYnND62JQjbuzg6hnfVmXJO8QJYHohbMGRBgQIHIQX2', 'admin', NOW(), NULL),
+('dmoreau', 'Diane', 'Moreau', 'diane@test.com', '$2a$10$VVOZMTmkvqVYnND62JQjbuzg6hnfVmXJO8QJYHohbMGRBgQIHIQX2', 'interne', NOW(), NULL),
 ('mdede', 'morad', 'dede', 'moradtest@test.com', '$2a$12$7bg7UBVasAqV9aah61WcC.b25cw/lmKwR0dbJ/iVOuP1UDpIVmrOS', 'client', NOW(), NULL);
 
 

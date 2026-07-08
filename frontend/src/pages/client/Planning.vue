@@ -112,7 +112,7 @@ function parseHour(t: string): number {
 
 function eventStyle(ev: any): Record<string, string> {
     const start = Math.max(parseHour(ev.start_time), DAY_START)
-    const end = Math.min(parseHour(ev.end_time), DAY_END)
+    const end = Math.min(ev.end_time ? parseHour(ev.end_time) : (parseHour(ev.start_time) + 1), DAY_END)
     const top = (start - DAY_START) * HOUR_HEIGHT
     const height = Math.max((end - start) * HOUR_HEIGHT, 24)
     const s = ts(ev.type)
@@ -284,7 +284,10 @@ onMounted(() => clientStore.fetchPlanning())
                 </div>
                 <div v-else class="day-panel-list">
                     <div v-for="ev in selectedEvents" :key="ev.id + ev.type" class="day-ev-row" :style="{ borderLeft: `3px solid ${ts(ev.type).border}` }">
-                        <div class="day-ev-time">{{ ft(ev.start_time) }} – {{ ft(ev.end_time) }}</div>
+                        <div class="day-ev-time">
+                            <span v-if="ev.end_time">{{ ft(ev.start_time) }} – {{ ft(ev.end_time) }}</span>
+                            <span v-else>{{ ft(ev.start_time) }}</span>
+                        </div>
                         <div class="day-ev-info">
                             <span class="day-ev-title">{{ ev.title }}</span>
                             <span class="day-ev-type" :style="{ color: ts(ev.type).text }">{{ ts(ev.type).label }}</span>

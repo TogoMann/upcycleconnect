@@ -21,7 +21,7 @@ func (r *Repository) GetAll() ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
 			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type,
-			i.physical_state, i.size, i.status, i.weight, i.created_at,
+			i.physical_state, i.size, i.status, i.weight, i.name, i.description, i.created_at,
 			s.type_site as site_type
 		FROM item i
 		LEFT JOIN site s ON i.site_id = s.id
@@ -57,11 +57,21 @@ func (r *Repository) GetAdminDepots() ([]AdminDepot, error) {
 func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type,
-			i.physical_state, i.size, i.status, i.weight, i.created_at,
-			s.type_site as site_type
+			i.id, i.owner_id, i.locker_id, i.site_id, 
+			COALESCE(i.material_type, '') as material_type,
+			COALESCE(i.physical_state::text, '') as physical_state, 
+			COALESCE(i.size::text, 'M') as size, 
+			COALESCE(i.status::text, 'deposited') as status, 
+			i.weight, 
+			COALESCE(i.name, '') as name, 
+			COALESCE(i.description, '') as description, 
+			i.created_at, i.entry_id,
+			COALESCE(s.type_site, '') as site_type,
+			COALESCE(TO_CHAR(e.schedule, 'YYYY-MM-DD'), '') as schedule_date,
+			COALESCE(TO_CHAR(e.start, 'HH24:MI'), '') as schedule_time
 		FROM item i
 		LEFT JOIN site s ON i.site_id = s.id
+		LEFT JOIN entry e ON i.entry_id = e.id
 		WHERE i.owner_id = $1
 	`, userId)
 	if err != nil {
@@ -73,11 +83,21 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Item, error) {
 func (r *Repository) GetById(id pgtype.Int8) (*Item, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT 
-			i.id, i.owner_id, i.locker_id, i.site_id, i.material_type,
-			i.physical_state, i.size, i.status, i.weight, i.created_at,
-			s.type_site as site_type
+			i.id, i.owner_id, i.locker_id, i.site_id, 
+			COALESCE(i.material_type, '') as material_type,
+			COALESCE(i.physical_state::text, '') as physical_state, 
+			COALESCE(i.size::text, 'M') as size, 
+			COALESCE(i.status::text, 'deposited') as status, 
+			i.weight, 
+			COALESCE(i.name, '') as name, 
+			COALESCE(i.description, '') as description, 
+			i.created_at, i.entry_id,
+			COALESCE(s.type_site, '') as site_type,
+			COALESCE(TO_CHAR(e.schedule, 'YYYY-MM-DD'), '') as schedule_date,
+			COALESCE(TO_CHAR(e.start, 'HH24:MI'), '') as schedule_time
 		FROM item i
 		LEFT JOIN site s ON i.site_id = s.id
+		LEFT JOIN entry e ON i.entry_id = e.id
 		WHERE i.id = $1
 	`, id)
 	if err != nil {
@@ -97,8 +117,8 @@ func (r *Repository) Create(item Item) (pgtype.Int8, error) {
 	}
 	var id int64
 	err := r.db.QueryRow(db.Ctx,
-		"INSERT INTO item (owner_id, locker_id, site_id, material_type, physical_state, size, status, weight) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, size, item.Status, item.Weight).Scan(&id)
+		"INSERT INTO item (owner_id, locker_id, site_id, material_type, physical_state, size, status, weight, name, description, entry_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, size, item.Status, item.Weight, item.Name, item.Description, item.EntryId).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}
@@ -111,8 +131,8 @@ func (r *Repository) Update(id pgtype.Int8, item Item) error {
 		size = SizeM
 	}
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE item SET owner_id=$1, locker_id=$2, site_id=$3, material_type=$4, physical_state=$5, size=$6, status=$7, weight=$8 WHERE id=$9",
-		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, size, item.Status, item.Weight, id)
+		"UPDATE item SET owner_id=$1, locker_id=$2, site_id=$3, material_type=$4, physical_state=$5, size=$6, status=$7, weight=$8, name=$9, description=$10, entry_id=$11 WHERE id=$12",
+		item.OwnerId, item.LockerId, item.SiteId, item.MaterialType, item.PhysicalState, size, item.Status, item.Weight, item.Name, item.Description, item.EntryId, id)
 	if err != nil {
 		return err
 	}

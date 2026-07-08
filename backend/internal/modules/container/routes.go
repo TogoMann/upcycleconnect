@@ -22,6 +22,7 @@ func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	r.HandleFunc("POST /lockers/{id}/access", middlewares.Authenticated(handler.CreateLockerAccess))
 	r.HandleFunc("GET /users/me/locker-access", middlewares.Authenticated(handler.GetUserAccesses))
 	r.HandleFunc("GET /sites/lockers", middlewares.Authenticated(handler.GetSitesWithLockers))
+	r.HandleFunc("GET /sites", middlewares.Authenticated(handler.GetAllSites))
 
 	r.HandleFunc("POST /container", middlewares.AdminOnly(handler.Create))
 	r.HandleFunc("PUT /container/{id}", middlewares.AdminOnly(handler.Update))

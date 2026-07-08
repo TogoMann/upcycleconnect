@@ -39,8 +39,23 @@ function formatDate(ts: any): string {
     return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function getAnnonceId(annonce: any): number {
+    const id = annonce.id
+    if (id === null || id === undefined) return 0
+    if (typeof id === 'number') return id
+    if (typeof id === 'string') return Number(id) || 0
+    if (typeof id === 'object') {
+        if ('Int64' in id) return id.Valid ? id.Int64 : 0
+        if ('id' in id) return Number(id.id) || 0
+    }
+    return 0
+}
+
 async function handleDelete(id: number) {
-    await clientStore.deleteAnnonce(id)
+    if (!id) return
+    if (confirm(t('client.mesAnnonces.confirmDelete', 'Voulez-vous vraiment supprimer cette annonce ?'))) {
+        await clientStore.deleteAnnonce(id)
+    }
 }
 
 onMounted(() => {
@@ -87,7 +102,7 @@ onMounted(() => {
         <div v-else class="annonces-list">
             <div
                 v-for="annonce in clientStore.annonces"
-                :key="annonce.id?.Int64"
+                :key="getAnnonceId(annonce)"
                 class="annonce-card"
             >
                 <div class="annonce-main">
@@ -114,7 +129,7 @@ onMounted(() => {
                     </div>
                 </div>
                 <div class="annonce-actions">
-                    <button class="btn-danger" @click="handleDelete(annonce.id?.Int64)">
+                    <button class="btn-danger" @click="handleDelete(getAnnonceId(annonce))">
                         {{ t('client.mesAnnonces.delete') }}
                     </button>
                 </div>

@@ -208,3 +208,20 @@ func (r *Repository) ClaimLocker(lockerId pgtype.Int8) (bool, error) {
 	}
 	return tag.RowsAffected() > 0, nil
 }
+
+func (r *Repository) GetAllSites() ([]SiteOption, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT
+			s.id as site_id,
+			COALESCE(a.street_number || ' ', '') || a.street_name || ', ' || ci.name as address,
+			COALESCE(s.type_site, '') as type_site
+		FROM site s
+		JOIN address a ON s.address_id = a.id
+		JOIN city ci ON a.city_id = ci.id
+		ORDER BY s.id
+	`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[SiteOption])
+}

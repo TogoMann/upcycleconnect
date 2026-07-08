@@ -62,6 +62,11 @@ type Item struct {
 	Size          ItemSize         `db:"size" json:"size"`
 	Status        ItemStatus       `db:"status" json:"status"`
 	Weight        pgtype.Numeric   `db:"weight" json:"weight"`
+	Name          string           `db:"name" json:"name"`
+	Description   string           `db:"description" json:"description"`
+	EntryId       pgtype.Int8      `db:"entry_id" json:"entry_id"`
+	ScheduleDate  string           `db:"schedule_date" json:"schedule_date"`
+	ScheduleTime  string           `db:"schedule_time" json:"schedule_time"`
 	CreatedAt     pgtype.Timestamp `db:"created_at" json:"created_at"`
 	SiteType      string           `db:"site_type" json:"site_type"`
 }

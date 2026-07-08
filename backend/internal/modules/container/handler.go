@@ -158,6 +158,16 @@ func (h *Handler) GetSitesWithLockers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sites)
 }
 
+func (h *Handler) GetAllSites(w http.ResponseWriter, r *http.Request) {
+	sites, err := h.service.GetAllSites()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sites)
+}
+
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var c Container
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {

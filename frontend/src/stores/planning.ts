@@ -61,12 +61,12 @@ export const usePlanningStore = defineStore('planning', () => {
         await fetchPlanning()
     }
 
-    async function createEntry(data: { schedule: string; start: string; ending: string }) {
+    async function createEntry(data: { schedule: string; start: string }) {
         const authStore = useAuthStore()
         const res = await fetch(`${API_BASE}/entry/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...data, created_by: { Int64: authStore.user?.id, Valid: true } }),
+            body: JSON.stringify({ schedule: data.schedule, start: data.start }),
         })
         if (!res.ok) throw new Error('Erreur création créneau')
         return await res.json()

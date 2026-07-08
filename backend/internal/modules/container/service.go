@@ -121,3 +121,7 @@ func (s *Service) GetLockerById(id pgtype.Int8) (*Locker, error) {
 func (s *Service) ClaimLocker(lockerId pgtype.Int8) (bool, error) {
 	return s.repo.ClaimLocker(lockerId)
 }
+
+func (s *Service) GetAllSites() ([]SiteOption, error) {
+	return s.repo.GetAllSites()
+}

@@ -52,19 +52,24 @@ export const useDepositStore = defineStore('deposit', () => {
     }
 
     async function createItem(data: {
+        name: string
+        description: string
         material_type: string
         physical_state: string
         weight?: number
         site_id?: number
+        entry_id?: number
     }) {
-        const authStore = useAuthStore()
         const body: any = {
-            owner_id: { Int64: authStore.user?.id, Valid: true },
+            name: data.name,
+            description: data.description,
             material_type: data.material_type,
             physical_state: data.physical_state,
-            status: 'deposited',
         }
-        if (data.site_id) body.site_id = { Int64: data.site_id, Valid: true }
+        if (data.weight) body.weight = data.weight
+        if (data.site_id) body.site_id = data.site_id
+        if (data.entry_id) body.entry_id = data.entry_id
+
         const res = await fetch(`${API_BASE}/items/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },

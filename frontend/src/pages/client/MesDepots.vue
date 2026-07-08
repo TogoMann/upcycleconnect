@@ -135,7 +135,10 @@ onMounted(() => {
                         <div class="depot-details">
                             <span v-if="depot.physical_state" class="detail-item">{{ t('client.mesDepots.state', { state: depot.physical_state }) }}</span>
                             <span v-if="depot.weight" class="detail-item">{{ formatWeight(depot.weight) }}</span>
-                            <span class="detail-item">{{ formatDate(depot.created_at) }}</span>
+                            <span v-if="depot.schedule_date" class="detail-item" style="font-weight: 600; color: var(--green-dark);">
+                                {{ t('client.mesDepots.scheduledFor', 'Prévu le') }} {{ formatDate(depot.schedule_date) }} {{ depot.schedule_time ? 'à ' + depot.schedule_time : '' }}
+                            </span>
+                            <span v-else class="detail-item">{{ formatDate(depot.created_at) }}</span>
                         </div>
                     </div>
                 </div>

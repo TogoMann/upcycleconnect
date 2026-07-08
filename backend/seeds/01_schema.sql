@@ -481,6 +481,8 @@ ALTER TABLE listing ADD COLUMN IF NOT EXISTS address VARCHAR(255);
 ALTER TABLE listing ADD COLUMN IF NOT EXISTS weight DECIMAL(8,2);
 
 ALTER TABLE item ADD COLUMN IF NOT EXISTS size LOCKER_SIZE DEFAULT 'M';
+ALTER TABLE item ADD COLUMN IF NOT EXISTS name VARCHAR(128);
+ALTER TABLE item ADD COLUMN IF NOT EXISTS description TEXT;
 
 ALTER TABLE event ADD COLUMN IF NOT EXISTS title VARCHAR(128) NOT NULL DEFAULT '';
 ALTER TABLE event ADD COLUMN IF NOT EXISTS description TEXT;
@@ -563,6 +565,18 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 
 INSERT INTO platform_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- View for site locations with addresses
+CREATE OR REPLACE VIEW v_site_locations AS
+SELECT
+    s.id,
+    s.type_site,
+    COALESCE(a.street_number || ' ', '') || a.street_name as street,
+    ci.name as city,
+    ci.zip_code
+FROM site s
+JOIN address a ON s.address_id = a.id
+JOIN city ci ON a.city_id = ci.id;
 
 CREATE TABLE IF NOT EXISTS news_vote (
     news_id BIGINT NOT NULL REFERENCES news(id) ON DELETE CASCADE,
