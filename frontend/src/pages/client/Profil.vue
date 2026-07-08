@@ -216,7 +216,7 @@ async function handleSave() {
             </div>
         </div>
 
-        <!-- Modal Historique Points -->
+        
         <div v-if="showHistory" class="modal-overlay" @click.self="showHistory = false">
             <div class="modal-content">
                 <div class="modal-header">
@@ -554,7 +554,7 @@ async function handleSave() {
     color: var(--green-dark);
 }
 
-/* Modal Historique */
+
 .modal-overlay {
     position: fixed;
     top: 0;

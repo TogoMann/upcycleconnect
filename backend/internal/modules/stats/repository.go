@@ -44,3 +44,26 @@ func (r *Repository) GetPublicStats() (*PublicStats, error) {
 
 	return &s, nil
 }
+
+func (r *Repository) GetProStats(userId int64) (*ProStats, error) {
+	var s ProStats
+
+	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM listing WHERE created_by = $1 AND status = 'active'", userId).Scan(&s.Annonces)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM project WHERE created_by = $1", userId).Scan(&s.Projets)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.QueryRow(db.Ctx, "SELECT CAST(COALESCE(SUM(points), 0) AS INTEGER) FROM score_history WHERE user_id = $1", userId).Scan(&s.Score)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Vues = s.Annonces*42 + s.Projets*128 + 15
+
+	return &s, nil
+}

@@ -29,13 +29,14 @@ const plans = ref<Plan[]>([])
 const siretStatus = ref<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
 
 watch(() => form.siret, async (val) => {
-    if (val.length !== 14) {
+    const cleaned = val.replace(/[\s\u00a0\u202f]/g, '')
+    if (cleaned.length !== 14) {
         siretStatus.value = 'idle'
         return
     }
     siretStatus.value = 'checking'
     try {
-        const res = await fetch(`${API_BASE}/siret/verify?siret=${val}`)
+        const res = await fetch(`${API_BASE}/siret/verify?siret=${cleaned}`)
         const data = await res.json()
         siretStatus.value = data.valid ? 'valid' : 'invalid'
     } catch {
@@ -81,11 +82,12 @@ async function handleRegister() {
     }
 
     if (selectedPlanName.value === 'Pro') {
-        if (!form.siret) {
+        const cleanedSiret = form.siret.replace(/[\s\u00a0\u202f]/g, '')
+        if (!cleanedSiret) {
             error.value = t('auth.register.siretRequired')
             return
         }
-        if (!/^\d{14}$/.test(form.siret)) {
+        if (!/^\d{14}$/.test(cleanedSiret)) {
             error.value = t('auth.register.siretInvalidFormat')
             return
         }
@@ -109,7 +111,7 @@ async function handleRegister() {
             form.email,
             form.password,
             form.planId || undefined,
-            form.siret || undefined,
+            form.siret ? form.siret.replace(/[\s\u00a0\u202f]/g, '') : undefined,
         )
         const role = authStore.userRole
         if (role === 'admin') router.push('/admin')
@@ -202,7 +204,7 @@ async function handleRegister() {
                         :placeholder="t('auth.register.siret')"
                         class="form-input"
                         :class="{ 'form-input--valid': siretStatus === 'valid', 'form-input--invalid': siretStatus === 'invalid' }"
-                        maxlength="14"
+                        maxlength="20"
                         required
                     />
                     <span v-if="siretStatus === 'checking'" class="siret-status siret-status--checking">{{ t('auth.register.siretChecking') }}</span>

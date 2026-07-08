@@ -46,7 +46,7 @@ const filtered = computed(() => {
             const id = getNumericId(item.id)
             if (id === null) return false
             
-            // Check if in cart
+            
             const inCart = cartItems.some(cartItem => {
                 if (item._type === 'annonce') return getNumericId(cartItem.listing_id) === id
                 if (item._type === 'event') return getNumericId(cartItem.event_id) === id
@@ -55,7 +55,7 @@ const filtered = computed(() => {
             })
             if (inCart) return false
 
-            // Check if already registered (for events and courses)
+            
             if (item._type === 'event') {
                 return !userParticipations.some(p => getNumericId(p.event_id) === id)
             }
@@ -308,7 +308,7 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- Toast Notification -->
+        
         <Transition name="toast">
             <div v-if="showToast" class="toast-card">
                 <div class="toast-content">
@@ -582,7 +582,7 @@ onMounted(() => {
     margin-top: -8px;
 }
 
-/* Toast Styles */
+
 .toast-card {
     position: fixed;
     bottom: 30px;

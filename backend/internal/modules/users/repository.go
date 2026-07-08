@@ -72,7 +72,7 @@ func (r *Repository) GetAll(page, limit int) (*PaginatedUsers, error) {
 	}, nil
 }
 func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE id = $1", id)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id, is_banned, ban_expires_at FROM users WHERE id = $1", id)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetUserById query: %w", err)
 	}
@@ -86,7 +86,7 @@ func (r *Repository) GetById(id pgtype.Int8) (*User, error) {
 }
 
 func (r *Repository) GetByUsername(username string) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE username = $1", username)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id, is_banned, ban_expires_at FROM users WHERE username = $1", username)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetByUsername query: %w", err)
 	}
@@ -102,7 +102,7 @@ func (r *Repository) GetByUsername(username string) (*User, error) {
 }
 
 func (r *Repository) GetByEmail(email string) (*User, error) {
-	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE email = $1", email)
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id, is_banned, ban_expires_at FROM users WHERE email = $1", email)
 	if err != nil {
 		return nil, fmt.Errorf("package users/repo GetByEmail query: %w", err)
 	}
@@ -182,8 +182,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 
 func (r *Repository) Update(id pgtype.Int8, user User) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE users SET username=$1, first_name=$2, last_name=$3, email=$4, role=$5, language_preference=$6, company_id=$7 WHERE id=$8",
-		user.Username, user.FirstName, user.LastName, user.Email, user.Role, user.LanguagePreference, user.CompanyId, id)
+		"UPDATE users SET username=$1, first_name=$2, last_name=$3, email=$4, role=$5, language_preference=$6, company_id=$7, is_banned=$8, ban_expires_at=$9 WHERE id=$10",
+		user.Username, user.FirstName, user.LastName, user.Email, user.Role, user.LanguagePreference, user.CompanyId, user.IsBanned, user.BanExpiresAt, id)
 	if err != nil {
 		return err
 	}
@@ -191,6 +191,11 @@ func (r *Repository) Update(id pgtype.Int8, user User) error {
 		return fmt.Errorf("package users/repo Update: Id invalide: %d", id.Int64)
 	}
 	return nil
+}
+
+func (r *Repository) BanUser(username string, isBanned bool, expiresAt pgtype.Timestamp) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE users SET is_banned = $1, ban_expires_at = $2 WHERE username = $3", isBanned, expiresAt, username)
+	return err
 }
 
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {

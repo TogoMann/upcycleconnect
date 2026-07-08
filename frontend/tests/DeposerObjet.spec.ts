@@ -41,15 +41,15 @@ describe('DeposerObjet Component', () => {
             global: { plugins: [router, i18n] }
         })
 
-        // Fill form using indices
+        
         const selects = wrapper.findAll('select')
         await selects[0].setValue('Bois')
         await selects[1].setValue('Neuf')
         
         const inputs = wrapper.findAll('input')
-        await inputs[0].setValue('2026-12-31') // Date
-        await inputs[1].setValue('10:00')      // Start
-        await inputs[2].setValue('11:00')      // End
+        await inputs[0].setValue('2026-12-31') 
+        await inputs[1].setValue('10:00')      
+        await inputs[2].setValue('11:00')      
 
         await wrapper.find('form').trigger('submit.prevent')
 

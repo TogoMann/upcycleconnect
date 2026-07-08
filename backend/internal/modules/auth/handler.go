@@ -74,7 +74,7 @@ func (h *Handler) AdminRequestReset(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) VerifySiret(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	siret := r.URL.Query().Get("siret")
+	siret := utils.CleanSiret(r.URL.Query().Get("siret"))
 	if len(siret) != 14 {
 		json.NewEncoder(w).Encode(map[string]bool{"valid": false})
 		return

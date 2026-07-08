@@ -21,13 +21,14 @@ const error = ref('');
 const success = ref('');
 
 watch(siret, async (val) => {
-    if (val.length !== 14) {
+    const cleaned = val.replace(/[\s\u00a0\u202f]/g, '');
+    if (cleaned.length !== 14) {
         siretStatus.value = 'idle';
         return;
     }
     siretStatus.value = 'checking';
     try {
-        const res = await fetch(`${API_BASE}/siret/verify?siret=${val}`);
+        const res = await fetch(`${API_BASE}/siret/verify?siret=${cleaned}`);
         const data = await res.json();
         siretStatus.value = data.valid ? 'valid' : 'invalid';
     } catch {
@@ -60,12 +61,13 @@ async function handleChoosePlan(plan: Plan) {
     success.value = '';
 
     try {
+        const cleanedSiret = siret.value.replace(/[\s\u00a0\u202f]/g, '');
         if (plan.price > 0) {
-            const url = await plansStore.choosePlanCheckout(plan.id, plan.name === 'Pro' ? siret.value : undefined);
+            const url = await plansStore.choosePlanCheckout(plan.id, plan.name === 'Pro' ? cleanedSiret : undefined);
             window.location.href = url;
             return;
         }
-        await plansStore.choosePlan(plan.id, plan.name === 'Pro' ? siret.value : undefined);
+        await plansStore.choosePlan(plan.id, plan.name === 'Pro' ? cleanedSiret : undefined);
         success.value = t('client.plans.planUpdated');
         setTimeout(() => {
             router.push('/particulier');
@@ -138,7 +140,7 @@ onMounted(() => {
 
                 <div v-if="selectedPlan?.id === plan.id && plan.name === 'Pro'" class="siret-field">
                     <label for="siret">{{ t('client.plans.siretLabel') }}</label>
-                    <input type="text" id="siret" v-model="siret" placeholder="12345678901234" maxlength="14">
+                    <input type="text" id="siret" v-model="siret" placeholder="123 456 789 00012" maxlength="20">
                     <p v-if="siretStatus === 'checking'" class="siret-hint">{{ t('client.plans.siretChecking') }}</p>
                     <p v-else-if="siretStatus === 'valid'" class="siret-hint siret-hint--valid">{{ t('client.plans.siretValid') }}</p>
                     <p v-else-if="siretStatus === 'invalid'" class="siret-hint siret-hint--invalid">{{ t('client.plans.siretInvalid') }}</p>

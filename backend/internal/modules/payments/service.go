@@ -6,6 +6,7 @@ import (
 	listingorder "backend/internal/modules/listing_order"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/subscriptions"
+	"backend/internal/utils"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -46,6 +47,7 @@ func NewService(listingService *listing.Service, listingOrderService *listingord
 }
 
 func (s *Service) CreateSubscriptionCheckout(userId int64, planId int64, siret string, returnPath string) (string, error) {
+	siret = utils.CleanSiret(siret)
 	p, err := s.planService.GetById(pgtype.Int8{Int64: planId, Valid: true})
 	if err != nil {
 		return "", fmt.Errorf("plan introuvable: %w", err)

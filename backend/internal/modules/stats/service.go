@@ -11,3 +11,7 @@ func NewService(repo *Repository) *Service {
 func (s *Service) GetPublicStats() (*PublicStats, error) {
 	return s.repo.GetPublicStats()
 }
+
+func (s *Service) GetProStats(userId int64) (*ProStats, error) {
+	return s.repo.GetProStats(userId)
+}

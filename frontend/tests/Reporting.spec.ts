@@ -8,7 +8,7 @@ import en from '../src/i18n/locales/en.json'
 
 const i18n = createI18n({ legacy: false, locale: 'fr', fallbackLocale: 'fr', messages: { fr, en } })
 
-// Mock Chart.js to avoid issues in test environment
+
 vi.mock('chart.js', () => ({
   Chart: {
     register: vi.fn(),
@@ -34,7 +34,7 @@ describe('Reporting.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     
-    // Mock global fetch
+    
     global.fetch = vi.fn((url: string) => {
       if (url.includes('/reporting/actors')) {
         return Promise.resolve({
@@ -95,7 +95,7 @@ describe('Reporting.vue', () => {
   it('renders charts and table after fetching data', async () => {
     const wrapper = mount(Reporting, { global: { plugins: [i18n] } })
     
-    // Wait for async setup
+    
     await new Promise(resolve => setTimeout(resolve, 0))
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
@@ -104,7 +104,7 @@ describe('Reporting.vue', () => {
     expect(wrapper.text()).toContain('Succès des Prestations')
     expect(wrapper.text()).toContain('Prédictions de Prochaines Prestations')
     
-    // Check table content
+    
     expect(wrapper.text()).toContain('testuser')
     expect(wrapper.text()).toContain('test@test.com')
     expect(wrapper.text()).toContain('event')

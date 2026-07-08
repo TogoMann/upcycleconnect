@@ -3,6 +3,7 @@ import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import AppLogo from '@/components/AppLogo.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -18,7 +19,7 @@ function logout() {
     <div class="salarie-layout">
         <header class="navbar">
             <div class="nav-container">
-                <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
+                <router-link to="/" class="nav-logo"><AppLogo variant="nav" /></router-link>
                 <div class="nav-profile">
                     <div class="profile-info">
                         <span class="profile-name">
@@ -124,7 +125,7 @@ function logout() {
             </div>
             <div class="footer-bottom">
                 <div class="footer-container">
-                    <span class="footer-logo">UpCycleConnect</span>
+                    <span class="footer-logo"><AppLogo variant="footer" /></span>
                     <div class="footer-lang">
                         <LanguageSwitcher />
                     </div>

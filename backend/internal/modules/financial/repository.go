@@ -15,18 +15,25 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) GetCommissions() ([]Commission, error) {
+	var rate float64
+	err := r.db.QueryRow(db.Ctx, "SELECT commission_taux FROM platform_settings WHERE id = 1").Scan(&rate)
+	if err != nil {
+		rate = 10.0
+	}
+	factor := rate / 100.0
+
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT
 			1 as id,
 			'Ventes catalogue' as type,
-			10 as taux,
-			CAST(COALESCE(SUM(price), 0) * 0.10 AS FLOAT8) as montant_total,
+			$1 as taux,
+			CAST(COALESCE(SUM(price), 0) * $2 AS FLOAT8) as montant_total,
 			CAST(COUNT(*) AS INTEGER) as nb_transactions,
 			TO_CHAR(CURRENT_DATE, 'TMMonth YYYY') as periode
 		FROM listing_order
 		WHERE (status = 'paid' OR status = 'completed')
 		AND date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)
-	`)
+	`, rate, factor)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +159,12 @@ func (r *Repository) GetReport() (*FinancialReport, error) {
 		return nil, err
 	}
 
-	report.TotalCommissions = report.ListingRevenue * 0.10
+	var rate float64
+	err = r.db.QueryRow(db.Ctx, "SELECT commission_taux FROM platform_settings WHERE id = 1").Scan(&rate)
+	if err != nil {
+		rate = 10.0
+	}
+	report.TotalCommissions = report.ListingRevenue * (rate / 100.0)
 
 	report.TotalRevenue = report.ListingRevenue + report.CourseRevenue + report.SubscriptionRevenue + report.AdRevenue
 

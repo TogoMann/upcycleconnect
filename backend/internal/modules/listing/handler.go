@@ -248,7 +248,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	listingDto.Id = id
-	logs.AddFromRequest(r, "Création d'annonce", fmt.Sprintf("Annonce #%d: %s", id, listingDto.Name), "info")
+	logs.AddFromRequest(r, "Création d'annonce", fmt.Sprintf("Annonce #%d: %s", id.Int64, listingDto.Name), "info")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(listingDto)

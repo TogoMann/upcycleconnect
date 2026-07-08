@@ -7,6 +7,7 @@
       "listings": "Annonces",
       "conseils": "Conseils",
       "formations": "Formations",
+      "tarifs": "Tarifs",
       "forum": "Forum",
       "about": "À propos",
       "login": "S'inscrire / Se connecter"
@@ -483,19 +484,6 @@
       "title": "Titre",
       "category": "Catégorie",
       "weight": "Poids"
-    },
-    "tableauBordAvance": {
-      "pageTitle": "Tableau avancé.",
-      "subtitle": "Statistiques approfondies de votre activité.",
-      "premiumFeature": "Fonctionnalité Premium",
-      "premiumDesc": "Le tableau de bord avancé est réservé aux abonnements Premium.",
-      "upgradeToPremium": "Passer à Premium",
-      "revenueMonth": "CA ce mois",
-      "recycledItems": "Objets recyclés",
-      "conversionRate": "Taux conversion",
-      "ecoScore": "Score éco",
-      "monthlyEvolution": "Évolution mensuelle",
-      "loading": "Chargement des statistiques…"
     },
     "profil": {
       "pageTitle": "Mon Profil.",
@@ -1023,7 +1011,6 @@
       "messaging": "Messagerie",
       "retrieveItem": "Récupérer un objet",
       "myProjects": "Mes Projets",
-      "advancedDashboard": "Tableau avancé",
       "myProfile": "Mon Profil"
     }
   },
@@ -1178,7 +1165,29 @@
     "pageTitle": "Conseils & inspirations.",
     "subtitle": "Guides pratiques, tutoriels et idées pour réussir vos projets d'upcycling.",
     "loading": "Chargement des conseils…",
-    "noResults": "Aucun conseil publié pour le moment."
+    "noResults": "Aucun conseil publié pour le moment.",
+    "sortLabel": "Trier par",
+    "sortRecent": "Plus récents",
+    "sortMostLiked": "Plus aimés",
+    "sortLeastLiked": "Moins aimés",
+    "likeAction": "J'aime ce conseil",
+    "dislikeAction": "Je n'aime pas ce conseil",
+    "loginToVote": "Connectez-vous pour voter"
+  },
+  "tarifs": {
+    "pageTitle": "Nos tarifs.",
+    "subtitle": "Choisissez l'abonnement adapté à vos besoins. Sans engagement, résiliable à tout moment.",
+    "loading": "Chargement des tarifs…",
+    "noResults": "Aucun abonnement disponible pour le moment.",
+    "recommended": "Recommandé",
+    "free": "Gratuit",
+    "perMonth": "{price} € / mois",
+    "perYear": "{price} € / an",
+    "prerequisiteLabel": "Prérequis",
+    "siretRequired": "Numéro SIRET valide requis (professionnels)",
+    "noPrerequisite": "Aucun prérequis, ouvert à tous",
+    "cta": "Créer un compte",
+    "manage": "Gérer mon abonnement"
   },
   "prestations": {
     "pageTitle": "Découvrez nos prestations.",
@@ -1742,6 +1751,7 @@
       "pricePlaceholder": "Gratuit si vide",
       "maxCapacityLabel": "Capacité max (participants)",
       "maxCapacityPlaceholder": "Illimité si vide",
+      "premiumLabel": "Événement Premium (réservé Premium/Pro)",
       "creating": "Création…",
       "create": "Créer",
       "description": "Description",

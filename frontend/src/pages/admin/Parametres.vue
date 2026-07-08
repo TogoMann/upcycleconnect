@@ -67,42 +67,6 @@ async function save() {
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
             <div class="form-card">
-                <h3 class="card-title">{{ t('admin.parametres.identitySection') }}</h3>
-                <div class="form-group">
-                    <label class="form-label">{{ t('admin.parametres.siteName') }}</label>
-                    <input v-model="form.nom_site" type="text" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">{{ t('admin.parametres.logoUrl') }}</label>
-                    <input v-model="form.logo_url" type="text" class="form-input" placeholder="https://…" />
-                </div>
-            </div>
-
-            <div class="form-card">
-                <h3 class="card-title">{{ t('admin.parametres.contactSection') }}</h3>
-                <div class="form-group">
-                    <label class="form-label">{{ t('admin.parametres.contactEmail') }}</label>
-                    <input v-model="form.email_contact" type="email" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">{{ t('admin.parametres.phone') }}</label>
-                    <input v-model="form.telephone" type="tel" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">{{ t('admin.parametres.address') }}</label>
-                    <input v-model="form.adresse" type="text" class="form-input" />
-                </div>
-            </div>
-
-            <div class="form-card">
-                <h3 class="card-title">{{ t('admin.parametres.commercialSection') }}</h3>
-                <div class="form-group">
-                    <label class="form-label">{{ t('admin.parametres.commissionRate') }}</label>
-                    <input v-model="form.commission_taux" type="number" step="0.1" min="0" max="100" class="form-input" />
-                </div>
-            </div>
-
-            <div class="form-card">
                 <h3 class="card-title">{{ t('admin.parametres.systemSection') }}</h3>
                 <div class="toggle-row">
                     <div class="toggle-info">

@@ -13,6 +13,37 @@ onMounted(() => {
     clientStore.fetchCart()
 })
 
+function fmtTime(time: any): string {
+    if (!time) return '—'
+    if (typeof time === 'string') {
+        return time.slice(0, 5)
+    }
+    if (typeof time === 'object') {
+        if (time.Valid === false || time.valid === false) return '—'
+        const micros = time.Microseconds ?? time.microseconds ?? 0
+        const totalSeconds = Math.floor(micros / 1_000_000)
+        const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0')
+        const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')
+        return `${h}:${m}`
+    }
+    return '—'
+}
+
+function fmtDate(date: any): string {
+    if (!date) return '—'
+    if (typeof date === 'string') {
+        return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    }
+    if (typeof date === 'object') {
+        if (date.Valid === false || date.valid === false) return '—'
+        const t = date.Time ?? date.time
+        if (t) {
+            return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+        }
+    }
+    return '—'
+}
+
 const total = computed(() => {
     return clientStore.cart.reduce((acc, item) => {
         const price = item.listing?.price || item.event?.price || item.course?.price || 0
@@ -39,8 +70,8 @@ function goToChat(id: any) {
 async function handleCheckout() {
     if (clientStore.cart.length === 0) return
 
-    const hasListing = clientStore.cart.some((item: any) => item.listing_id?.Valid)
-    const hasDirectPay = clientStore.cart.some((item: any) => item.event_id?.Valid || item.course_id?.Valid)
+    const hasListing = clientStore.cart.some((item: any) => item.listing_id != null)
+    const hasDirectPay = clientStore.cart.some((item: any) => item.event_id != null || item.course_id != null)
 
     if (hasListing && !hasDirectPay) {
         alert(t('client.panier.listingsNeedAgreement'))
@@ -54,7 +85,7 @@ async function handleCheckout() {
     }
 
     const directPayTotal = clientStore.cart.reduce((acc: number, item: any) => {
-        if (item.listing_id?.Valid) return acc
+        if (item.listing_id != null) return acc
         const price = item.event?.price || item.course?.price || 0
         return acc + (parseFloat(price) || 0)
     }, 0)
@@ -71,12 +102,12 @@ async function handleCheckout() {
 
 async function handleRemove(item: any) {
     try {
-        if (item.listing_id?.Valid) {
-            await clientStore.removeFromCart('listing', item.listing_id.Int64)
-        } else if (item.event_id?.Valid) {
-            await clientStore.removeFromCart('event', item.event_id.Int64)
-        } else if (item.course_id?.Valid) {
-            await clientStore.removeFromCart('course', item.course_id.Int64)
+        if (item.listing_id != null) {
+            await clientStore.removeFromCart('listing', item.listing_id)
+        } else if (item.event_id != null) {
+            await clientStore.removeFromCart('event', item.event_id)
+        } else if (item.course_id != null) {
+            await clientStore.removeFromCart('course', item.course_id)
         }
     } catch (e: any) {
         alert(e.message)
@@ -117,7 +148,7 @@ async function handleClearCart() {
         <div v-else class="cart-content">
             <div class="items-list">
                 <div v-for="item in clientStore.cart" :key="item.id" class="cart-item">
-                    <!-- Listing Display -->
+                    
                     <template v-if="item.listing">
                         <img v-if="item.listing.image_url?.String" :src="`${API_BASE}` + item.listing.image_url.String" :alt="item.listing.name" class="item-img">
                         <img v-else-if="item.listing.image_url && typeof item.listing.image_url === 'string'" :src="`${API_BASE}` + item.listing.image_url" :alt="item.listing.name" class="item-img">
@@ -139,13 +170,13 @@ async function handleClearCart() {
                         </div>
                     </template>
 
-                    <!-- Event Display -->
+                    
                     <template v-else-if="item.event">
                         <div class="item-icon">📅</div>
                         <div class="item-details">
                             <h3 class="item-name">{{ t('client.panier.event') }}</h3>
                             <p class="item-category">{{ t('client.panier.participation') }} • {{ item.event.location }}</p>
-                            <p class="item-info">📅 {{ item.event.date }} • {{ item.event.start_time }} - {{ item.event.end_time }}</p>
+                            <p class="item-info">📅 {{ fmtDate(item.event.date) }} • {{ fmtTime(item.event.start_time) }} - {{ fmtTime(item.event.end_time) }}</p>
                         </div>
                         <div class="item-price">{{ item.event.price }}€</div>
                         <div class="item-actions">
@@ -153,13 +184,13 @@ async function handleClearCart() {
                         </div>
                     </template>
 
-                    <!-- Course Display -->
+                    
                     <template v-else-if="item.course">
                         <div class="item-icon">🛠️</div>
                         <div class="item-details">
                             <h3 class="item-name">{{ item.course.name }}</h3>
                             <p class="item-category">{{ t('client.panier.training') }} • {{ t('client.panier.capacity') }}: {{ item.course.max_capacity?.Int32 }}</p>
-                            <p class="item-info">📅 {{ item.course.date }} • {{ item.course.start_time }} - {{ item.course.end_time }}</p>
+                            <p class="item-info">📅 {{ fmtDate(item.course.date) }} • {{ fmtTime(item.course.start_time) }} - {{ fmtTime(item.course.end_time) }}</p>
                         </div>
                         <div class="item-price">{{ item.course.price }}€</div>
                         <div class="item-actions">

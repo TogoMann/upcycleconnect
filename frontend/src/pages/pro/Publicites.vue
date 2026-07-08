@@ -252,7 +252,7 @@ async function submitCreate() {
         <div v-if="checkoutMessage" class="alert alert--info">{{ checkoutMessage }}</div>
 
         <template v-else>
-            <!-- KPIs -->
+            
             <div class="kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-value">{{ stats.total }}</div>
@@ -272,7 +272,7 @@ async function submitCreate() {
                 </div>
             </div>
 
-            <!-- Filtres -->
+            
             <div class="filter-row">
                 <button v-for="f in ['all', 'pending', 'validated', 'rejected', 'expired']" :key="f"
                     class="filter-btn" :class="{ 'filter-btn--active': filter === f }"
@@ -281,7 +281,7 @@ async function submitCreate() {
                 </button>
             </div>
 
-            <!-- Empty state -->
+            
             <div v-if="filteredAds.length === 0" class="empty-state">
                 <div class="empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
@@ -290,7 +290,7 @@ async function submitCreate() {
                 <button v-if="filter === 'all'" class="btn-primary" @click="openCreate">{{ t('pro.publicites.createAd') }}</button>
             </div>
 
-            <!-- Liste des pubs -->
+            
             <div v-else class="ads-list">
                 <div v-for="ad in filteredAds" :key="ad.id.Int64" class="ad-card">
                     <div class="ad-header">
@@ -329,7 +329,7 @@ async function submitCreate() {
             </div>
         </template>
 
-        <!-- Modal création -->
+        
         <Teleport to="body">
             <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
                 <div class="modal-card">
@@ -408,7 +408,7 @@ async function submitCreate() {
 .btn-primary svg { width: 16px; height: 16px; }
 .loading-state { text-align: center; padding: 60px 0; opacity: 0.5; font-size: 0.9rem; }
 
-/* KPIs */
+
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
 .kpi-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.08); border-radius: 12px; padding: 18px 20px; }
 .kpi-card--green { background: var(--green-pale); border-color: transparent; }
@@ -418,19 +418,19 @@ async function submitCreate() {
 .kpi-card--yellow .kpi-value { color: #92400e; }
 .kpi-label { font-size: 0.78rem; font-weight: 500; color: var(--charcoal); opacity: 0.5; margin-top: 4px; }
 
-/* Filters */
+
 .filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 .filter-btn { padding: 7px 16px; border: 1.5px solid rgba(53,53,53,0.12); border-radius: 20px; background: transparent; color: var(--charcoal); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .filter-btn:hover { border-color: var(--green-mid); color: var(--green-dark); }
 .filter-btn--active { background: var(--green-dark); color: var(--white); border-color: var(--green-dark); }
 
-/* Empty state */
+
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 0; }
 .empty-icon { width: 64px; height: 64px; background: var(--green-pale); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: var(--green-mid); }
 .empty-icon svg { width: 32px; height: 32px; }
 .empty-text { font-size: 0.95rem; color: var(--charcoal); opacity: 0.5; margin: 0; }
 
-/* Ads list */
+
 .ads-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .ad-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.1); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; transition: border-color 0.2s; }
 .ad-card:hover { border-color: var(--green-mid); }
@@ -450,7 +450,7 @@ async function submitCreate() {
 .btn-pay-ad:disabled { opacity: 0.6; cursor: not-allowed; }
 .ad-paid-label { font-size: 0.75rem; font-weight: 700; color: var(--green-mid); }
 
-/* Badges */
+
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .badge--active { background: var(--green-pale); color: var(--green-dark); }
 .badge--pending { background: #fef3c7; color: #92400e; }
@@ -458,7 +458,7 @@ async function submitCreate() {
 .badge--expired { background: rgba(53,53,53,0.08); color: var(--charcoal); opacity: 0.6; }
 .badge--default { background: rgba(53,53,53,0.08); color: var(--charcoal); }
 
-/* Modal */
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
 .modal-card { background: var(--white); border-radius: 20px; padding: 32px; max-width: 580px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; }
 .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--charcoal); margin: 0 0 4px; }
@@ -466,7 +466,7 @@ async function submitCreate() {
 .modal-form { display: flex; flex-direction: column; gap: 18px; }
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 8px; }
 
-/* Form */
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-label { font-size: 0.82rem; font-weight: 600; color: var(--charcoal); opacity: 0.75; }

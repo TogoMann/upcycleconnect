@@ -4,6 +4,7 @@ import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import AppLogo from '@/components/AppLogo.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -37,7 +38,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     <div class="client-layout">
         <header class="navbar">
             <div class="nav-container">
-                <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
+                <router-link to="/" class="nav-logo"><AppLogo variant="nav" /></router-link>
                 <div class="user-dropdown" ref="dropdownRef">
                     <button class="user-trigger" @click.stop="dropdownOpen = !dropdownOpen">
                         <span class="user-avatar">{{ userInitials() }}</span>
@@ -229,15 +230,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                     </router-link>
 
                     <router-link
-                        to="/particulier/paiement"
+                        to="/particulier/moyens-de-paiement"
                         class="sidebar-item"
                         active-class="sidebar-item--active"
                     >
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                             <line x1="1" y1="10" x2="23" y2="10" />
+                            <path d="M6 14h4" />
                         </svg>
-                        <span>{{ t('clientLayout.nav.payment') }}</span>
+                        <span>Moyens de paiement</span>
                     </router-link>
 
                     <div class="sidebar-divider"></div>
@@ -267,7 +269,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </div>
             <div class="footer-bottom">
                 <div class="footer-container">
-                    <span class="footer-logo">UpCycleConnect</span>
+                    <span class="footer-logo"><AppLogo variant="footer" /></span>
                     <div class="footer-lang">
                         <LanguageSwitcher />
                     </div>

@@ -25,13 +25,6 @@ const categories = computed(() => [
         alt: t('home.categories.recycle.label'),
     },
     {
-        id: 'reparer',
-        label: t('home.categories.repair.label'),
-        description: t('home.categories.repair.description'),
-        img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80',
-        alt: t('home.categories.repair.label'),
-    },
-    {
         id: 'transformer',
         label: t('home.categories.transform.label'),
         description: t('home.categories.transform.description'),
@@ -77,7 +70,7 @@ const arguments_ = computed(() => [
                         <p class="category-desc">{{ cat.description }}</p>
                     </div>
 
-                    <router-link to="/prestations" class="category-card">
+                    <router-link to="/formations" class="category-card">
                         <div class="category-img-wrap">
                             <img src="https://images.unsplash.com/photo-1523301343968-6a6ebf63c672?w=400&q=80" :alt="t('home.categories.learn.label')" class="category-img" />
                         </div>
@@ -109,7 +102,7 @@ const arguments_ = computed(() => [
                         </li>
                     </ul>
                     <div class="arguments-ctas">
-                        <router-link to="/prestations" class="btn btn-primary-dark">
+                        <router-link to="/formations" class="btn btn-primary-dark">
                             {{ t('home.arguments.ctaPrestations') }}
                         </router-link>
                         <router-link to="/evenements" class="btn btn-outline-dark">
@@ -119,7 +112,7 @@ const arguments_ = computed(() => [
                 </div>
                 <div class="arguments-image-wrap">
                     <img
-                        src="https://images.unsplash.com/photo-1582738412745-8660e269a986?w=700&q=80"
+                        src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=700&q=80"
                         :alt="t('home.arguments.imageAlt')"
                         class="arguments-img"
                     />

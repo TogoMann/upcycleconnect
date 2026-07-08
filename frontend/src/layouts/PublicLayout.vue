@@ -4,6 +4,7 @@ import { RouterView, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import AppLogo from '@/components/AppLogo.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -59,14 +60,14 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     <div class="public-layout">
         <header class="navbar">
             <div class="nav-container">
-                <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
+                <router-link to="/" class="nav-logo"><AppLogo variant="nav" /></router-link>
                 <nav class="nav-links">
                     <router-link to="/" class="nav-link" exact-active-class="nav-link--active">{{ t('layout.nav.home') }}</router-link>
-                    <router-link to="/prestations" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.prestations') }}</router-link>
                     <router-link to="/evenements" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.events') }}</router-link>
                     <router-link to="/annonces" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.listings') }}</router-link>
                     <router-link to="/conseils" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.conseils') }}</router-link>
                     <router-link to="/formations" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.formations') }}</router-link>
+                    <router-link to="/tarifs" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.tarifs') }}</router-link>
                     <router-link to="/forum" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.forum') }}</router-link>
                     <router-link to="/a-propos" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.about') }}</router-link>
                 </nav>
@@ -128,7 +129,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </div>
             <div class="footer-bottom">
                 <div class="footer-container">
-                    <span class="footer-logo">UpCycleConnect</span>
+                    <span class="footer-logo"><AppLogo variant="footer" /></span>
                     <div class="footer-lang">
                         <LanguageSwitcher />
                     </div>

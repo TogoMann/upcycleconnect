@@ -37,7 +37,7 @@ func (s *Service) SendBulkEmail(req NotificationRequest) (Notification, error) {
 	n.Id = id
 	n.Date = "A l'instant"
 
-	// Run sending loop in a background goroutine to prevent blocking the HTTP response
+	
 	go func(notificationId int64, targets []string, title, msg string) {
 		successCount := 0
 		for _, email := range targets {
@@ -49,7 +49,7 @@ func (s *Service) SendBulkEmail(req NotificationRequest) (Notification, error) {
 			}
 		}
 		
-		// Update the final success count in the database
+		
 		_ = s.repo.UpdateEnvoyes(notificationId, successCount)
 	}(id, emails, req.Titre, req.Message)
 	

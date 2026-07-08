@@ -63,7 +63,7 @@ func TestReportingAPI(t *testing.T) {
 	})
 
 	t.Run("GetMLStatus", func(t *testing.T) {
-		// Ensure at least one prediction exists for the query to not fail on Scan
+		
 		_, _ = pool.Exec(context.Background(), "INSERT INTO user_predictions (user_id, predicted_service_type, probability) VALUES (1, 'listing', 0.95) ON CONFLICT DO NOTHING")
 
 		req, _ := http.NewRequest("GET", "/reporting/ml-status", nil)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -200,6 +201,39 @@ func (h *Handler) Epingler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Bannir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var req struct {
+		Username      string `json:"username"`
+		IsPermanent   bool   `json:"is_permanent"`
+		DurationHours int    `json:"duration_hours"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" {
+		http.Error(w, "missing username", http.StatusBadRequest)
+		return
+	}
+
+	var expiresAt pgtype.Timestamp
+	if req.IsPermanent {
+		expiresAt.Valid = false
+	} else {
+		if req.DurationHours <= 0 {
+			req.DurationHours = 24
+		}
+		expiresAt.Time = time.Now().Add(time.Duration(req.DurationHours) * time.Hour)
+		expiresAt.Valid = true
+	}
+
+	err = h.service.BanUser(req.Username, true, expiresAt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"message": "user banned"}`)
+	fmt.Fprintf(w, `{"message": "user banned successfully"}`)
 }

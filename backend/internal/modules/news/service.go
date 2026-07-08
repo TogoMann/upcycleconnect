@@ -15,8 +15,25 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetAll(newsType string) ([]NewsFrontend, error) {
-	return s.repo.GetAll(newsType)
+func (s *Service) GetAll(newsType string, userId pgtype.Int8, sortBy string) ([]NewsFrontend, error) {
+	return s.repo.GetAll(newsType, userId, sortBy)
+}
+
+func (s *Service) Vote(newsId pgtype.Int8, userId pgtype.Int8, voteType string) (*NewsFrontend, error) {
+	if !newsId.Valid || newsId.Int64 < 1 {
+		return nil, fmt.Errorf("news/service News ID invalide: %d", newsId)
+	}
+	if voteType != "up" && voteType != "down" {
+		return nil, fmt.Errorf("news/service type de vote invalide: %s", voteType)
+	}
+	exists, err := s.repo.ExistsById(newsId)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("news/service News introuvable: %d", newsId.Int64)
+	}
+	return s.repo.Vote(newsId, userId, voteType)
 }
 
 func (s *Service) GetById(id pgtype.Int8) (*News, error) {

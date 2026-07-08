@@ -19,10 +19,19 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
+func userIdFromContext(r *http.Request) pgtype.Int8 {
+	if claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims); ok {
+		if sub, ok := claims["sub"].(float64); ok {
+			return pgtype.Int8{Int64: int64(sub), Valid: true}
+		}
+	}
+	return pgtype.Int8{}
+}
+
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	posts, err := h.service.GetAll(r.URL.Query().Get("type"))
+	posts, err := h.service.GetAll(r.URL.Query().Get("type"), userIdFromContext(r), r.URL.Query().Get("sort"))
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -35,7 +44,7 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetAllActualites(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	posts, err := h.service.GetAll(string(Actualite))
+	posts, err := h.service.GetAll(string(Actualite), userIdFromContext(r), r.URL.Query().Get("sort"))
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -48,7 +57,7 @@ func (h *Handler) GetAllActualites(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetAllConseils(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	posts, err := h.service.GetAll(string(Conseil))
+	posts, err := h.service.GetAll(string(Conseil), userIdFromContext(r), r.URL.Query().Get("sort"))
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -56,6 +65,48 @@ func (h *Handler) GetAllConseils(w http.ResponseWriter, r *http.Request) {
 
 	res, _ := json.Marshal(posts)
 	fmt.Fprintf(w, "%s", string(res))
+}
+
+func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return
+	}
+
+	idStr := r.PathValue("id")
+	idInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var input struct {
+		Type string `json:"type"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	updated, err := h.service.Vote(
+		pgtype.Int8{Int64: idInt, Valid: true},
+		pgtype.Int8{Int64: int64(sub), Valid: true},
+		input.Type,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(updated)
 }
 
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {

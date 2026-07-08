@@ -48,14 +48,21 @@ describe('NouvelleAnnonce Component', () => {
             global: { plugins: [router, i18n] }
         })
 
-        // Fill form
+        
         await wrapper.find('input[type="text"]').setValue('Ma superbe chaise')
         await wrapper.find('textarea').setValue('Une description très longue et détaillée.')
-        
+
         const selects = wrapper.findAll('select')
         await selects[0].setValue('Mobilier')
-        await selects[1].setValue('1') // City ID
-        
+
+        const cityInput = wrapper.find('input[placeholder*="ville"]')
+        await cityInput.trigger('focus')
+        await cityInput.setValue('Paris')
+        await wrapper.vm.$nextTick()
+        await wrapper.find('.suggestions-list li').trigger('mousedown')
+
+        await wrapper.find('input[placeholder*="rue"]').setValue('12 rue de la Paix')
+
         await wrapper.find('input[type="number"]').setValue('45.00')
 
         await wrapper.find('form').trigger('submit.prevent')

@@ -21,7 +21,7 @@ async function setLocale(lang: string) {
                 body: JSON.stringify({ language_preference: lang }),
             })
         } catch {
-            // preference stays local-only if the sync fails
+            
         }
     }
 }

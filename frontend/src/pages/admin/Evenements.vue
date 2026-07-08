@@ -31,11 +31,12 @@ interface Event {
     creator_email: string | null
     approver_username: string | null
     approver_email: string | null
+    premium?: boolean
 }
 
 const events = ref<Event[]>([])
 const showForm = ref(false)
-const form = ref({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' })
+const form = ref({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '', premium: false })
 const saving = ref(false)
 const selectedEvent = ref<Event | null>(null)
 
@@ -57,7 +58,8 @@ async function creer() {
             date: form.value.date,
             start_time: form.value.start_time + ':00',
             end_time: form.value.end_time + ':00',
-            location: form.value.location
+            location: form.value.location,
+            premium: form.value.premium
         }
         if (form.value.price) body.price = parseFloat(form.value.price)
         if (form.value.max_capacity) body.max_capacity = parseInt(form.value.max_capacity, 10)
@@ -72,7 +74,7 @@ async function creer() {
         if (res.ok) {
             const created = await res.json()
             events.value.unshift(created)
-            form.value = { title: '', description: '', date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' }
+            form.value = { title: '', description: '', date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '', premium: false }
             showForm.value = false
         }
     } catch {}
@@ -215,6 +217,12 @@ function fmtTimestamp(ts: string | null): string {
                         :placeholder="t('admin.evenements.maxCapacityPlaceholder')"
                     />
                 </div>
+                <div class="field field--checkbox">
+                    <label class="checkbox-label">
+                        <input type="checkbox" v-model="form.premium" class="checkbox-input" />
+                        <span>{{ t('admin.evenements.premiumLabel') }}</span>
+                    </label>
+                </div>
                 <button type="submit" class="btn-save" :disabled="saving">
                     {{ saving ? t('admin.evenements.creating') : t('admin.evenements.create') }}
                 </button>
@@ -225,7 +233,10 @@ function fmtTimestamp(ts: string | null): string {
             <div v-if="selectedEvent" class="modal-overlay" @click.self="selectedEvent = null">
                 <div class="modal">
                     <div class="modal-header">
-                        <h3 class="modal-title">{{ selectedEvent.title }}</h3>
+                        <h3 class="modal-title">
+                            {{ selectedEvent.title }}
+                            <span v-if="selectedEvent.premium" class="badge-premium-inline">Premium</span>
+                        </h3>
                         <button class="modal-close" @click="selectedEvent = null">✕</button>
                     </div>
                     <dl class="modal-dl">
@@ -280,7 +291,10 @@ function fmtTimestamp(ts: string | null): string {
                     </tr>
                     <tr v-for="e in events" :key="e.id">
                         <td class="td-id">#{{ e.id }}</td>
-                        <td class="td-bold">{{ e.title }}</td>
+                        <td class="td-bold">
+                            {{ e.title }}
+                            <span v-if="e.premium" class="badge-premium-inline">Premium</span>
+                        </td>
                         <td>{{ fmtDate(e.date) }}</td>
                         <td>{{ fmtTime(e.start_time) }}</td>
                         <td>{{ fmtTime(e.end_time) }}</td>
@@ -583,5 +597,39 @@ function fmtTimestamp(ts: string | null): string {
     display: block;
     font-size: 0.78rem;
     color: rgba(53, 53, 53, 0.5);
+}
+.badge-premium-inline {
+    display: inline-block;
+    background: #ebd3ff;
+    color: #6b21a8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+.field--checkbox {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--charcoal);
+    cursor: pointer;
+}
+.checkbox-input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
 </style>

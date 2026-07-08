@@ -2,8 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { API_BASE } from '@/config'
+import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 
 const valeurs = computed(() => [
     { num: '01', titre: t('about.values.item1.title'), texte: t('about.values.item1.text') },
@@ -95,7 +97,7 @@ const chiffres = computed(() => [
             <div class="container story-inner">
                 <div class="story-img-wrap">
                     <img
-                        src="https://images.unsplash.com/photo-1582738412745-8660e269a986?w=700&q=80"
+                        src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=700&q=80"
                         :alt="t('about.story.imageAlt')"
                         class="story-img"
                     />
@@ -108,7 +110,7 @@ const chiffres = computed(() => [
                     <p class="story-text">
                         {{ t('about.story.text2') }}
                     </p>
-                    <router-link to="/auth/register" class="btn-join">
+                    <router-link v-if="!authStore.isAuthenticated" to="/auth/register" class="btn-join">
                         {{ t('about.story.cta') }}
                     </router-link>
                 </div>

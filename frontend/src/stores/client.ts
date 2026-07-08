@@ -12,7 +12,7 @@ import { usePlanningStore } from './planning'
 import { useProfileStore } from './profile'
 
 export const useClientStore = defineStore('client', () => {
-    // Initialize all domain stores
+    
     const authStore = useAuthStore()
     const chatStore = useChatStore()
     const cartStore = useCartStore()
@@ -31,7 +31,7 @@ export const useClientStore = defineStore('client', () => {
     const { cities } = storeToRefs(locationStore)
     const { cart } = storeToRefs(cartStore)
 
-    // Aggregate Chat (Conversations used directly in client store previously)
+    
     async function fetchConversations() {
         try {
             const data = await chatStore.getConversations()
@@ -50,7 +50,7 @@ export const useClientStore = defineStore('client', () => {
     }
 
     return {
-        // --- State ---
+        
         annonces,
         allAnnonces,
         conversations,
@@ -69,8 +69,8 @@ export const useClientStore = defineStore('client', () => {
         cities,
         cart,
         
-        // Global UI state
-        // For simplicity, we bind isLoading to a computed that checks if ANY store is loading.
+        
+        
         isLoading: computed(() => 
             cartStore.isLoading || 
             catalogueStore.isLoading || 
@@ -81,7 +81,7 @@ export const useClientStore = defineStore('client', () => {
             profileStore.isLoading
         ),
         
-        // Same for error (returns the first non-null error)
+        
         error: computed(() => 
             cartStore.error || 
             catalogueStore.error || 
@@ -92,32 +92,33 @@ export const useClientStore = defineStore('client', () => {
             profileStore.error
         ),
 
-        // --- Methods (Re-exported directly) ---
+        
 
-        // Listing
+        
         fetchAnnonces: listingStore.fetchAnnonces,
         fetchAllAnnonces: listingStore.fetchAllAnnonces,
         uploadImage: listingStore.uploadImage,
         fetchSitesWithLockers: listingStore.fetchSitesWithLockers,
         createAnnonce: listingStore.createAnnonce,
         createOrderCheckout: listingStore.createOrderCheckout,
+        deleteAnnonce: listingStore.deleteAnnonce,
         fetchConversations,
         isChattingWith,
 
-        // Deposit
+        
         fetchDepots: depositStore.fetchDepots,
         fetchSites: depositStore.fetchSites,
         fetchLockerAccesses: depositStore.fetchLockerAccesses,
         createItem: depositStore.createItem,
 
-        // Profile
+        
         fetchScore: profileStore.fetchScore,
         fetchScoreHistory: profileStore.fetchScoreHistory,
         fetchQuests: profileStore.fetchQuests,
         markTutorialSeen: profileStore.markTutorialSeen,
         updateProfile: profileStore.updateProfile,
 
-        // Planning
+        
         fetchEntries: planningStore.fetchEntries,
         fetchPlanning: planningStore.fetchPlanning,
         createPersonalEvent: planningStore.createPersonalEvent,
@@ -125,17 +126,17 @@ export const useClientStore = defineStore('client', () => {
         createEntry: planningStore.createEntry,
         deleteEntry: planningStore.deleteEntry,
 
-        // Catalogue
+        
         fetchCatalogue: catalogueStore.fetchCatalogue,
         fetchParticipations: catalogueStore.fetchParticipations,
         fetchCourseOrders: catalogueStore.fetchCourseOrders,
         createCourseOrder: catalogueStore.createCourseOrder,
         createEventParticipation: catalogueStore.createEventParticipation,
 
-        // Location
+        
         fetchCities: locationStore.fetchCities,
 
-        // Cart
+        
         fetchCart: cartStore.fetchCart,
         addToCart: cartStore.addToCart,
         removeFromCart: cartStore.removeFromCart,

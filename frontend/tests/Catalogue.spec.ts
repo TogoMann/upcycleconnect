@@ -10,7 +10,7 @@ import en from '../src/i18n/locales/en.json'
 
 const i18n = createI18n({ legacy: false, locale: 'fr', fallbackLocale: 'fr', messages: { fr, en } })
 
-// Mock router
+
 const router = createRouter({
     history: createWebHistory(),
     routes: [{ path: '/particulier/catalogue', component: { template: '<div></div>' } }]
@@ -41,10 +41,10 @@ describe('Catalogue Component', () => {
     it('filters out items already in cart', async () => {
         const store = useClientStore()
         
-        // Item in catalogue
+        
         store.allAnnonces = [{ id: 10, name: 'Annonce 1', _type: 'annonce' }]
         
-        // Same item in cart
+        
         store.cart = [{ id: 1, listing_id: { Int64: 10, Valid: true } }]
 
         const wrapper = mount(Catalogue, {
@@ -53,7 +53,7 @@ describe('Catalogue Component', () => {
             }
         })
 
-        // Should not find the card for the item in cart
+        
         expect(wrapper.text()).not.toContain('Annonce 1')
         expect(wrapper.text()).toContain('Aucun élément disponible')
     })
@@ -66,7 +66,7 @@ describe('Catalogue Component', () => {
             { id: 11, name: 'Annonce 2', description: 'Desc 2', price: 20 }
         ]
         
-        // Only one item in cart
+        
         store.cart = [{ id: 1, listing_id: { Int64: 10, Valid: true } }]
 
         const wrapper = mount(Catalogue, {

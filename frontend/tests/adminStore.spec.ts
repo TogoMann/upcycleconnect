@@ -54,7 +54,7 @@ describe('Admin Store', () => {
             expect.stringContaining('/event/1/approve'), 
             expect.objectContaining({ method: 'PATCH' })
         )
-        // Store should optimistically update
+        
         expect(store.events[0].approved).toBe(true)
     })
 
@@ -70,7 +70,7 @@ describe('Admin Store', () => {
             expect.stringContaining('/users/1'), 
             expect.objectContaining({ method: 'DELETE' })
         )
-        // State should reflect deletion
+        
         expect(store.users.length).toBe(1)
         expect(store.users[0].id).toBe(2)
     })

@@ -29,7 +29,7 @@ func SendEmail(to string, subject string, body string) error {
 
 	var err error
 	if cfg.SMTPPort == "465" {
-		// SSL/TLS implicit connection for port 465
+		
 		tlsconfig := &tls.Config{
 			InsecureSkipVerify: false,
 			ServerName:         cfg.SMTPHost,
@@ -75,7 +75,7 @@ func SendEmail(to string, subject string, body string) error {
 			return err
 		}
 	} else {
-		// Standard smtp.SendMail for STARTTLS (usually port 587) or unencrypted
+		
 		var auth smtp.Auth
 		if cfg.SMTPUser != "" {
 			auth = smtp.PlainAuth("", cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPHost)

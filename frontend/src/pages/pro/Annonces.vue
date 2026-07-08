@@ -1,162 +1,367 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { API_BASE } from '@/config'
+import { onMounted, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
 const clientStore = useClientStore()
 
-const CATEGORIES = ['Mobilier', 'Décoration', 'Vêtements', 'Jouet', 'Electronique', 'Outils']
+const statusLabels = computed<Record<string, string>>(() => ({
+    active: t('client.mesAnnonces.statusActive'),
+    sold: t('client.mesAnnonces.statusSold'),
+    cancelled: t('client.mesAnnonces.statusCancelled'),
+}))
 
-const search = ref('')
-const filterCategorie = ref('')
-const buyingId = ref<number | null>(null)
-const errorMsg = ref('')
+const statusClass: Record<string, string> = {
+    active: 'badge--active',
+    sold: 'badge--sold',
+    cancelled: 'badge--cancelled',
+}
 
-onMounted(async () => {
-    await clientStore.fetchAllAnnonces()
+function priceValue(price: any): number {
+    if (price === null || price === undefined) return 0
+    const val = typeof price === 'object' ? (price.Float64 ?? price.Int64) : price
+    return Number(val) || 0
+}
+
+function isDon(annonce: any): boolean {
+    return priceValue(annonce.price) === 0
+}
+
+function formatPrice(price: any): string {
+    return `${priceValue(price).toFixed(2)} €`
+}
+
+function formatDate(ts: any): string {
+    if (!ts) return '—'
+    const date = new Date(ts.Time ?? ts)
+    return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+async function handleDelete(id: number) {
+    await clientStore.deleteAnnonce(id)
+}
+
+onMounted(() => {
+    clientStore.fetchAnnonces()
 })
-
-const annonces = computed(() => {
-    return clientStore.allAnnonces.map((a: any) => {
-        const p = a.price
-        const priceVal = p ? (typeof p === 'object' ? (p.Float64 ?? p.Int64) : Number(p)) : 0
-        return {
-            id: a.id?.Int64 ?? a.id,
-            titre: a.name,
-            categorie: a.category || t('pro.annonces.uncategorized'),
-            prix: Number(priceVal) || 0,
-            statut: a.status,
-            date: new Date(a.created_at?.Time ?? a.created_at).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
-            handoffMode: a.handoff_mode === 'casier' ? t('pro.annonces.handoffLocker') : t('pro.annonces.handoffInPerson'),
-        }
-    })
-})
-
-const filtered = computed(() =>
-    annonces.value.filter(a => {
-        const matchSearch = a.titre.toLowerCase().includes(search.value.toLowerCase())
-        const matchCategorie = !filterCategorie.value || a.categorie === filterCategorie.value
-        return matchSearch && matchCategorie
-    })
-)
-
-async function handleBuy(a: { id: number; prix: number; statut: string }) {
-    if (a.statut !== 'active') return
-    buyingId.value = a.id
-    errorMsg.value = ''
-    try {
-        const data = await clientStore.createOrderCheckout(a.id)
-        if (data.free) {
-            await clientStore.fetchAllAnnonces()
-        } else if (data.url) {
-            window.location.href = data.url
-        }
-    } catch (e: any) {
-        errorMsg.value = e.message || t('pro.annonces.buyError')
-    } finally {
-        buyingId.value = null
-    }
-}
-
-function badgeClass(s: string) {
-    if (s === 'active') return 'badge badge--active'
-    if (s === 'sold') return 'badge badge--sold'
-    return 'badge badge--draft'
-}
-function badgeLabel(s: string) {
-    if (s === 'active') return t('pro.annonces.statusActive')
-    if (s === 'sold') return t('pro.annonces.statusSold')
-    return t('pro.annonces.statusCancelled')
-}
 </script>
 
 <template>
-    <div class="annonces">
+    <div class="page">
         <div class="page-header">
-            <h1 class="page-title">{{ t('pro.annonces.pageTitle') }}</h1>
-            <p class="page-subtitle">{{ t('pro.annonces.subtitle') }}</p>
+            <h1 class="page-title">{{ t('client.mesAnnonces.pageTitle') }}</h1>
+            <router-link to="/pro/annonces/nouvelle" class="btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                {{ t('client.mesAnnonces.newListing') }}
+            </router-link>
         </div>
 
-        <div v-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
-
-        <div class="filters-row">
-            <input
-                v-model="search"
-                type="text"
-                class="filter-input"
-                :placeholder="t('pro.annonces.searchPlaceholder')"
-            />
-            <select v-model="filterCategorie" class="filter-select">
-                <option value="">{{ t('pro.annonces.allCategories') }}</option>
-                <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
+        <div v-if="clientStore.isLoading" class="state-empty">
+            <p>{{ t('client.mesAnnonces.loading') }}</p>
         </div>
 
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>{{ t('pro.annonces.title') }}</th>
-                        <th>{{ t('pro.annonces.category') }}</th>
-                        <th>{{ t('pro.annonces.transaction') }}</th>
-                        <th>{{ t('pro.annonces.price') }}</th>
-                        <th>{{ t('pro.annonces.date') }}</th>
-                        <th>{{ t('pro.annonces.status') }}</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="filtered.length === 0">
-                        <td colspan="7" class="empty">{{ t('pro.annonces.noResults') }}</td>
-                    </tr>
-                    <tr v-for="a in filtered" :key="a.id">
-                        <td class="td-bold">{{ a.titre }}</td>
-                        <td class="td-muted">{{ a.categorie }}</td>
-                        <td class="td-muted">{{ a.handoffMode }}</td>
-                        <td>{{ a.prix === 0 ? t('pro.annonces.don') : a.prix.toFixed(2) + ' €' }}</td>
-                        <td class="td-muted">{{ a.date }}</td>
-                        <td><span :class="badgeClass(a.statut)">{{ badgeLabel(a.statut) }}</span></td>
-                        <td>
-                            <button
-                                v-if="a.statut === 'active'"
-                                class="btn-buy"
-                                :disabled="buyingId === a.id"
-                                @click="handleBuy(a)"
-                            >
-                                {{ buyingId === a.id ? t('pro.annonces.buying') : (a.prix === 0 ? t('pro.annonces.retrieve') : t('pro.annonces.buy')) }}
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div v-else-if="clientStore.annonces.length === 0" class="state-empty">
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg>
+            </div>
+            <p class="empty-title">{{ t('client.mesAnnonces.emptyTitle') }}</p>
+            <p class="empty-sub">
+                {{ t('client.mesAnnonces.emptySubtitle') }}
+            </p>
+            <router-link
+                to="/pro/annonces/nouvelle"
+                class="btn-primary btn-primary--centered"
+            >
+                {{ t('client.mesAnnonces.createListing') }}
+            </router-link>
+        </div>
+
+        <div v-else class="annonces-list">
+            <div
+                v-for="annonce in clientStore.annonces"
+                :key="annonce.id?.Int64"
+                class="annonce-card"
+            >
+                <div class="annonce-main">
+                    <div v-if="annonce.image_url" class="annonce-thumb">
+                        <img :src="`${API_BASE}` + annonce.image_url" alt="" />
+                    </div>
+                    <div class="annonce-info">
+                        <div class="badge-row">
+                            <span class="badge" :class="statusClass[annonce.status] ?? 'badge--active'">
+                                {{ statusLabels[annonce.status] ?? annonce.status }}
+                            </span>
+                            <span v-if="!annonce.approved" class="badge badge--pending">
+                                {{ t('client.mesAnnonces.pending') }}
+                            </span>
+                        </div>
+                        <h3 class="annonce-name">{{ annonce.name }}</h3>
+                        <p class="annonce-desc">{{ annonce.description }}</p>
+                        <span class="annonce-handoff">{{ annonce.handoff_mode === 'casier' ? t('client.mesAnnonces.handoffLocker') : t('client.mesAnnonces.handoffInPerson') }}</span>
+                    </div>
+                    <div class="annonce-meta">
+                        <span v-if="isDon(annonce)" class="badge badge--don">{{ t('client.mesAnnonces.don') }}</span>
+                        <span v-else class="annonce-price">{{ formatPrice(annonce.price) }}</span>
+                        <span class="annonce-date">{{ formatDate(annonce.created_at) }}</span>
+                    </div>
+                </div>
+                <div class="annonce-actions">
+                    <button class="btn-danger" @click="handleDelete(annonce.id?.Int64)">
+                        {{ t('client.mesAnnonces.delete') }}
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-.page-header { margin-bottom: 24px; }
-.page-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; color: var(--charcoal); letter-spacing: -0.03em; margin: 0 0 8px; line-height: 1.08; }
-.page-subtitle { font-size: 0.9rem; color: var(--charcoal); opacity: 0.6; margin: 0; }
-.error-banner { background: rgba(229, 62, 62, 0.08); border: 1px solid rgba(229, 62, 62, 0.25); border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; color: #e53e3e; margin-bottom: 16px; }
-.filters-row { display: flex; gap: 12px; margin-bottom: 20px; }
-.filter-input { flex: 1; padding: 10px 14px; font-size: 0.9rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--white); color: var(--charcoal); font-family: inherit; outline: none; transition: border-color 0.2s; }
-.filter-input:focus { border-color: var(--green-mid); }
-.filter-select { padding: 10px 14px; font-size: 0.9rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--white); color: var(--charcoal); font-family: inherit; outline: none; cursor: pointer; }
-.table-wrap { background: var(--white); border-radius: 14px; border: 1.5px solid rgba(53,53,53,0.08); overflow: hidden; }
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table th { text-align: left; padding: 14px 20px; font-size: 0.8rem; font-weight: 600; color: var(--charcoal); opacity: 0.5; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid rgba(53,53,53,0.08); }
-.data-table td { padding: 14px 20px; font-size: 0.9rem; color: var(--charcoal); border-bottom: 1px solid rgba(53,53,53,0.05); }
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover { background: rgba(215,236,225,0.3); }
-.td-bold { font-weight: 600; }
-.td-muted { opacity: 0.55; font-size: 0.85rem; }
-.empty { text-align: center; opacity: 0.4; padding: 40px !important; }
-.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-.badge--active { background: var(--green-pale); color: var(--green-dark); }
-.badge--sold { background: rgba(53,53,53,0.08); color: var(--charcoal); }
-.badge--draft { background: #fef3c7; color: #92400e; }
-.btn-buy { padding: 7px 16px; background: var(--green-dark); color: var(--white); border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s; }
-.btn-buy:hover:not(:disabled) { background: var(--green-mid); }
-.btn-buy:disabled { opacity: 0.6; cursor: not-allowed; }
+.page {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--charcoal);
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.page-title {
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 800;
+    color: var(--charcoal);
+    letter-spacing: -0.03em;
+    margin: 0;
+    line-height: 1.08;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-dark);
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.btn-primary svg {
+    width: 16px;
+    height: 16px;
+}
+.btn-primary:hover {
+    background: var(--green-mid);
+}
+.btn-primary--centered {
+    margin-top: 16px;
+}
+
+.state-empty {
+    text-align: center;
+    padding: 64px 32px;
+}
+.empty-icon {
+    width: 64px;
+    height: 64px;
+    background: var(--green-pale);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: var(--green-mid);
+}
+.empty-icon svg {
+    width: 28px;
+    height: 28px;
+}
+.empty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0 0 8px;
+}
+.empty-sub {
+    font-size: 0.875rem;
+    color: var(--charcoal);
+    opacity: 0.6;
+    margin: 0;
+    max-width: 360px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.annonces-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.annonce-card {
+    background: var(--white);
+    border: 1.5px solid rgba(53, 53, 53, 0.1);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.annonce-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    min-width: 0;
+}
+.annonce-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: var(--cream);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.annonce-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.annonce-info {
+    flex: 1;
+    min-width: 0;
+}
+.badge-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.badge--active {
+    background: var(--green-pale);
+    color: var(--green-dark);
+}
+.badge--sold {
+    background: rgba(52, 137, 91, 0.12);
+    color: var(--green-mid);
+}
+.badge--cancelled {
+    background: rgba(53, 53, 53, 0.08);
+    color: rgba(53, 53, 53, 0.55);
+}
+.badge--pending {
+    background: rgba(246, 173, 85, 0.15);
+    color: #c05621;
+}
+.badge--don {
+    background: var(--green-mid);
+    color: var(--white);
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+.annonce-handoff {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--charcoal);
+    opacity: 0.5;
+    margin-top: 4px;
+}
+.annonce-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.annonce-desc {
+    font-size: 0.8rem;
+    color: var(--charcoal);
+    opacity: 0.6;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.annonce-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.annonce-price {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--green-dark);
+    letter-spacing: -0.02em;
+}
+.annonce-date {
+    font-size: 0.75rem;
+    color: var(--charcoal);
+    opacity: 0.45;
+}
+.annonce-actions {
+    flex-shrink: 0;
+}
+.btn-danger {
+    background: transparent;
+    border: 1.5px solid rgba(53, 53, 53, 0.18);
+    color: rgba(53, 53, 53, 0.55);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition:
+        border-color 0.2s,
+        color 0.2s,
+        background 0.2s;
+}
+.btn-danger:hover {
+    border-color: #e53e3e;
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.06);
+}
+
+@media (max-width: 640px) {
+    .annonce-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .annonce-main {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .annonce-meta {
+        align-items: flex-start;
+    }
+}
 </style>

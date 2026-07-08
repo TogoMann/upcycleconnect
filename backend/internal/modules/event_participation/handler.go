@@ -71,6 +71,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	_, err := h.service.CreateFromRequest(int64(sub), req)
 	if err != nil {
+		if err.Error() == "upgrade_required" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "upgrade_required", "message": "Cet événement est réservé aux membres Premium et Pro."})
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -504,7 +504,7 @@ onMounted(() => clientStore.fetchPlanning())
     opacity: 0.5;
 }
 
-/* Month view */
+
 .month-view {
     border: 1.5px solid rgba(53,53,53,0.1);
     border-radius: 14px;
@@ -606,7 +606,7 @@ onMounted(() => clientStore.fetchPlanning())
     padding: 1px 4px;
 }
 
-/* Day detail panel */
+
 .day-panel {
     margin-top: 16px;
     background: var(--white);
@@ -720,7 +720,7 @@ onMounted(() => clientStore.fetchPlanning())
 }
 .btn-del:hover { color: #e53e3e; background: rgba(229,62,62,0.08); }
 
-/* Week view */
+
 .week-view {
     background: var(--white);
     border: 1.5px solid rgba(53,53,53,0.1);
@@ -864,7 +864,7 @@ onMounted(() => clientStore.fetchPlanning())
     white-space: nowrap;
 }
 
-/* Modal */
+
 .modal-overlay {
     position: fixed;
     inset: 0;

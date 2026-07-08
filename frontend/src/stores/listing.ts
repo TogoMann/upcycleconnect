@@ -83,6 +83,25 @@ export const useListingStore = defineStore('listing', () => {
         return await res.json()
     }
 
+    async function deleteAnnonce(id: number) {
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/listing/${id}`, {
+                method: 'DELETE',
+                headers: authHeaders(),
+            })
+            if (!res.ok) {
+                const errText = await res.text()
+                throw new Error(errText || 'Erreur suppression annonce')
+            }
+            annonces.value = annonces.value.filter((a: any) => (a.id?.Int64 ?? a.id) !== id)
+        } catch (e: any) {
+            console.error('Delete Annonce Error:', e)
+            error.value = e.message
+            throw e
+        }
+    }
+
     async function createOrderCheckout(listingId: number): Promise<{ free: boolean; url?: string; order_id?: number }> {
         const cartStore = useCartStore()
         const res = await fetch(`${API_BASE}/listing-order/checkout`, {
@@ -117,6 +136,7 @@ export const useListingStore = defineStore('listing', () => {
         uploadImage,
         fetchSitesWithLockers,
         createAnnonce,
-        createOrderCheckout
+        createOrderCheckout,
+        deleteAnnonce
     }
 })

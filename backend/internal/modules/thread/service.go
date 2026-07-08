@@ -93,3 +93,7 @@ func (s *Service) IncrementViews(threadId pgtype.Int8, userId pgtype.Int8) error
 func (s *Service) GetSalarieForum() ([]SalarieThread, error) {
 	return s.repo.GetSalarieForum()
 }
+
+func (s *Service) BanUser(username string, isBanned bool, expiresAt pgtype.Timestamp) error {
+	return s.repo.BanUser(username, isBanned, expiresAt)
+}

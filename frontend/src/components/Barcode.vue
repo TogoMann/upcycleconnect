@@ -19,7 +19,7 @@ onMounted(() => {
       width: props.width || 2,
       height: props.height || 100,
       displayValue: props.displayValue !== undefined ? props.displayValue : true,
-      lineColor: "#086a35", // UpcycleConnect Green
+      lineColor: "#086a35", 
     })
   }
 })

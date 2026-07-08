@@ -60,6 +60,11 @@ func (s *Service) Create(loDto Listing, lockerId pgtype.Int8, physicalState stri
 		return pgtype.Int8{}, err
 	}
 
+	u, err := s.userService.GetById(loDto.CreatedBy)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+
 	tier, err := s.subRepo.GetActiveTierByUserId(loDto.CreatedBy)
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -68,7 +73,7 @@ func (s *Service) Create(loDto Listing, lockerId pgtype.Int8, physicalState stri
 	limit := 5
 	if tier == "Premium" {
 		limit = 20
-	} else if tier == "Pro" {
+	} else if tier == "Pro" || (u != nil && u.Role == users.Pro) {
 		limit = 1000000
 	}
 

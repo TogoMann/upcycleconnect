@@ -20,7 +20,7 @@ async function loadConversations() {
     loading.value = true;
     try {
         conversations.value = await chatStore.adminGetConversations();
-        // If a listing was selected, keep it, otherwise clear selections
+        
         if (selectedListingId.value && !listingsWithConversations.value.some(l => l.group_key === selectedListingId.value)) {
             selectedListingId.value = null;
             selectedConv.value = null;
@@ -36,7 +36,7 @@ function conversationGroupKey(conv: Conversation): string {
     return conv.course_id ? `course-${conv.course_id}` : `listing-${conv.listing_id}`;
 }
 
-// Group conversations by listing or course
+
 const listingsWithConversations = computed(() => {
     const groups: { [key: string]: { group_key: string; listing_title: string; conversations: Conversation[] } } = {};
     for (const conv of conversations.value) {
@@ -56,7 +56,7 @@ const listingsWithConversations = computed(() => {
     return Object.values(groups);
 });
 
-// Selected listing object
+
 const selectedListing = computed(() => {
     return listingsWithConversations.value.find(l => l.group_key === selectedListingId.value) || null;
 });
@@ -153,7 +153,7 @@ onMounted(loadConversations);
                     </div>
 
                     <div v-else class="transcript-wrapper">
-                        <!-- Conversations Tabs Bar -->
+                        
                         <div class="conv-tabs-bar">
                             <button v-for="conv in selectedListing?.conversations" :key="conv.id"
                                     class="conv-tab" :class="{ active: selectedConv?.id === conv.id }"
@@ -163,7 +163,7 @@ onMounted(loadConversations);
                         </div>
 
                         <div v-if="selectedConv" class="transcript-grid" :class="{ 'has-audit': showAudit }">
-                            <!-- Chat message feed -->
+                            
                             <div class="chat-feed">
                                 <div class="chat-feed-header">
                                     <div>
@@ -310,13 +310,13 @@ onMounted(loadConversations);
     transform: rotate(180deg);
 }
 
-/* 2-Column Navigation Grid */
+
 .two-column-layout {
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 20px;
     flex: 1;
-    min-height: 0; /* Ensures columns scroll internally */
+    min-height: 0; 
 }
 
 .transcript-wrapper {
@@ -400,7 +400,7 @@ onMounted(loadConversations);
     gap: 8px;
 }
 
-/* Column 1: Subjects List (Listings) */
+
 .list-item {
     padding: 12px;
     border: 1px solid #f1f5f9;
@@ -435,7 +435,7 @@ onMounted(loadConversations);
     color: #64748b;
 }
 
-/* Column 2: Conversations List */
+
 .conv-header {
     display: flex;
     justify-content: space-between;
@@ -480,7 +480,7 @@ onMounted(loadConversations);
     border-color: #10b981;
 }
 
-/* Column 3: Transcript & Details Split */
+
 .transcript-container {
     padding: 0;
     display: flex;
@@ -516,7 +516,7 @@ onMounted(loadConversations);
     border-color: #94a3b8;
 }
 
-/* Chat Transcript area */
+
 .chat-feed {
     border-right: 1px solid #e2e8f0;
     display: flex;
@@ -676,7 +676,7 @@ onMounted(loadConversations);
     background: #fca5a5;
 }
 
-/* Audit history logs sidebar */
+
 .audit-sidebar {
     background: #fafaf9;
     display: flex;
@@ -750,7 +750,7 @@ onMounted(loadConversations);
     padding: 20px 0;
 }
 
-/* Placeholders & Prompts */
+
 .select-prompt {
     flex: 1;
     display: flex;

@@ -223,7 +223,7 @@ onMounted(() => {
     opacity: 0.75;
 }
 
-/* Audit Section Styles */
+
 .audit-section {
     margin-top: 40px;
 }

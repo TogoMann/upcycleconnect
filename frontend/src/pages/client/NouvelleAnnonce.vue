@@ -2,11 +2,17 @@
 import { reactive, ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/client'
+import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const router = useRouter()
 const clientStore = useClientStore()
+const authStore = useAuthStore()
+
+const backRoute = computed(() => {
+    return authStore.userRole === 'pro' ? '/pro/annonces' : '/particulier/annonces'
+})
 
 const CATEGORIES = ['Mobilier', 'Décoration', 'Vêtements', 'Jouet', 'Electronique', 'Outils'] as const
 const ETATS = ['Neuf', 'Bon état', 'Abimé', 'Cassé'] as const
@@ -47,7 +53,62 @@ const form = reactive({
     image_url: '',
     isDon: false,
     weight: '',
+    street: '',
+    zipCode: '',
+    city: '',
+    department: '',
 })
+
+const cityQuery = ref('')
+const showCitySuggestions = ref(false)
+
+const citySuggestions = computed(() => {
+    const q = cityQuery.value.trim().toLowerCase()
+    if (!q) return []
+    return clientStore.cities.filter((c: any) => 
+        c.name.toLowerCase().includes(q) || 
+        c.zip_code.includes(q)
+    ).slice(0, 8)
+})
+
+function selectCity(city: any) {
+    form.city_id = String(city.id)
+    form.city = city.name
+    form.zipCode = city.zip_code
+    cityQuery.value = `${city.name} (${city.zip_code})`
+    showCitySuggestions.value = false
+    
+    if (city.zip_code && city.zip_code.length >= 2) {
+        const deptNum = city.zip_code.slice(0, 2)
+        form.department = getDepartmentName(deptNum)
+    }
+}
+
+function getDepartmentName(num: string): string {
+    const depts: Record<string, string> = {
+        '01': 'Ain', '02': 'Aisne', '03': 'Allier', '04': 'Alpes-de-Haute-Provence', '05': 'Hautes-Alpes',
+        '06': 'Alpes-Maritimes', '07': 'Ardèche', '08': 'Ardennes', '09': 'Ariège', '10': 'Aube',
+        '11': 'Aude', '12': 'Aveyron', '13': 'Bouches-du-Rhône', '14': 'Calvados', '15': 'Cantal',
+        '16': 'Charente', '17': 'Charente-Maritime', '18': 'Cher', '19': 'Corrèze', '2A': 'Corse-du-Sud',
+        '2B': 'Haute-Corse', '21': 'Côte-d\'Or', '22': 'Côtes-d\'Armor', '23': 'Creuse', '24': 'Dordogne',
+        '25': 'Doubs', '26': 'Drôme', '27': 'Eure', '28': 'Eure-et-Loir', '29': 'Finistère',
+        '30': 'Gard', '31': 'Haute-Garonne', '32': 'Gers', '33': 'Gironde', '34': 'Hérault',
+        '35': 'Ille-et-Vilaine', '36': 'Indre', '37': 'Indre-et-Loire', '38': 'Isère', '39': 'Jura',
+        '40': 'Landes', '41': 'Loir-et-Cher', '42': 'Loire', '43': 'Haute-Loire', '44': 'Loire-Atlantique',
+        '45': 'Loiret', '46': 'Lot', '47': 'Lot-et-Garonne', '48': 'Lozère', '49': 'Maine-et-Loire',
+        '50': 'Manche', '51': 'Marne', '52': 'Haute-Marne', '53': 'Mayenne', '54': 'Meurthe-et-Moselle',
+        '55': 'Meuse', '56': 'Morbihan', '57': 'Moselle', '58': 'Nièvre', '59': 'Nord',
+        '60': 'Oise', '61': 'Orne', '62': 'Pas-de-Calais', '63': 'Puy-de-Dôme', '64': 'Pyrénées-Atlantiques',
+        '65': 'Hautes-Pyrénées', '66': 'Pyrénées-Orientales', '67': 'Bas-Rhin', '68': 'Haut-Rhin', '69': 'Rhône',
+        '70': 'Haute-Saône', '71': 'Saône-et-Loire', '72': 'Sarthe', '73': 'Savoie', '74': 'Haute-Savoie',
+        '75': 'Paris', '76': 'Seine-Maritime', '77': 'Seine-et-Marne', '78': 'Yvelines', '79': 'Deux-Sèvres',
+        '80': 'Somme', '81': 'Tarn', '82': 'Tarn-et-Garonne', '83': 'Var', '84': 'Vaucluse',
+        '85': 'Vendée', '86': 'Vienne', '87': 'Haute-Vienne', '88': 'Vosges', '89': 'Yonne',
+        '90': 'Territoire de Belfort', '91': 'Essonne', '92': 'Hauts-de-Seine', '93': 'Seine-Saint-Denis',
+        '94': 'Val-de-Marne', '95': 'Val-d\'Oise'
+    }
+    return depts[num] ? `${num} - ${depts[num]}` : num
+}
 
 const sitesWithLockers = ref<any[]>([])
 const sitesLoading = ref(false)
@@ -138,6 +199,7 @@ const errors = reactive({
     lockerId: '',
     itemSize: '',
     physicalState: '',
+    address: '',
     global: '',
 })
 
@@ -159,12 +221,14 @@ function validate(): boolean {
     errors.price = form.isDon || (form.price && Number(form.price) > 0) ? '' : t('client.nouvelleAnnonce.errorPriceRequired')
     errors.category = form.category ? '' : t('client.nouvelleAnnonce.errorCategoryRequired')
     errors.city_id = form.city_id ? '' : t('client.nouvelleAnnonce.errorCityRequired')
+    errors.address = form.handoffMode === 'main_propre' && !form.street.trim() ? 'L\'adresse de rue est requise.' : ''
     errors.itemSize = form.handoffMode === 'casier' && !form.itemSize ? t('client.nouvelleAnnonce.errorSizeRequired') : ''
     errors.siteId = form.handoffMode === 'casier' && !form.siteId ? t('client.nouvelleAnnonce.errorSiteRequired') : ''
     errors.lockerId = form.handoffMode === 'casier' && !form.lockerId ? t('client.nouvelleAnnonce.errorLockerRequired') : ''
     errors.physicalState = form.handoffMode === 'casier' && !form.physicalState ? t('client.nouvelleAnnonce.errorStateRequired') : ''
+    
     return !errors.name && !errors.description && !errors.price && !errors.category && !errors.city_id
-        && !errors.itemSize && !errors.siteId && !errors.lockerId && !errors.physicalState
+        && !errors.address && !errors.itemSize && !errors.siteId && !errors.lockerId && !errors.physicalState
 }
 
 async function handleSubmit() {
@@ -176,6 +240,10 @@ async function handleSubmit() {
             form.image_url = await clientStore.uploadImage(imageFile.value)
         }
 
+        const formattedAddress = form.handoffMode === 'main_propre'
+            ? `${form.street.trim()}, ${form.zipCode} ${form.city}, ${form.department.trim()}`
+            : ''
+
         await clientStore.createAnnonce({
             name: form.name.trim(),
             description: form.description.trim(),
@@ -184,14 +252,14 @@ async function handleSubmit() {
             city_id: Number(form.city_id),
             image_url: form.image_url,
             handoff_mode: form.handoffMode,
-            address: form.handoffMode === 'main_propre' ? form.address.trim() : '',
+            address: formattedAddress,
             weight: form.weight ? Number(form.weight) : 0,
             locker_id: form.handoffMode === 'casier' ? Number(form.lockerId) : undefined,
             physical_state: form.handoffMode === 'casier' ? form.physicalState : undefined,
             size: form.handoffMode === 'casier' ? form.itemSize : undefined,
         })
         await clientStore.fetchAnnonces()
-        router.push('/particulier/annonces')
+        router.push(backRoute.value)
     } catch (e: any) {
         errors.global = e.message
     } finally {
@@ -203,7 +271,7 @@ async function handleSubmit() {
 <template>
     <div class="page">
         <div class="page-header">
-            <router-link to="/particulier/annonces" class="back-link">
+            <router-link :to="backRoute" class="back-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="19" y1="12" x2="5" y2="12" />
                     <polyline points="12 19 5 12 12 5" />
@@ -274,19 +342,25 @@ async function handleSubmit() {
                 <span v-if="errors.itemSize" class="form-error">{{ errors.itemSize }}</span>
             </div>
 
-            <div class="form-group form-group--row">
-                <div class="city-field">
+            <div class="form-group form-group--row" style="position: relative;">
+                <div class="city-field" style="position: relative;">
                     <label class="form-label">{{ t('client.nouvelleAnnonce.cityLabel') }}</label>
-                    <select
-                        v-model="form.city_id"
-                        class="form-input"
-                        :class="{ 'form-input--error': errors.city_id }"
-                    >
-                        <option value="" disabled>{{ t('client.nouvelleAnnonce.selectCity') }}</option>
-                        <option v-for="city in clientStore.cities" :key="city.id" :value="city.id">
-                            {{ city.name }} ({{ city.zip_code }})
-                        </option>
-                    </select>
+                    <div style="position: relative;">
+                        <input
+                            v-model="cityQuery"
+                            type="text"
+                            class="form-input"
+                            :class="{ 'form-input--error': errors.city_id }"
+                            placeholder="Saisissez une ville ou un code postal..."
+                            @focus="showCitySuggestions = true"
+                            @blur="setTimeout(() => showCitySuggestions = false, 250)"
+                        />
+                        <ul v-if="showCitySuggestions && citySuggestions.length > 0" class="suggestions-list">
+                            <li v-for="c in citySuggestions" :key="c.id" @mousedown="selectCity(c)">
+                                {{ c.name }} ({{ c.zip_code }})
+                            </li>
+                        </ul>
+                    </div>
                     <span v-if="errors.city_id" class="form-error">{{ errors.city_id }}</span>
                 </div>
 
@@ -354,15 +428,29 @@ async function handleSubmit() {
                 </div>
             </template>
 
-            <div class="form-group" v-if="form.handoffMode === 'main_propre'">
-                <label class="form-label">{{ t('client.nouvelleAnnonce.addressLabel') }}</label>
-                <input
-                    v-model="form.address"
-                    type="text"
-                    class="form-input"
-                    :placeholder="t('client.nouvelleAnnonce.addressPlaceholder')"
-                />
-            </div>
+            <template v-if="form.handoffMode === 'main_propre'">
+                <div class="form-group">
+                    <label class="form-label">Adresse / Rue</label>
+                    <input
+                        v-model="form.street"
+                        type="text"
+                        class="form-input"
+                        :class="{ 'form-input--error': errors.address }"
+                        placeholder="Numéro et nom de rue (ex. 12 rue de la Paix)"
+                    />
+                    <span v-if="errors.address" class="form-error">{{ errors.address }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Département / Région</label>
+                    <input
+                        v-model="form.department"
+                        type="text"
+                        class="form-input"
+                        placeholder="Département ou région"
+                    />
+                </div>
+            </template>
 
             <div class="form-group">
                 <label class="form-label">{{ t('client.nouvelleAnnonce.photoLabel') }}</label>
@@ -420,7 +508,7 @@ async function handleSubmit() {
             <div v-if="errors.global" class="error-banner">{{ errors.global }}</div>
 
             <div class="form-actions">
-                <router-link to="/particulier/annonces" class="btn-cancel">{{ t('client.nouvelleAnnonce.cancel') }}</router-link>
+                <router-link :to="backRoute" class="btn-cancel">{{ t('client.nouvelleAnnonce.cancel') }}</router-link>
                 <button type="submit" class="btn-submit" :disabled="submitting">
                     {{ submitting ? t('client.nouvelleAnnonce.publishing') : t('client.nouvelleAnnonce.publish') }}
                 </button>
@@ -734,5 +822,34 @@ async function handleSubmit() {
 .btn-submit:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border: 1.5px solid rgba(53, 53, 53, 0.15);
+    border-radius: 8px;
+    margin-top: 4px;
+    padding: 0;
+    list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.suggestions-list li {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: background 0.2s, color 0.2s;
+    color: var(--charcoal);
+    text-align: left;
+}
+.suggestions-list li:hover {
+    background: var(--green-pale);
+    color: var(--green-dark);
 }
 </style>

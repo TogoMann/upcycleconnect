@@ -137,6 +137,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Location    string  `json:"location"`
 		Price       float64 `json:"price"`
 		MaxCapacity *int32  `json:"max_capacity"`
+		Premium     bool    `json:"premium"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -156,6 +157,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Description: pgtype.Text{String: input.Description, Valid: input.Description != ""},
 		Location:    input.Location,
 		Approved:    role == "admin",
+		Premium:     input.Premium,
 	}
 	if input.MaxCapacity != nil {
 		dto.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}

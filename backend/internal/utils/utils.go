@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -46,7 +47,17 @@ func GenerateSecureToken() string {
 	return hex.EncodeToString(b)
 }
 
+func CleanSiret(siret string) string {
+	return strings.Map(func(r rune) rune {
+		if r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '\u00a0' || r == '\u202f' {
+			return -1
+		}
+		return r
+	}, siret)
+}
+
 func VerifySiret(siret string) bool {
+	siret = CleanSiret(siret)
 	if len(siret) != 14 {
 		return false
 	}

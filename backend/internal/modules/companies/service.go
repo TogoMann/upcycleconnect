@@ -16,6 +16,7 @@ func NewService(repo *Repository) *Service {
 }
 
 func (s *Service) CreateCompany(c Company) (pgtype.Int8, error) {
+	c.Siret = utils.CleanSiret(c.Siret)
 	if !utils.VerifySiret(c.Siret) {
 		return pgtype.Int8{}, fmt.Errorf("invalid SIRET number")
 	}
@@ -33,6 +34,7 @@ func (s *Service) GetCompanyById(id int64) (*Company, error) {
 }
 
 func (s *Service) GetCompanyBySiret(siret string) (*Company, error) {
+	siret = utils.CleanSiret(siret)
 	return s.repo.GetBySiret(siret)
 }
 

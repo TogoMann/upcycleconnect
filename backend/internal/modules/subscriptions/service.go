@@ -30,6 +30,7 @@ func (s *Service) ChoosePlan(userId int64, planId int64, siret string) error {
 
 	role := users.Client
 	if p.Name == "Pro" {
+		siret = utils.CleanSiret(siret)
 		if !utils.VerifySiret(siret) {
 			return fmt.Errorf("numéro SIRET invalide")
 		}

@@ -52,6 +52,7 @@ type Listing struct {
 	Weight        pgtype.Numeric     `db:"weight" json:"weight"`
 	SellerScore   int32              `db:"seller_score" json:"seller_score"`
 	SellerLevel   int32              `db:"-" json:"seller_level"`
+	IsSponsored   bool               `db:"is_sponsored" json:"is_sponsored"`
 }
 
 type PaginatedListings struct {

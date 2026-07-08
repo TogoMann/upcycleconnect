@@ -19,6 +19,7 @@ type Event struct {
 	MaxCapacity pgtype.Int4      `db:"max_capacity" json:"max_capacity"`
 	CreatedBy   pgtype.Int8      `db:"created_by" json:"created_by"`
 	CreatedAt   pgtype.Timestamp `db:"created_at" json:"created_at"`
+	Premium     bool             `db:"premium" json:"premium"`
 }
 
 type EventFull struct {
@@ -40,4 +41,5 @@ type EventFull struct {
 	CreatorEmail     pgtype.Text      `db:"creator_email" json:"creator_email"`
 	ApproverUsername pgtype.Text      `db:"approver_username" json:"approver_username"`
 	ApproverEmail    pgtype.Text      `db:"approver_email" json:"approver_email"`
+	Premium          bool             `db:"premium" json:"premium"`
 }

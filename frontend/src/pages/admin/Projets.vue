@@ -244,7 +244,7 @@ function filterLabel(f: string): string {
 .btn-detail:hover { border-color: var(--green-mid); color: var(--green-dark); }
 .btn-detail svg { width: 14px; height: 14px; }
 
-/* Modal */
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
 .modal-card { background: var(--white); border-radius: 20px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }

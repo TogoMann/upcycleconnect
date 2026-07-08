@@ -89,7 +89,7 @@ function truncate(text: string, max: number) {
         <div v-if="loading" class="loading-state">{{ t('pro.mesProjets.loading') }}</div>
 
         <template v-else>
-            <!-- KPIs -->
+            
             <div class="kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-value">{{ stats.total }}</div>
@@ -109,7 +109,7 @@ function truncate(text: string, max: number) {
                 </div>
             </div>
 
-            <!-- Filtres -->
+            
             <div class="filter-row">
                 <button v-for="f in ['all', 'in progress', 'done', 'featured', 'cancelled']" :key="f"
                     class="filter-btn" :class="{ 'filter-btn--active': filter === f }"
@@ -118,7 +118,7 @@ function truncate(text: string, max: number) {
                 </button>
             </div>
 
-            <!-- Empty state -->
+            
             <div v-if="filteredProjects.length === 0" class="empty-state">
                 <div class="empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -129,7 +129,7 @@ function truncate(text: string, max: number) {
                 <router-link v-if="filter === 'all'" to="/pro/projets/nouveau" class="btn-primary">{{ t('pro.mesProjets.createProject') }}</router-link>
             </div>
 
-            <!-- Grille projets -->
+            
             <div v-else class="projets-grid">
                 <router-link
                     v-for="p in filteredProjects"
@@ -172,7 +172,7 @@ function truncate(text: string, max: number) {
 .btn-primary svg { width: 16px; height: 16px; }
 .loading-state { text-align: center; padding: 60px 0; opacity: 0.5; font-size: 0.9rem; }
 
-/* KPIs */
+
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
 .kpi-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.08); border-radius: 12px; padding: 18px 20px; }
 .kpi-card--green { background: var(--green-pale); border-color: transparent; }
@@ -184,19 +184,19 @@ function truncate(text: string, max: number) {
 .kpi-card--yellow .kpi-value { color: #92400e; }
 .kpi-label { font-size: 0.78rem; font-weight: 500; color: var(--charcoal); opacity: 0.5; margin-top: 4px; }
 
-/* Filters */
+
 .filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 .filter-btn { padding: 7px 16px; border: 1.5px solid rgba(53,53,53,0.12); border-radius: 20px; background: transparent; color: var(--charcoal); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .filter-btn:hover { border-color: var(--green-mid); color: var(--green-dark); }
 .filter-btn--active { background: var(--green-dark); color: var(--white); border-color: var(--green-dark); }
 
-/* Empty state */
+
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 0; }
 .empty-icon { width: 64px; height: 64px; background: var(--green-pale); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: var(--green-mid); }
 .empty-icon svg { width: 32px; height: 32px; }
 .empty-text { font-size: 0.95rem; color: var(--charcoal); opacity: 0.5; margin: 0; }
 
-/* Projects grid */
+
 .projets-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .projet-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.1); border-radius: 14px; padding: 22px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s, transform 0.2s; }
 .projet-card:hover { border-color: var(--green-mid); transform: translateY(-2px); }
@@ -211,7 +211,7 @@ function truncate(text: string, max: number) {
 .featured-badge-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fffbeb; border-radius: 8px; font-size: 0.78rem; font-weight: 600; color: #92400e; }
 .featured-badge-bar svg { width: 14px; height: 14px; color: #f59e0b; }
 
-/* Badges */
+
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
 .badge--progress { background: #eff6ff; color: #1e40af; }
 .badge--done { background: var(--green-pale); color: var(--green-dark); }

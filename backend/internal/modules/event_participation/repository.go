@@ -80,3 +80,36 @@ func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	}
 	return true, nil
 }
+
+func (r *Repository) IsEventPremium(eventId int64) (bool, error) {
+	var premium bool
+	err := r.db.QueryRow(db.Ctx, "SELECT premium FROM event WHERE id = $1", eventId).Scan(&premium)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return premium, nil
+}
+
+func (r *Repository) IsUserEligibleForPremiumEvent(userId int64) (bool, error) {
+	var plan string
+	var role string
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT COALESCE(p.name, ''), u.role 
+		FROM users u 
+		LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
+		LEFT JOIN plans p ON p.id = s.plan_id
+		WHERE u.id = $1
+	`, userId).Scan(&plan, &role)
+	if err != nil {
+		return false, err
+	}
+
+	isPro := role == "pro"
+	isAdmin := role == "admin"
+	isPremiumPlan := plan == "Premium" || plan == "premium"
+
+	return isPro || isAdmin || isPremiumPlan, nil
+}

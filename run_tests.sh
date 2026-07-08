@@ -1,11 +1,11 @@
-#!/bin/bash
 
-# UpcycleConnect Test Runner
-# This script runs both backend and frontend tests.
+
+
+
 
 set -e
 
-# ANSI Color Codes
+
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
@@ -19,7 +19,7 @@ if [ -f .env ]; then
     set +a
 fi
 
-# 1. Run Backend Tests (Go)
+
 echo -e "${GREEN}[1/2] Testing backend...${NC}"
 cd backend
 if go test ./tests/... -v; then
@@ -30,9 +30,9 @@ else
 fi
 cd ..
 
-# 2. Run Frontend Tests (Vitest via Bun in Docker)
+
 echo -e "${GREEN}[2/2] Testing frontend...${NC}"
-# Check if the frontend container is running
+
 if ! docker ps --format '{{.Names}}' | grep -q "^uc-front-dev$"; then
     echo -e "${RED}✗ Error: Docker container 'uc-front-dev' is not running.${NC}"
     echo -e "Please start your development environment before running frontend tests."

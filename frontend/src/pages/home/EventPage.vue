@@ -23,6 +23,7 @@ interface Event {
     location?: string
     start_time?: string
     end_time?: string
+    premium?: boolean
 }
 
 const events = ref<Event[]>([])
@@ -30,7 +31,7 @@ const loading = ref(true)
 
 const filteredEvents = computed(() => {
     return events.value.filter(event => {
-        // Check cart
+        
         const inCart = clientStore.cart.some(cartItem => {
             const cartEventId = cartItem.event_id && typeof cartItem.event_id === 'object' && 'Int64' in cartItem.event_id 
                 ? Number(cartItem.event_id.Int64) 
@@ -39,7 +40,7 @@ const filteredEvents = computed(() => {
         })
         if (inCart) return false
 
-        // Check already registered
+        
         const alreadyRegistered = clientStore.participations.some(p => {
             const pEid = p.event_id && typeof p.event_id === 'object' ? p.event_id.Int64 : p.event_id
             return Number(pEid) === Number(event.id)
@@ -77,6 +78,20 @@ async function handleAddToCart(event: Event) {
         return
     }
 
+    if (event.premium) {
+        const role = authStore.userRole
+        const plan = authStore.user?.plan || ''
+
+        const isPro = role === 'pro'
+        const isAdmin = role === 'admin'
+        const isPremiumPlan = plan.toLowerCase() === 'premium'
+
+        if (!isPro && !isAdmin && !isPremiumPlan) {
+            router.push('/particulier/plans')
+            return
+        }
+    }
+
     try {
         await clientStore.addToCart({ eventId: event.id })
         showToast.value = true
@@ -110,6 +125,7 @@ async function handleAddToCart(event: Event) {
                     <div class="event-info">
                         <div class="event-badges">
                             <span class="badge-date">{{ fmtDate(event.date) }}</span>
+                            <span v-if="event.premium" class="badge-premium">Premium</span>
                             <span v-if="!event.approved" class="badge-pending">{{ t('events.pendingApproval') }}</span>
                         </div>
                         <h2 class="event-title">{{ event.title }}</h2>
@@ -138,7 +154,7 @@ async function handleAddToCart(event: Event) {
 </template>
 
 <style scoped>
-/* Previous styles + Toast styles */
+
 .event-loc { margin-top: 8px; font-size: 0.95rem; opacity: 0.7; }
 .event-desc { margin-top: 10px; font-size: 0.95rem; opacity: 0.75; line-height: 1.5; }
 
@@ -175,6 +191,7 @@ async function handleAddToCart(event: Event) {
 .event-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .badge-date { background: var(--green-pale); color: var(--green-dark); font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 6px; text-transform: capitalize; }
 .badge-pending { background: #fef3c7; color: #92400e; font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+.badge-premium { background: #ebd3ff; color: #6b21a8; font-size: 0.82rem; font-weight: 700; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
 .event-title { font-size: clamp(1.4rem, 2.8vw, 1.9rem); font-weight: 700; color: var(--charcoal); line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
 .event-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
 .event-price { font-size: 1.1rem; font-weight: 700; color: var(--green-dark); }

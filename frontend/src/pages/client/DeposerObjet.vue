@@ -81,7 +81,7 @@ async function handleSubmit() {
                 site_id: form.site_id ? Number(form.site_id) : undefined,
             })
         } catch {
-            // Endpoint POST /items/ non encore implémenté côté backend
+            
         }
         await clientStore.createEntry({
             schedule: form.schedule,

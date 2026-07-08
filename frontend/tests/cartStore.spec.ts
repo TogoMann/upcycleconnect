@@ -41,8 +41,8 @@ describe('Cart Store', () => {
 
     it('adds to cart successfully', async () => {
         ;(fetch as any)
-            .mockResolvedValueOnce({ ok: true }) // for the POST
-            .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }) // for fetchCart
+            .mockResolvedValueOnce({ ok: true }) 
+            .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }) 
 
         const store = useCartStore()
 
@@ -56,8 +56,8 @@ describe('Cart Store', () => {
 
     it('removes from cart successfully', async () => {
         ;(fetch as any)
-            .mockResolvedValueOnce({ ok: true }) // for the DELETE
-            .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }) // for fetchCart
+            .mockResolvedValueOnce({ ok: true }) 
+            .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }) 
 
         const store = useCartStore()
 

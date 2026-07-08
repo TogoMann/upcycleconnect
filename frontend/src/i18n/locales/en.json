@@ -7,6 +7,7 @@
       "listings": "Listings",
       "conseils": "Tips",
       "formations": "Trainings",
+      "tarifs": "Pricing",
       "forum": "Forum",
       "about": "About",
       "login": "Sign up / Log in"
@@ -483,19 +484,6 @@
       "title": "Title",
       "category": "Category",
       "weight": "Weight"
-    },
-    "tableauBordAvance": {
-      "pageTitle": "Advanced dashboard.",
-      "subtitle": "In-depth statistics of your activity.",
-      "premiumFeature": "Premium feature",
-      "premiumDesc": "The advanced dashboard is reserved for Premium subscriptions.",
-      "upgradeToPremium": "Upgrade to Premium",
-      "revenueMonth": "Revenue this month",
-      "recycledItems": "Recycled items",
-      "conversionRate": "Conversion rate",
-      "ecoScore": "Eco score",
-      "monthlyEvolution": "Monthly evolution",
-      "loading": "Loading statistics…"
     },
     "profil": {
       "pageTitle": "My Profile.",
@@ -1023,7 +1011,6 @@
       "messaging": "Messaging",
       "retrieveItem": "Retrieve an item",
       "myProjects": "My Projects",
-      "advancedDashboard": "Advanced dashboard",
       "myProfile": "My Profile"
     }
   },
@@ -1178,7 +1165,29 @@
     "pageTitle": "Tips & inspiration.",
     "subtitle": "Practical guides, tutorials and ideas to succeed at your upcycling projects.",
     "loading": "Loading tips…",
-    "noResults": "No tips published yet."
+    "noResults": "No tips published yet.",
+    "sortLabel": "Sort by",
+    "sortRecent": "Most recent",
+    "sortMostLiked": "Most liked",
+    "sortLeastLiked": "Least liked",
+    "likeAction": "Like this tip",
+    "dislikeAction": "Dislike this tip",
+    "loginToVote": "Log in to vote"
+  },
+  "tarifs": {
+    "pageTitle": "Our pricing.",
+    "subtitle": "Choose the plan that fits your needs. No commitment, cancel anytime.",
+    "loading": "Loading pricing…",
+    "noResults": "No subscription available at the moment.",
+    "recommended": "Recommended",
+    "free": "Free",
+    "perMonth": "€{price} / month",
+    "perYear": "€{price} / year",
+    "prerequisiteLabel": "Requirements",
+    "siretRequired": "Valid SIRET number required (professionals)",
+    "noPrerequisite": "No requirements, open to everyone",
+    "cta": "Create an account",
+    "manage": "Manage my subscription"
   },
   "prestations": {
     "pageTitle": "Discover our services.",
@@ -1742,6 +1751,7 @@
       "pricePlaceholder": "Free if left blank",
       "maxCapacityLabel": "Max capacity (participants)",
       "maxCapacityPlaceholder": "Unlimited if left blank",
+      "premiumLabel": "Premium Event (Premium/Pro only)",
       "creating": "Creating…",
       "create": "Create",
       "description": "Description",

@@ -50,6 +50,8 @@ type User struct {
 	CreatedAt          pgtype.Timestamp `db:"created_at" json:"created_at"`
 	Siret              pgtype.Text      `db:"-" json:"-"`
 	CompanyId          pgtype.Int8      `db:"company_id" json:"company_id"`
+	IsBanned           bool             `db:"is_banned" json:"is_banned"`
+	BanExpiresAt       pgtype.Timestamp `db:"ban_expires_at" json:"ban_expires_at"`
 }
 
 type ScoreHistory struct {

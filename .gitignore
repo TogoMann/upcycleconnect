@@ -2,5 +2,5 @@
 tmp
 *.pdf
 practice
-.claude/
-backend/uploads/
+/backend/seeds/
+/bin/

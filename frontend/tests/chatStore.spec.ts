@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useChatStore } from '../src/stores/chat'
 import { useAuthStore } from '../src/stores/auth'
 
-// Mock global fetch
+
 global.fetch = vi.fn()
 
 describe('Chat Store', () => {

@@ -221,7 +221,7 @@ async function deleteStep(stepId: number) {
         <div v-if="loading" class="loading-state">{{ t('pro.projetDetail.loading') }}</div>
 
         <template v-else-if="project">
-            <!-- En-tête projet -->
+            
             <div class="project-header-card">
                 <div class="project-top">
                     <div class="project-title-area">
@@ -243,7 +243,7 @@ async function deleteStep(stepId: number) {
                     </div>
                 </div>
 
-                <!-- Info cards -->
+                
                 <div class="info-grid">
                     <div class="info-card">
                         <div class="info-icon">
@@ -283,7 +283,7 @@ async function deleteStep(stepId: number) {
                     </div>
                 </div>
 
-                <!-- Action buttons -->
+                
                 <div class="action-bar">
                     <button class="btn-action" @click="startEdit" v-if="!editing">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -300,14 +300,14 @@ async function deleteStep(stepId: number) {
                 </div>
             </div>
 
-            <!-- Section étapes -->
+            
             <div class="steps-section">
                 <div class="steps-header">
                     <h2 class="section-title">{{ t('pro.projetDetail.stepsTitle') }}</h2>
                     <span class="steps-count">{{ t('pro.projetDetail.stepsCount', { count: steps.length, plural: steps.length !== 1 ? 's' : '' }) }}</span>
                 </div>
 
-                <!-- Timeline des étapes -->
+                
                 <div class="steps-timeline" v-if="steps.length > 0">
                     <div v-for="step in steps" :key="step.id.Int64" class="step-item">
                         <div class="step-marker">
@@ -344,7 +344,7 @@ async function deleteStep(stepId: number) {
                     <p>{{ t('pro.projetDetail.noSteps') }}</p>
                 </div>
 
-                <!-- Ajouter une étape -->
+                
                 <div class="add-step-form">
                     <div class="add-step-marker">
                         <span>+</span>
@@ -359,7 +359,7 @@ async function deleteStep(stepId: number) {
             </div>
         </template>
 
-        <!-- Modal statut -->
+        
         <Teleport to="body">
             <div v-if="showStatusModal" class="modal-overlay" @click.self="showStatusModal = false">
                 <div class="modal-card">
@@ -379,7 +379,7 @@ async function deleteStep(stepId: number) {
             </div>
         </Teleport>
 
-        <!-- Modal suppression -->
+        
         <Teleport to="body">
             <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
                 <div class="modal-card">
@@ -401,7 +401,7 @@ async function deleteStep(stepId: number) {
 .back-link svg { width: 16px; height: 16px; }
 .loading-state { text-align: center; padding: 60px 0; opacity: 0.5; font-size: 0.9rem; }
 
-/* Project header card */
+
 .project-header-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.1); border-radius: 16px; padding: 28px; margin-bottom: 28px; }
 .project-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
 .project-title-area { flex: 1; }
@@ -422,7 +422,7 @@ async function deleteStep(stepId: number) {
 .badge--cancelled { background: rgba(53,53,53,0.08); color: var(--charcoal); opacity: 0.6; }
 .badge--default { background: rgba(53,53,53,0.08); color: var(--charcoal); }
 
-/* Info grid */
+
 .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
 .info-card { display: flex; align-items: center; gap: 12px; background: var(--cream); border-radius: 10px; padding: 14px 16px; }
 .info-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(53,53,53,0.06); flex-shrink: 0; }
@@ -436,7 +436,7 @@ async function deleteStep(stepId: number) {
 .info-label { font-size: 0.72rem; font-weight: 600; color: var(--charcoal); opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em; }
 .info-value { font-size: 0.92rem; font-weight: 700; color: var(--charcoal); margin-top: 2px; }
 
-/* Action bar */
+
 .action-bar { display: flex; gap: 10px; border-top: 1px solid rgba(53,53,53,0.06); padding-top: 18px; flex-wrap: wrap; }
 .btn-action { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border: 1.5px solid rgba(53,53,53,0.12); border-radius: 8px; background: transparent; color: var(--charcoal); font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-action:hover { border-color: var(--green-mid); color: var(--green-dark); }
@@ -444,13 +444,13 @@ async function deleteStep(stepId: number) {
 .btn-action--danger { border-color: #fecaca; color: #991b1b; }
 .btn-action--danger:hover { border-color: #dc2626; background: #fef2f2; }
 
-/* Steps section */
+
 .steps-section { background: var(--white); border: 1.5px solid rgba(53,53,53,0.1); border-radius: 16px; padding: 28px; }
 .steps-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .section-title { font-size: 1.1rem; font-weight: 700; color: var(--charcoal); margin: 0; }
 .steps-count { font-size: 0.82rem; color: var(--charcoal); opacity: 0.45; font-weight: 500; }
 
-/* Timeline */
+
 .steps-timeline { display: flex; flex-direction: column; gap: 0; }
 .step-item { display: flex; gap: 16px; }
 .step-marker { display: flex; flex-direction: column; align-items: center; }
@@ -472,7 +472,7 @@ async function deleteStep(stepId: number) {
 .steps-empty { padding: 32px; text-align: center; }
 .steps-empty p { font-size: 0.88rem; color: var(--charcoal); opacity: 0.45; margin: 0; }
 
-/* Add step form */
+
 .add-step-form { display: flex; gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(53,53,53,0.06); }
 .add-step-marker { width: 32px; height: 32px; border-radius: 50%; border: 2px dashed rgba(53,53,53,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--charcoal); opacity: 0.3; flex-shrink: 0; }
 .add-step-content { flex: 1; display: flex; flex-direction: column; gap: 10px; }
@@ -480,7 +480,7 @@ async function deleteStep(stepId: number) {
 .form-input:focus { border-color: var(--green-mid); background: var(--white); }
 .form-textarea-sm { resize: vertical; min-height: 60px; line-height: 1.5; }
 
-/* Buttons */
+
 .btn-primary { padding: 10px 20px; background: var(--green-dark); color: var(--white); border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.2s; align-self: flex-start; }
 .btn-primary:hover:not(:disabled) { background: var(--green-mid); }
 .btn-primary:disabled { opacity: 0.4; cursor: default; }
@@ -493,7 +493,7 @@ async function deleteStep(stepId: number) {
 .btn-danger { padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
 .btn-danger:hover { background: #b91c1c; }
 
-/* Modal */
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
 .modal-card { background: var(--white); border-radius: 20px; padding: 32px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
 .modal-title { font-size: 1.15rem; font-weight: 800; color: var(--charcoal); margin: 0 0 16px; }

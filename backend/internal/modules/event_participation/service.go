@@ -26,6 +26,21 @@ func (s *Service) GetById(id pgtype.Int8) (*EventParticipation, error) {
 }
 
 func (s *Service) CreateFromRequest(userId int64, req CreateEventParticipationRequest) (pgtype.Int8, error) {
+	premium, err := s.repo.IsEventPremium(req.EventId)
+	if err != nil {
+		return pgtype.Int8{}, err
+	}
+
+	if premium {
+		eligible, err := s.repo.IsUserEligibleForPremiumEvent(userId)
+		if err != nil {
+			return pgtype.Int8{}, err
+		}
+		if !eligible {
+			return pgtype.Int8{}, fmt.Errorf("upgrade_required")
+		}
+	}
+
 	dto := EventParticipation{
 		EventId: pgtype.Int8{Int64: req.EventId, Valid: true},
 		UserId:  pgtype.Int8{Int64: userId, Valid: true},

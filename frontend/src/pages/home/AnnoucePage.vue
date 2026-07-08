@@ -43,6 +43,7 @@ const annonces = computed(() => {
             categorie: a.category || 'Non classé',
             handoffMode: a.handoff_mode === 'casier' ? t('listings.handoffLocker') : t('listings.handoffInPerson'),
             img: a.image_url ? `${API_BASE}` + a.image_url : 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
+            isSponsored: !!a.is_sponsored,
         }
     })
 })
@@ -163,6 +164,7 @@ const annoncesFiltrees = computed(() => {
 
                         <div class="annonce-body">
                             <div class="annonce-badges">
+                                <span v-if="annonce.isSponsored" class="badge badge--sponsored">Sponsorisé</span>
                                 <span
                                     class="badge"
                                     :class="annonce.type === 'Don' ? 'badge--don' : 'badge--vente'"
@@ -402,6 +404,11 @@ const annoncesFiltrees = computed(() => {
 .badge--vente {
     background: var(--green-mid);
     color: var(--white);
+}
+.badge--sponsored {
+    background: #6b21a8;
+    color: var(--white);
+    margin-right: 6px;
 }
 
 .annonce-titre {

@@ -185,3 +185,8 @@ func (r *Repository) GetSalarieForum() ([]SalarieThread, error) {
 	}
 	return threads, nil
 }
+
+func (r *Repository) BanUser(username string, isBanned bool, expiresAt pgtype.Timestamp) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE users SET is_banned = $1, ban_expires_at = $2 WHERE username = $3", isBanned, expiresAt, username)
+	return err
+}

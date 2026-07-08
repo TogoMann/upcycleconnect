@@ -1,8 +1,8 @@
--- Genere par l'ia
 
--- =========================
--- MASSIVE DATA GENERATION FOR ML (600+ USERS)
--- =========================
+
+
+
+
 DO $$
 DECLARE
     i INT;
@@ -14,7 +14,7 @@ DECLARE
     msg_count INT;
 BEGIN
     FOR i IN 1..600 LOOP
-        -- Generate User
+        
         INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at)
         VALUES (
             'trash_user_' || i, 
@@ -30,28 +30,28 @@ BEGIN
             NOW() - (random() * INTERVAL '500 days')
         ) RETURNING id INTO new_user_id;
 
-        -- Generate Score History (ML feature: total_points)
+        
         INSERT INTO score_history (user_id, points, description, created_at)
         SELECT new_user_id, floor(random() * 50), 'Points automatiques ' || s, NOW() - (random() * INTERVAL '365 days')
         FROM generate_series(1, (1 + floor(random() * 5))::INT) s;
 
-        -- Generate interactions to create a bias for the ML model (target: event, course, or listing)
-        -- We'll create some "profiles":
-        -- i % 3 = 0 -> Event lovers
-        -- i % 3 = 1 -> Course lovers
-        -- i % 3 = 2 -> Listing/Shop lovers
+        
+        
+        
+        
+        
         
         interaction_count := 2 + floor(random() * 10);
         
         FOR j IN 1..interaction_count LOOP
             IF (i % 3 = 0) THEN
-                -- Event bias
+                
                 service_roll := CASE WHEN random() < 0.7 THEN 0 ELSE floor(random() * 3) END;
             ELSIF (i % 3 = 1) THEN
-                -- Course bias
+                
                 service_roll := CASE WHEN random() < 0.7 THEN 1 ELSE floor(random() * 3) END;
             ELSE
-                -- Listing bias
+                
                 service_roll := CASE WHEN random() < 0.7 THEN 2 ELSE floor(random() * 3) END;
             END IF;
 
@@ -67,7 +67,7 @@ BEGIN
             END IF;
         END LOOP;
 
-        -- Generate Items (deposits)
+        
         item_count := floor(random() * 8);
         IF item_count > 0 THEN
             INSERT INTO item (owner_id, site_id, material_type, physical_state, status, created_at)
@@ -79,7 +79,7 @@ BEGIN
             FROM generate_series(1, item_count);
         END IF;
 
-        -- Generate News Comments
+        
         comment_count := floor(random() * 4);
         IF comment_count > 0 THEN
             INSERT INTO comments (news_id, created_by, content, created_at)
@@ -87,7 +87,7 @@ BEGIN
             FROM generate_series(1, comment_count) s;
         END IF;
 
-        -- Generate Chat Messages
+        
         msg_count := floor(random() * 6);
         IF msg_count > 0 THEN
             INSERT INTO chat_message (conversation_id, sender_id, content, created_at)

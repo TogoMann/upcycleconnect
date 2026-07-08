@@ -40,11 +40,16 @@ func (r *Repository) GetAll(page, limit int) (*PaginatedListings, error) {
 			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name,
-			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score,
+			EXISTS(
+				SELECT 1 FROM advertisement ad 
+				WHERE ad.target_type = 'listing' AND ad.target_id = l.id AND ad.status = 'validated'
+				AND CURRENT_DATE BETWEEN ad.start_date AND ad.end_date
+			) as is_sponsored
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
-		ORDER BY l.id DESC
+		ORDER BY is_sponsored DESC, (u.role = 'pro') DESC, l.id DESC
 		LIMIT $1 OFFSET $2
 	`, limit, offset)
 	if err != nil {
@@ -77,14 +82,19 @@ func (r *Repository) GetAllApproved(excludeUserId pgtype.Int8, minScore int32) (
 			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name,
-			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score,
+			EXISTS(
+				SELECT 1 FROM advertisement ad 
+				WHERE ad.target_type = 'listing' AND ad.target_id = l.id AND ad.status = 'validated'
+				AND CURRENT_DATE BETWEEN ad.start_date AND ad.end_date
+			) as is_sponsored
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
 		WHERE l.approved = true AND l.status = 'active'
 		AND ($1::bigint IS NULL OR l.created_by != $1)
 		AND COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) >= $2
-		ORDER BY (SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = l.created_by) DESC, l.created_at DESC`,
+		ORDER BY is_sponsored DESC, (u.role = 'pro') DESC, (SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = l.created_by) DESC, l.created_at DESC`,
 		excludeUserId, minScore)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAllApproved query: %w", err)
@@ -100,7 +110,12 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Listing, error) {
 			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name,
-			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score,
+			EXISTS(
+				SELECT 1 FROM advertisement ad 
+				WHERE ad.target_type = 'listing' AND ad.target_id = l.id AND ad.status = 'validated'
+				AND CURRENT_DATE BETWEEN ad.start_date AND ad.end_date
+			) as is_sponsored
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
@@ -119,7 +134,12 @@ func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
 			COALESCE(u.username, '') as created_by_name,
-			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score,
+			EXISTS(
+				SELECT 1 FROM advertisement ad 
+				WHERE ad.target_type = 'listing' AND ad.target_id = l.id AND ad.status = 'validated'
+				AND CURRENT_DATE BETWEEN ad.start_date AND ad.end_date
+			) as is_sponsored
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id

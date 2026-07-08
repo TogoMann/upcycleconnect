@@ -17,16 +17,36 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetAll(newsType string) ([]NewsFrontend, error) {
+func orderClauseForSort(sortBy string) string {
+	switch sortBy {
+	case "top":
+		return "ORDER BY (n.upvotes - n.downvotes) DESC, n.created_at DESC"
+	case "bottom":
+		return "ORDER BY (n.upvotes - n.downvotes) ASC, n.created_at DESC"
+	default:
+		return "ORDER BY n.created_at DESC"
+	}
+}
+
+func (r *Repository) GetAll(newsType string, userId pgtype.Int8, sortBy string) ([]NewsFrontend, error) {
+	baseQuery := `
+		SELECT n.id, n.created_by, n.title, n.content, n.type,
+			TO_CHAR(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+			n.upvotes, n.downvotes, nv.vote_type as my_vote
+		FROM news n
+		LEFT JOIN news_vote nv ON nv.news_id = n.id AND nv.user_id = $1
+	`
+	order := orderClauseForSort(sortBy)
+
 	if newsType == "" {
-		rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, type, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, upvotes, downvotes FROM news")
+		rows, err := r.db.Query(db.Ctx, baseQuery+order, userId)
 		if err != nil {
 			return nil, fmt.Errorf("package news/repo GetAll query: %w", err)
 		}
 		return pgx.CollectRows(rows, pgx.RowToStructByName[NewsFrontend])
 	}
 
-	rows, err := r.db.Query(db.Ctx, "SELECT id, created_by, title, content, type, TO_CHAR(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, upvotes, downvotes FROM news WHERE type = $1", newsType)
+	rows, err := r.db.Query(db.Ctx, baseQuery+" WHERE n.type = $2 "+order, userId, newsType)
 	if err != nil {
 		return nil, fmt.Errorf("package news/repo GetAll query: %w", err)
 	}
@@ -82,6 +102,82 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 		return fmt.Errorf("package news/repo: Id invalide: %d", id)
 	}
 	return nil
+}
+
+func (r *Repository) Vote(newsId pgtype.Int8, userId pgtype.Int8, voteType string) (*NewsFrontend, error) {
+	tx, err := r.db.Begin(db.Ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(db.Ctx)
+
+	var existingType string
+	err = tx.QueryRow(db.Ctx, "SELECT vote_type FROM news_vote WHERE news_id = $1 AND user_id = $2 FOR UPDATE", newsId, userId).Scan(&existingType)
+	if err != nil && err != pgx.ErrNoRows {
+		return nil, err
+	}
+	hasExisting := err == nil
+
+	switch {
+	case !hasExisting:
+		if _, err := tx.Exec(db.Ctx, "INSERT INTO news_vote (news_id, user_id, vote_type) VALUES ($1, $2, $3)", newsId, userId, voteType); err != nil {
+			return nil, err
+		}
+		if voteType == "up" {
+			_, err = tx.Exec(db.Ctx, "UPDATE news SET upvotes = upvotes + 1 WHERE id = $1", newsId)
+		} else {
+			_, err = tx.Exec(db.Ctx, "UPDATE news SET downvotes = downvotes + 1 WHERE id = $1", newsId)
+		}
+		if err != nil {
+			return nil, err
+		}
+	case existingType == voteType:
+		if _, err := tx.Exec(db.Ctx, "DELETE FROM news_vote WHERE news_id = $1 AND user_id = $2", newsId, userId); err != nil {
+			return nil, err
+		}
+		if voteType == "up" {
+			_, err = tx.Exec(db.Ctx, "UPDATE news SET upvotes = upvotes - 1 WHERE id = $1", newsId)
+		} else {
+			_, err = tx.Exec(db.Ctx, "UPDATE news SET downvotes = downvotes - 1 WHERE id = $1", newsId)
+		}
+		if err != nil {
+			return nil, err
+		}
+	default:
+		if _, err := tx.Exec(db.Ctx, "UPDATE news_vote SET vote_type = $3, created_at = CURRENT_TIMESTAMP WHERE news_id = $1 AND user_id = $2", newsId, userId, voteType); err != nil {
+			return nil, err
+		}
+		if voteType == "up" {
+			_, err = tx.Exec(db.Ctx, "UPDATE news SET upvotes = upvotes + 1, downvotes = downvotes - 1 WHERE id = $1", newsId)
+		} else {
+			_, err = tx.Exec(db.Ctx, "UPDATE news SET downvotes = downvotes + 1, upvotes = upvotes - 1 WHERE id = $1", newsId)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	rows, err := tx.Query(db.Ctx, `
+		SELECT n.id, n.created_by, n.title, n.content, n.type,
+			TO_CHAR(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
+			n.upvotes, n.downvotes, nv.vote_type as my_vote
+		FROM news n
+		LEFT JOIN news_vote nv ON nv.news_id = n.id AND nv.user_id = $2
+		WHERE n.id = $1
+	`, newsId, userId)
+	if err != nil {
+		return nil, err
+	}
+	updated, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NewsFrontend])
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(db.Ctx); err != nil {
+		return nil, err
+	}
+
+	return &updated, nil
 }
 
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {

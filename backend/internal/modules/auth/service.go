@@ -47,9 +47,31 @@ func (s *Service) Login(username, password string) (*LoginResponse, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
+	if user.IsBanned {
+		if user.BanExpiresAt.Valid && user.BanExpiresAt.Time.Before(time.Now()) {
+			user.IsBanned = false
+			user.BanExpiresAt = pgtype.Timestamp{Valid: false}
+			_ = s.userRepo.Update(user.Id, *user)
+		} else {
+			var errMsg string
+			if user.BanExpiresAt.Valid {
+				errMsg = "Votre compte est banni temporairement jusqu'au " + user.BanExpiresAt.Time.Format("02/01/2006 15:04") + "."
+			} else {
+				errMsg = "Votre compte est banni définitivement."
+			}
+			return nil, errors.New(errMsg)
+		}
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return nil, errors.New("invalid credentials")
+	}
+
+	if user.Role != users.Admin {
+		if pub, perr := s.settingsRepo.GetPublic(); perr == nil && pub.Maintenance {
+			return nil, errors.New("Le site est en maintenance. Seuls les administrateurs peuvent se connecter.")
+		}
 	}
 
 	token, err := utils.GenerateJWT(user.Id.Int64, user.Username, string(user.Role))
@@ -67,6 +89,10 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 	open, err := s.settingsRepo.IsRegistrationOpen()
 	if err == nil && !open {
 		return nil, errors.New("les inscriptions sont temporairement fermées")
+	}
+
+	if pub, perr := s.settingsRepo.GetPublic(); perr == nil && pub.Maintenance {
+		return nil, errors.New("Le site est en maintenance. Les inscriptions sont momentanément indisponibles.")
 	}
 
 	req.Username = strings.TrimSpace(req.Username)
@@ -123,6 +149,7 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 	}
 
 	if strings.EqualFold(tier, "Pro") {
+		req.Siret = utils.CleanSiret(req.Siret)
 		if req.Siret == "" {
 			return nil, errors.New("le numéro SIRET est obligatoire pour le plan Pro")
 		}

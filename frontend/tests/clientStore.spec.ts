@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useClientStore } from '../src/stores/client'
 import { useAuthStore } from '../src/stores/auth'
 
-// Mock global fetch
+
 global.fetch = vi.fn()
 
 describe('Client Store (Cart Logic)', () => {
@@ -11,7 +11,7 @@ describe('Client Store (Cart Logic)', () => {
         setActivePinia(createPinia())
         vi.clearAllMocks()
         
-        // Mock auth store
+        
         const auth = useAuthStore()
         auth.token = 'test-token'
         auth.user = { id: 5, username: 'testuser' }
@@ -43,7 +43,7 @@ describe('Client Store (Cart Logic)', () => {
             method: 'POST',
             body: JSON.stringify({ listing_id: 10 })
         }))
-        // Refresh call (fetchCart) doesn't specify method 'GET' explicitly in code
+        
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/cart'), expect.objectContaining({
             headers: expect.objectContaining({ Authorization: 'Bearer test-token' })
         }))
@@ -73,7 +73,7 @@ describe('Client Store (Cart Logic)', () => {
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/cart/checkout'), expect.objectContaining({
             method: 'POST'
         }))
-        // Parallel refresh calls
+        
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/cart'), expect.anything())
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/event-participation'), expect.anything())
         expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/course-order/me'), expect.anything())

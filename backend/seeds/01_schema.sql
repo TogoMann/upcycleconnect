@@ -53,7 +53,8 @@ END $$;
 CREATE TABLE IF NOT EXISTS city (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
-    zip_code VARCHAR(10) NOT NULL
+    zip_code VARCHAR(10) NOT NULL,
+    CONSTRAINT city_name_zip_code_key UNIQUE (name, zip_code)
 );
 
 CREATE TABLE IF NOT EXISTS address (
@@ -115,7 +116,9 @@ CREATE TABLE IF NOT EXISTS users (
     language_preference VARCHAR(5) DEFAULT 'fr',
     has_seen_tutorial BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    company_id BIGINT REFERENCES companies(id) ON DELETE SET NULL
+    company_id BIGINT REFERENCES companies(id) ON DELETE SET NULL,
+    is_banned BOOLEAN DEFAULT FALSE,
+    ban_expires_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS score_history (
@@ -138,7 +141,8 @@ CREATE TABLE IF NOT EXISTS event (
     location VARCHAR(255),
     max_capacity INTEGER,
     created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    premium BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS event_participation (
@@ -303,8 +307,8 @@ CREATE TABLE IF NOT EXISTS listing_order (
 
 CREATE TABLE IF NOT EXISTS invoices (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- Buyer
-    seller_id BIGINT REFERENCES users(id) ON DELETE SET NULL, -- Seller
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, 
+    seller_id BIGINT REFERENCES users(id) ON DELETE SET NULL, 
     order_id BIGINT,
     order_type VARCHAR(64) NOT NULL,
     invoice_number VARCHAR(128) UNIQUE NOT NULL,
@@ -480,6 +484,7 @@ ALTER TABLE item ADD COLUMN IF NOT EXISTS size LOCKER_SIZE DEFAULT 'M';
 
 ALTER TABLE event ADD COLUMN IF NOT EXISTS title VARCHAR(128) NOT NULL DEFAULT '';
 ALTER TABLE event ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE event ADD COLUMN IF NOT EXISTS premium BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER TABLE news ADD COLUMN IF NOT EXISTS type VARCHAR(20) NOT NULL DEFAULT 'actualite';
 
@@ -558,3 +563,13 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 
 INSERT INTO platform_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS news_vote (
+    news_id BIGINT NOT NULL REFERENCES news(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vote_type VARCHAR(4) NOT NULL CHECK (vote_type IN ('up', 'down')),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (news_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_news_vote_news_id ON news_vote(news_id);

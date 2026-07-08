@@ -109,7 +109,7 @@ export const useChatStore = defineStore('chat', () => {
     if (!res.ok) throw new Error('Failed to edit message')
   }
 
-  // Admin Methods
+  
   async function adminGetConversations() {
     const res = await fetch(`${API_BASE}/admin/chat/conversations`, {
       headers: { Authorization: `Bearer ${authStore.token}` },

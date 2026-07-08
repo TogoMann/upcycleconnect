@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../src/stores/auth'
 
-// Mock global fetch
+
 global.fetch = vi.fn()
 
 describe('Auth Store', () => {

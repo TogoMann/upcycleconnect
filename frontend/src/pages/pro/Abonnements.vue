@@ -57,17 +57,44 @@ watch(siretInput, async (val) => {
 })
 
 const daysRemaining = computed(() => {
-    if (!currentSub.value?.until?.Valid) return null
-    const until = new Date(currentSub.value.until.Time)
+    const until = currentSub.value?.until
+    if (!until) return null
+    let timeStr = ''
+    if (typeof until === 'string') {
+        timeStr = until
+    } else if (typeof until === 'object') {
+        if (!until.Valid) return null
+        timeStr = until.Time
+    }
+    const untilDate = new Date(timeStr)
     const now = new Date()
-    const diff = Math.ceil((until.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    const diff = Math.ceil((untilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     return Math.max(0, diff)
 })
 
 const progressPercent = computed(() => {
-    if (!currentSub.value?.created_at?.Valid || !currentSub.value?.until?.Valid) return 0
-    const start = new Date(currentSub.value.created_at.Time).getTime()
-    const end = new Date(currentSub.value.until.Time).getTime()
+    const startVal = currentSub.value?.created_at
+    const endVal = currentSub.value?.until
+    if (!startVal || !endVal) return 0
+    
+    let startStr = ''
+    if (typeof startVal === 'string') {
+        startStr = startVal
+    } else if (typeof startVal === 'object') {
+        if (!startVal.Valid) return 0
+        startStr = startVal.Time
+    }
+    
+    let endStr = ''
+    if (typeof endVal === 'string') {
+        endStr = endVal
+    } else if (typeof endVal === 'object') {
+        if (!endVal.Valid) return 0
+        endStr = endVal.Time
+    }
+    
+    const start = new Date(startStr).getTime()
+    const end = new Date(endStr).getTime()
     const now = Date.now()
     if (end <= start) return 100
     return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
@@ -76,9 +103,16 @@ const progressPercent = computed(() => {
 const isExpiringSoon = computed(() => daysRemaining.value !== null && daysRemaining.value <= 7)
 const isExpired = computed(() => daysRemaining.value !== null && daysRemaining.value <= 0)
 
-function formatDate(d: { Time: string; Valid: boolean } | undefined) {
-    if (!d?.Valid) return '—'
-    return new Date(d.Time).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+function formatDate(d: { Time: string; Valid: boolean } | string | undefined) {
+    if (!d) return '—'
+    let timeStr = ''
+    if (typeof d === 'string') {
+        timeStr = d
+    } else if (typeof d === 'object') {
+        if (!d.Valid) return '—'
+        timeStr = d.Time
+    }
+    return new Date(timeStr).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 function planIcon(name: string) {
@@ -239,16 +273,21 @@ function changeLabel(plan: PlanOption) {
                 </div>
             </div>
 
-            <!-- Bandeau carte bancaire manquante -->
+            
             <div v-if="!hasPaymentMethod && currentTier !== 'Free'" class="alert-banner alert-banner--danger">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                <div>
-                    <strong>{{ t('pro.abonnements.missingPaymentTitle') }}</strong>
-                    <span>{{ t('pro.abonnements.missingPaymentDesc') }}</span>
+                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <div>
+                        <strong>{{ t('pro.abonnements.missingPaymentTitle') }}</strong>
+                        <p style="margin: 4px 0 0; font-size: 0.85rem;">{{ t('pro.abonnements.missingPaymentDesc') }}</p>
+                    </div>
+                    <router-link to="/pro/moyens-de-paiement" class="btn btn-outline-danger" style="padding: 6px 14px; font-size: 0.8rem; background: var(--white); border: 1.5px solid #c53030; color: #c53030; border-radius: 6px; font-weight: 700; text-decoration: none; display: inline-block;">
+                        Gérer les moyens de paiement
+                    </router-link>
                 </div>
             </div>
 
-            <!-- Bandeau expiration proche -->
+            
             <div v-if="isExpiringSoon && !isExpired" class="alert-banner alert-banner--warning">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <div>
@@ -257,7 +296,7 @@ function changeLabel(plan: PlanOption) {
                 </div>
             </div>
 
-            <!-- Bandeau expiré -->
+            
             <div v-if="isExpired" class="alert-banner alert-banner--danger">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 <div>
@@ -266,7 +305,7 @@ function changeLabel(plan: PlanOption) {
                 </div>
             </div>
 
-            <!-- Section abonnement actuel -->
+            
             <div v-if="currentSub && currentTier !== 'Free'" class="current-sub-card">
                 <div class="sub-header">
                     <div class="sub-tier-badge" :class="`tier--${currentTier.toLowerCase()}`">{{ currentTier }}</div>
@@ -285,6 +324,9 @@ function changeLabel(plan: PlanOption) {
                         <span class="sub-detail-label">{{ t('pro.abonnements.timeRemaining') }}</span>
                         <span class="sub-detail-value" :class="{ 'text-warning': isExpiringSoon, 'text-danger': isExpired }">
                             {{ isExpired ? t('pro.abonnements.expired') : t('pro.abonnements.daysRemaining', { days: daysRemaining, plural: daysRemaining !== 1 ? 's' : '' }) }}
+                            <span v-if="isExpiringSoon && !hasPaymentMethod" style="font-size: 0.8rem; display: block; color: #e53e3e; font-weight: 500; margin-top: 4px;">
+                                (Expirera le 1er si aucun moyen de paiement n'est renseigné)
+                            </span>
                         </span>
                     </div>
                 </div>
@@ -307,7 +349,7 @@ function changeLabel(plan: PlanOption) {
                 <p class="free-message">{{ t('pro.abonnements.freeMessage') }}</p>
             </div>
 
-            <!-- Grille des plans -->
+            
             <h2 class="section-title">{{ t('pro.abonnements.choosePlanTitle') }}</h2>
             <div class="plans-grid">
                 <div
@@ -349,7 +391,7 @@ function changeLabel(plan: PlanOption) {
             </div>
         </template>
 
-        <!-- Modal de confirmation -->
+        
         <Teleport to="body">
             <div v-if="showConfirmModal" class="modal-overlay" @click.self="closeModal">
                 <div class="modal-card">
@@ -401,7 +443,7 @@ function changeLabel(plan: PlanOption) {
 .page-subtitle { font-size: 0.9rem; color: var(--charcoal); opacity: 0.6; margin: 0; }
 .loading-state { text-align: center; padding: 60px 0; opacity: 0.5; font-size: 0.9rem; }
 
-/* Alert banners */
+
 .alert-banner { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; }
 .alert-banner svg { width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px; }
 .alert-banner div { display: flex; flex-direction: column; gap: 2px; }
@@ -412,7 +454,7 @@ function changeLabel(plan: PlanOption) {
 .alert-banner--warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 .alert-banner--warning svg { color: #f59e0b; }
 
-/* Current subscription card */
+
 .current-sub-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.1); border-radius: 16px; padding: 28px; margin-bottom: 32px; }
 .current-sub-card--free { text-align: center; padding: 32px; }
 .free-message { font-size: 0.9rem; color: var(--charcoal); opacity: 0.6; margin: 12px 0 0; }
@@ -437,10 +479,10 @@ function changeLabel(plan: PlanOption) {
 .progress--warning { background: #f59e0b; }
 .progress-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.72rem; color: var(--charcoal); opacity: 0.4; }
 
-/* Section title */
+
 .section-title { font-size: 1.1rem; font-weight: 700; color: var(--charcoal); margin: 0 0 16px; }
 
-/* Plans grid */
+
 .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .plan-card { background: var(--white); border: 1.5px solid rgba(53,53,53,0.1); border-radius: 16px; padding: 28px 24px; display: flex; flex-direction: column; gap: 14px; position: relative; transition: border-color 0.2s, transform 0.2s; }
 .plan-card:hover { transform: translateY(-2px); }
@@ -465,7 +507,7 @@ function changeLabel(plan: PlanOption) {
 .plan-btn--active { background: transparent; color: var(--green-dark); cursor: default; }
 .plan-btn:disabled { opacity: 0.5; cursor: default; }
 
-/* Modal */
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
 .modal-card { background: var(--white); border-radius: 20px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
 .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--charcoal); margin: 0 0 24px; }
@@ -480,7 +522,7 @@ function changeLabel(plan: PlanOption) {
 .modal-note { opacity: 0.6; font-size: 0.82rem !important; margin-top: 4px !important; }
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
 
-/* Form elements */
+
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-label { font-size: 0.85rem; font-weight: 600; color: var(--charcoal); opacity: 0.75; }
 .form-input { padding: 11px 14px; font-size: 0.9rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--cream); color: var(--charcoal); font-family: inherit; outline: none; transition: border-color 0.2s; }

@@ -15,16 +15,15 @@ import ProLayout from '@/layouts/ProLayout.vue'
 import SalarieLayout from '@/layouts/SalarieLayout.vue'
 
 import HomePage from '@/pages/home/HomePage.vue'
-import PrestationPage from '@/pages/home/PrestationPage.vue'
 import EventPage from '@/pages/home/EventPage.vue'
 import AnnouncePage from '@/pages/home/AnnoucePage.vue'
-import RepairPage from '@/pages/home/RepairPage.vue'
 import ForumPage from '@/pages/home/ForumPage.vue'
 import ForumThreadPage from '@/pages/home/ForumThreadPage.vue'
 import ForumCreatePage from '@/pages/home/ForumCreatePage.vue'
 import AboutPage from '@/pages/home/AboutPage.vue'
 import ConseilsPage from '@/pages/home/ConseilsPage.vue'
 import FormationsPage from '@/pages/home/FormationsPage.vue'
+import TarifsPage from '@/pages/home/TarifsPage.vue'
 import AnnonceDetailPage from '@/pages/home/AnnonceDetailPage.vue'
 import LegalPage from '@/pages/home/LegalPage.vue'
 
@@ -78,6 +77,7 @@ import ConfirmationPaiement from '@/pages/client/ConfirmationPaiement.vue'
 import ClientProfil from '@/pages/client/Profil.vue'
 import ClientChat from '@/pages/client/Chat.vue'
 import ClientPlans from '@/pages/client/Plans.vue'
+import MoyensPaiement from '@/pages/client/MoyensPaiement.vue'
 
 import ProDashboard from '@/pages/pro/Dashboard.vue'
 import ProAbonnements from '@/pages/pro/Abonnements.vue'
@@ -88,7 +88,6 @@ import ProRecupererObjet from '@/pages/pro/RecupererObjet.vue'
 import ProMesProjets from '@/pages/pro/MesProjets.vue'
 import ProNouveauProjet from '@/pages/pro/NouveauProjet.vue'
 import ProProjetDetail from '@/pages/pro/ProjetDetail.vue'
-import ProTableauBordAvance from '@/pages/pro/TableauBordAvance.vue'
 import ProProfil from '@/pages/pro/Profil.vue'
 import ProChat from '@/pages/pro/Chat.vue'
 
@@ -110,17 +109,16 @@ const router = createRouter({
             component: PublicLayout,
             children: [
                 { path: '', component: HomePage },
-                { path: 'prestations', component: PrestationPage },
                 { path: 'evenements', component: EventPage },
                 { path: 'annonces', component: AnnouncePage },
                 { path: 'annonces/:id', component: AnnonceDetailPage },
-                { path: 'reparer', component: RepairPage },
                 { path: 'forum', component: ForumPage },
                 { path: 'forum/nouveau', component: ForumCreatePage, meta: { requiresAuth: true } },
                 { path: 'forum/:id', component: ForumThreadPage },
                 { path: 'a-propos', component: AboutPage },
                 { path: 'conseils', component: ConseilsPage },
                 { path: 'formations', component: FormationsPage },
+                { path: 'tarifs', component: TarifsPage },
                 { path: 'mentions-legales', component: LegalPage },
                 { path: 'auth/login', component: Login },
                 { path: 'auth/register', component: Register },
@@ -147,6 +145,7 @@ const router = createRouter({
                 { path: 'panier', component: Panier, name: 'Panier' },
                 { path: 'paiement', component: Paiement },
                 { path: 'paiement/confirmation', component: ConfirmationPaiement, name: 'ConfirmationPaiement' },
+                { path: 'moyens-de-paiement', component: MoyensPaiement },
                 { path: 'profil', component: ClientProfil },
                 { path: 'chat', component: ClientChat },
                 { path: 'plans', component: ClientPlans },
@@ -163,11 +162,22 @@ const router = createRouter({
                 { path: 'publicites', component: ProPublicites },
                 { path: 'facturation', component: ProFacturation },
                 { path: 'annonces', component: ProAnnonces },
+                { path: 'annonces/nouvelle', component: NouvelleAnnonce },
+                { path: 'conteneurs', component: MesDepots },
+                { path: 'conteneurs/deposer', component: DeposerObjet },
                 { path: 'conteneurs/recuperer', component: ProRecupererObjet },
+                { path: 'score', component: UpcyclingScore },
+                { path: 'planning', component: Planning },
+                { path: 'catalogue', component: Catalogue },
+                { path: 'formations', component: ClientMesFormations },
+                { path: 'panier', component: Panier, name: 'ProPanier' },
+                { path: 'paiement', component: Paiement },
+                { path: 'paiement/confirmation', component: ConfirmationPaiement, name: 'ProConfirmationPaiement' },
+                { path: 'moyens-de-paiement', component: MoyensPaiement },
+                { path: 'plans', component: ClientPlans },
                 { path: 'projets', component: ProMesProjets },
                 { path: 'projets/nouveau', component: ProNouveauProjet },
                 { path: 'projets/:id', component: ProProjetDetail },
-                { path: 'dashboard-avance', component: ProTableauBordAvance },
                 { path: 'profil', component: ProProfil },
                 { path: 'chat', component: ProChat },
             ],
