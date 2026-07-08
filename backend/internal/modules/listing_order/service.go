@@ -76,15 +76,25 @@ func (s *Service) CreatePaidOrder(userId int64, listingId int64) (pgtype.Int8, e
 func (s *Service) createConfirmedOrder(userId int64, l *listing.Listing) (pgtype.Int8, error) {
 	sellerId := l.CreatedBy.Int64
 
-	realPrice, err := l.Price.Float64Value()
+	var orderPrice pgtype.Numeric
+	orderPrice = l.Price
+	priceVal, err := l.Price.Float64Value()
 	if err != nil {
 		return pgtype.Int8{}, fmt.Errorf("prix de l'annonce invalide")
+	}
+	realPrice := priceVal.Float64
+
+	// Check if there is a negotiated price
+	negotiatedPrice, hasNegotiation, err := s.listingService.GetNegotiatedPrice(l.Id.Int64, userId)
+	if err == nil && hasNegotiation {
+		realPrice = negotiatedPrice
+		orderPrice.UnmarshalJSON([]byte(fmt.Sprintf("%f", negotiatedPrice)))
 	}
 
 	lo := ListingOrder{
 		ListingId: l.Id,
 		UserId:    pgtype.Int8{Int64: userId, Valid: true},
-		Price:     l.Price,
+		Price:     orderPrice,
 		Status:    Paid,
 	}
 
@@ -93,7 +103,7 @@ func (s *Service) createConfirmedOrder(userId int64, l *listing.Listing) (pgtype
 		return id, err
 	}
 
-	s.financialSvc.GenerateInvoiceForOrder(userId, &sellerId, id.Int64, "listing", realPrice.Float64)
+	s.financialSvc.GenerateInvoiceForOrder(userId, &sellerId, id.Int64, "listing", realPrice)
 
 	s.listingService.UpdateStatus(l.Id, "sold")
 	s.chatRepo.CloseConversationsByListingId(l.Id.Int64)

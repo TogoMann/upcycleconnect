@@ -169,6 +169,13 @@ watch(() => form.itemSize, () => {
     }
 })
 
+watch(() => form.zipCode, (newZip) => {
+    if (form.handoffMode === 'main_propre' && newZip && newZip.length >= 2) {
+        const deptNum = newZip.slice(0, 2)
+        form.department = getDepartmentName(deptNum)
+    }
+})
+
 function siteLabel(site: any, index: number): string {
     const type = site.type_site || t('client.nouvelleAnnonce.collectionPoint')
     return `${type} ${index + 1} — ${site.address}`
@@ -200,6 +207,7 @@ const errors = reactive({
     itemSize: '',
     physicalState: '',
     address: '',
+    zipCode: '',
     global: '',
 })
 
@@ -220,15 +228,24 @@ function validate(): boolean {
     errors.description = form.description.trim() ? '' : t('client.nouvelleAnnonce.errorDescriptionRequired')
     errors.price = form.isDon || (form.price && Number(form.price) > 0) ? '' : t('client.nouvelleAnnonce.errorPriceRequired')
     errors.category = form.category ? '' : t('client.nouvelleAnnonce.errorCategoryRequired')
-    errors.city_id = form.city_id ? '' : t('client.nouvelleAnnonce.errorCityRequired')
-    errors.address = form.handoffMode === 'main_propre' && !form.street.trim() ? 'L\'adresse de rue est requise.' : ''
+    
+    if (form.handoffMode === 'casier') {
+        errors.city_id = form.city_id ? '' : t('client.nouvelleAnnonce.errorCityRequired')
+        errors.zipCode = ''
+        errors.address = ''
+    } else {
+        errors.city_id = form.city.trim() ? '' : t('client.nouvelleAnnonce.errorCityRequired')
+        errors.zipCode = form.zipCode.trim() ? '' : 'Le code postal est requis.'
+        errors.address = form.street.trim() ? '' : 'L\'adresse de rue est requise.'
+    }
+    
     errors.itemSize = form.handoffMode === 'casier' && !form.itemSize ? t('client.nouvelleAnnonce.errorSizeRequired') : ''
     errors.siteId = form.handoffMode === 'casier' && !form.siteId ? t('client.nouvelleAnnonce.errorSiteRequired') : ''
     errors.lockerId = form.handoffMode === 'casier' && !form.lockerId ? t('client.nouvelleAnnonce.errorLockerRequired') : ''
     errors.physicalState = form.handoffMode === 'casier' && !form.physicalState ? t('client.nouvelleAnnonce.errorStateRequired') : ''
     
     return !errors.name && !errors.description && !errors.price && !errors.category && !errors.city_id
-        && !errors.address && !errors.itemSize && !errors.siteId && !errors.lockerId && !errors.physicalState
+        && !errors.address && !errors.itemSize && !errors.siteId && !errors.lockerId && !errors.physicalState && !errors.zipCode
 }
 
 async function handleSubmit() {
@@ -244,20 +261,28 @@ async function handleSubmit() {
             ? `${form.street.trim()}, ${form.zipCode} ${form.city}, ${form.department.trim()}`
             : ''
 
-        await clientStore.createAnnonce({
+        const payload: any = {
             name: form.name.trim(),
             description: form.description.trim(),
             price: form.isDon ? 0 : Number(form.price),
             category: form.category,
-            city_id: Number(form.city_id),
             image_url: form.image_url,
             handoff_mode: form.handoffMode,
             address: formattedAddress,
             weight: form.weight ? Number(form.weight) : 0,
-            locker_id: form.handoffMode === 'casier' ? Number(form.lockerId) : undefined,
-            physical_state: form.handoffMode === 'casier' ? form.physicalState : undefined,
-            size: form.handoffMode === 'casier' ? form.itemSize : undefined,
-        })
+        }
+
+        if (form.handoffMode === 'casier') {
+            payload.city_id = Number(form.city_id)
+            payload.locker_id = Number(form.lockerId)
+            payload.physical_state = form.physicalState
+            payload.size = form.itemSize
+        } else {
+            payload.city_name = form.city.trim()
+            payload.zip_code = form.zipCode.trim()
+        }
+
+        await clientStore.createAnnonce(payload)
         await clientStore.fetchAnnonces()
         router.push(backRoute.value)
     } catch (e: any) {
@@ -342,7 +367,7 @@ async function handleSubmit() {
                 <span v-if="errors.itemSize" class="form-error">{{ errors.itemSize }}</span>
             </div>
 
-            <div class="form-group form-group--row" style="position: relative;">
+            <div v-if="form.handoffMode === 'casier'" class="form-group form-group--row" style="position: relative;">
                 <div class="city-field" style="position: relative;">
                     <label class="form-label">{{ t('client.nouvelleAnnonce.cityLabel') }}</label>
                     <div style="position: relative;">
@@ -364,7 +389,7 @@ async function handleSubmit() {
                     <span v-if="errors.city_id" class="form-error">{{ errors.city_id }}</span>
                 </div>
 
-                <div v-if="form.handoffMode === 'casier' && form.city_id" class="sites-summary">
+                <div v-if="form.city_id" class="sites-summary">
                     <span class="sites-summary-title">{{ t('client.nouvelleAnnonce.availableLockersTitle') }}</span>
                     <div v-if="sitesLoading" class="locker-hint">{{ t('client.nouvelleAnnonce.loading') }}</div>
                     <div v-else-if="sitesWithLockers.length === 0" class="locker-hint">{{ t('client.nouvelleAnnonce.noSitesInCity') }}</div>
@@ -429,6 +454,32 @@ async function handleSubmit() {
             </template>
 
             <template v-if="form.handoffMode === 'main_propre'">
+                <div class="form-group form-group--row" style="margin-bottom: 0;">
+                    <div class="city-field">
+                        <label class="form-label">Ville</label>
+                        <input
+                            v-model="form.city"
+                            type="text"
+                            class="form-input"
+                            :class="{ 'form-input--error': errors.city_id }"
+                            placeholder="Ex. Paris"
+                        />
+                        <span v-if="errors.city_id" class="form-error">{{ errors.city_id }}</span>
+                    </div>
+
+                    <div class="city-field">
+                        <label class="form-label">Code postal</label>
+                        <input
+                            v-model="form.zipCode"
+                            type="text"
+                            class="form-input"
+                            :class="{ 'form-input--error': errors.zipCode }"
+                            placeholder="Ex. 75000"
+                        />
+                        <span v-if="errors.zipCode" class="form-error">{{ errors.zipCode }}</span>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Adresse / Rue</label>
                     <input

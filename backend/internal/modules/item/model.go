@@ -12,6 +12,7 @@ const (
 	Deposited ItemStatus = "deposited"
 	Validated ItemStatus = "validated"
 	Collected ItemStatus = "collected"
+	Cancelled ItemStatus = "cancelled"
 )
 
 type ItemState string

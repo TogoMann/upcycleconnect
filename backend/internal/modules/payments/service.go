@@ -149,12 +149,18 @@ func (s *Service) CreateListingOrderCheckout(userId int64, listingId int64) (*Li
 		return nil, fmt.Errorf("annonce introuvable: %w", err)
 	}
 
-	price, err := l.Price.Float64Value()
+	priceVal, err := l.Price.Float64Value()
 	if err != nil {
 		return nil, fmt.Errorf("prix invalide")
 	}
+	price := priceVal.Float64
 
-	if price.Float64 <= 0 {
+	negotiatedPrice, hasNegotiation, err := s.listingService.GetNegotiatedPrice(listingId, userId)
+	if err == nil && hasNegotiation {
+		price = negotiatedPrice
+	}
+
+	if price <= 0 {
 		id, err := s.listingOrderService.CreateFromRequest(userId, listingorder.CreateListingOrderRequest{
 			ListingId: listingId,
 			Price:     0,
@@ -179,7 +185,7 @@ func (s *Service) CreateListingOrderCheckout(userId int64, listingId int64) (*Li
 				Quantity: stripe.Int64(1),
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 					Currency:   stripe.String("eur"),
-					UnitAmount: stripe.Int64(int64(price.Float64 * 100)),
+					UnitAmount: stripe.Int64(int64(price * 100)),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 						Name: stripe.String(l.Name),
 					},

@@ -19,7 +19,7 @@ BEGIN
         CREATE TYPE ITEM_STATE AS ENUM ('neuf', 'bon etat', 'abime', 'casse');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'item_status') THEN
-        CREATE TYPE ITEM_STATUS AS ENUM ('deposited', 'validated', 'collected');
+        CREATE TYPE ITEM_STATUS AS ENUM ('deposited', 'validated', 'collected', 'cancelled');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'locker_status') THEN
         CREATE TYPE LOCKER_STATUS AS ENUM ('Available', 'Occupied', 'HS');

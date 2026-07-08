@@ -77,6 +77,40 @@ function getItemId(item: any): number {
     }
     return Number(item.id)
 }
+const isOwner = computed(() => {
+    if (!listing.value || !authStore.user) return false
+    const cb = listing.value.created_by
+    const ownerId = cb && typeof cb === 'object' && 'Int64' in cb ? cb.Int64 : Number(cb)
+    return ownerId === authStore.user.id
+})
+
+function handleBuy() {
+    if (!authStore.isAuthenticated) {
+        router.push('/auth/login')
+        return
+    }
+    if (!listing.value) return
+
+    let listingId = ''
+    if (typeof listing.value.id === 'object' && listing.value.id !== null) {
+        listingId = listing.value.id.Int64?.toString() || listing.value.id.id?.toString() || ''
+    } else {
+        listingId = listing.value.id?.toString() || ''
+    }
+
+    const priceVal = typeof listing.value.price === 'object' ? (listing.value.price.Float64 ?? listing.value.price.Int64) : Number(listing.value.price)
+
+    const prefix = authStore.userRole === 'pro' ? '/pro' : '/particulier'
+    router.push({
+        path: `${prefix}/paiement`,
+        query: {
+            id: listingId,
+            name: listing.value.name,
+            price: priceVal.toString(),
+            type: 'listing'
+        }
+    })
+}
 
 function handleAction() {
     if (!authStore.isAuthenticated) {
@@ -187,19 +221,19 @@ function handleAction() {
                                 <p class="desc-text">{{ listing.description || t('listingDetail.noDescription') }}</p>
                             </div>
 
-                            <div class="detail-actions">
+                            <div class="detail-actions" v-if="!isOwner">
+                                <button
+                                    class="btn-buy"
+                                    @click="handleBuy"
+                                >
+                                    {{ isFree ? 'Obtenir gratuitement' : 'Acheter directement' }}
+                                </button>
                                 <button
                                     class="btn-contact"
                                     :class="{ 'btn-contact--active': listing && clientStore.isChattingWith(getItemId(listing)) }"
                                     @click="handleAction"
                                 >
-                                    {{ listing && clientStore.isChattingWith(getItemId(listing)) ? t('listingDetail.continueChat') : t('listingDetail.contactSeller') }}
-                                </button>
-                                <button v-if="!listing || !clientStore.isChattingWith(getItemId(listing))" class="btn-save">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                    </svg>
-                                    {{ t('listingDetail.save') }}
+                                    {{ listing && clientStore.isChattingWith(getItemId(listing)) ? t('listingDetail.continueChat') : 'Négocier le prix' }}
                                 </button>
                             </div>
                         </div>
@@ -433,52 +467,57 @@ function handleAction() {
     display: flex;
     gap: 12px;
 }
-.btn-contact {
+.btn-buy {
     flex: 1;
     display: block;
     padding: 14px 24px;
     background: var(--green-dark);
     color: var(--white);
+    border: none;
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 700;
-    text-decoration: none;
+    cursor: pointer;
     text-align: center;
     transition:
         background 0.2s,
         transform 0.15s;
 }
-.btn-contact:hover {
+.btn-buy:hover {
     background: var(--green-mid);
     transform: translateY(-1px);
 }
-.btn-contact--active {
-    background: #4183d7;
-}
-.btn-contact--active:hover {
-    background: #3569ad;
-}
-.btn-save {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 18px;
+.btn-contact {
+    flex: 1;
+    display: block;
+    padding: 14px 24px;
     background: transparent;
     color: var(--charcoal);
     border: 1.5px solid rgba(53, 53, 53, 0.25);
     border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
-    font-family: inherit;
+    text-align: center;
     transition:
         border-color 0.2s,
-        color 0.2s;
-    white-space: nowrap;
+        color 0.2s,
+        transform 0.15s;
 }
-.btn-save:hover {
+.btn-contact:hover {
     border-color: var(--green-mid);
     color: var(--green-mid);
+    transform: translateY(-1px);
+}
+.btn-contact--active {
+    background: #4183d7;
+    color: var(--white);
+    border-color: #4183d7;
+}
+.btn-contact--active:hover {
+    background: #3569ad;
+    color: var(--white);
+    border-color: #3569ad;
 }
 
 @media (max-width: 860px) {
@@ -489,9 +528,6 @@ function handleAction() {
 @media (max-width: 560px) {
     .detail-actions {
         flex-direction: column;
-    }
-    .btn-save {
-        justify-content: center;
     }
 }
 </style>

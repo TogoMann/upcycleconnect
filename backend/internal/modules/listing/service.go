@@ -227,3 +227,7 @@ func (s *Service) Disapprove(id pgtype.Int8) error {
 	}
 	return s.repo.Disapprove(id)
 }
+
+func (s *Service) GetNegotiatedPrice(listingId int64, buyerId int64) (float64, bool, error) {
+	return s.repo.GetNegotiatedPrice(listingId, buyerId)
+}

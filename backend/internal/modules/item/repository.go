@@ -203,3 +203,27 @@ func (r *Repository) MarkCodeUsed(code string) error {
 	}
 	return nil
 }
+
+func (r *Repository) CancelDepot(id pgtype.Int8) error {
+	var entryId pgtype.Int8
+	err := r.db.QueryRow(db.Ctx, "SELECT entry_id FROM item WHERE id = $1", id).Scan(&entryId)
+	if err != nil {
+		return err
+	}
+
+	if entryId.Valid {
+		_, err = r.db.Exec(db.Ctx, "DELETE FROM entry WHERE id = $1", entryId)
+		if err != nil {
+			return err
+		}
+	}
+
+	tag, err := r.db.Exec(db.Ctx, "UPDATE item SET status = 'cancelled' WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("item not found")
+	}
+	return nil
+}

@@ -250,3 +250,33 @@ func (r *Repository) CountByUserId(userId pgtype.Int8) (int64, error) {
 	}
 	return count, nil
 }
+
+func (r *Repository) FindOrCreateCity(name string, zipCode string) (int64, error) {
+	var id int64
+	err := r.db.QueryRow(db.Ctx, "SELECT id FROM city WHERE LOWER(name) = LOWER($1) AND zip_code = $2", name, zipCode).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+	err = r.db.QueryRow(db.Ctx, "INSERT INTO city (name, zip_code) VALUES ($1, $2) RETURNING id", name, zipCode).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("package listing/repo FindOrCreateCity: %w", err)
+	}
+	return id, nil
+}
+
+func (r *Repository) GetNegotiatedPrice(listingId int64, buyerId int64) (float64, bool, error) {
+	var proposedPrice float64
+	err := r.db.QueryRow(db.Ctx, `
+		SELECT m.proposed_price
+		FROM chat_message m
+		JOIN chat_conversation c ON m.conversation_id = c.id
+		WHERE c.listing_id = $1 AND c.buyer_id = $2 AND m.message_type = 'price_proposal' AND m.proposal_status = 'accepted'
+		ORDER BY m.id DESC
+		LIMIT 1
+	`, listingId, buyerId).Scan(&proposedPrice)
+
+	if err != nil {
+		return 0, false, nil
+	}
+	return proposedPrice, true, nil
+}

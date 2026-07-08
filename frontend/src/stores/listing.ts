@@ -70,7 +70,7 @@ export const useListingStore = defineStore('listing', () => {
         return Array.isArray(data) ? data : []
     }
 
-    async function createAnnonce(data: { name: string; description: string; price: number; category?: string; city_id?: number; image_url?: string; handoff_mode?: string; address?: string; weight?: number; locker_id?: number; physical_state?: string; size?: string }) {
+    async function createAnnonce(data: { name: string; description: string; price: number; category?: string; city_id?: number; city_name?: string; zip_code?: string; image_url?: string; handoff_mode?: string; address?: string; weight?: number; locker_id?: number; physical_state?: string; size?: string }) {
         const res = await fetch(`${API_BASE}/listing/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },

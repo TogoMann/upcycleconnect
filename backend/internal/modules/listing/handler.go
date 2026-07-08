@@ -205,6 +205,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		Price         float64 `json:"price"`
 		Category      string  `json:"category"`
 		CityId        int64   `json:"city_id"`
+		CityName      string  `json:"city_name"`
+		ZipCode       string  `json:"zip_code"`
 		ImageUrl      string  `json:"image_url"`
 		HandoffMode   string  `json:"handoff_mode"`
 		Address       string  `json:"address"`
@@ -225,11 +227,19 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		handoffMode = HandDelivery
 	}
 
+	cityId := input.CityId
+	if cityId == 0 && input.CityName != "" {
+		resolvedId, err := h.service.repo.FindOrCreateCity(input.CityName, input.ZipCode)
+		if err == nil {
+			cityId = resolvedId
+		}
+	}
+
 	listingDto := Listing{
 		Name:        input.Name,
 		Description: input.Description,
 		Category:    ListingCategory(input.Category),
-		CityId:      pgtype.Int8{Int64: input.CityId, Valid: input.CityId > 0},
+		CityId:      pgtype.Int8{Int64: cityId, Valid: cityId > 0},
 		CreatedBy:   pgtype.Int8{Int64: int64(sub), Valid: true},
 		Status:      Active,
 		Approved:    false,
@@ -295,6 +305,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		Category    string  `json:"category"`
 		Status      string  `json:"status"`
 		CityId      int64   `json:"city_id"`
+		CityName    string  `json:"city_name"`
+		ZipCode     string  `json:"zip_code"`
 		ImageUrl    string  `json:"image_url"`
 		HandoffMode string  `json:"handoff_mode"`
 		Address     string  `json:"address"`
@@ -312,12 +324,20 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		handoffMode = HandDelivery
 	}
 
+	cityId := input.CityId
+	if cityId == 0 && input.CityName != "" {
+		resolvedId, err := h.service.repo.FindOrCreateCity(input.CityName, input.ZipCode)
+		if err == nil {
+			cityId = resolvedId
+		}
+	}
+
 	dto := Listing{
 		Name:        input.Name,
 		Description: input.Description,
 		Category:    ListingCategory(input.Category),
 		Status:      ListingStatus(input.Status),
-		CityId:      pgtype.Int8{Int64: input.CityId, Valid: input.CityId > 0},
+		CityId:      pgtype.Int8{Int64: cityId, Valid: cityId > 0},
 		ImageUrl:    pgtype.Text{String: input.ImageUrl, Valid: input.ImageUrl != ""},
 		HandoffMode: handoffMode,
 		Address:     pgtype.Text{String: input.Address, Valid: input.Address != ""},
