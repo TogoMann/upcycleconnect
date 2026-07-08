@@ -81,3 +81,43 @@ func (s *Service) Update(id pgtype.Int8, c Container) error {
 func (s *Service) Delete(id pgtype.Int8) error {
 	return s.repo.Delete(id)
 }
+
+func (s *Service) FindAvailableLocker(cityId pgtype.Int8) (pgtype.Int8, error) {
+	return s.repo.FindAvailableLocker(cityId)
+}
+
+func (s *Service) UpdateLockerStatus(lockerId pgtype.Int8, status string) error {
+	return s.repo.UpdateLockerStatus(lockerId, status)
+}
+
+func (s *Service) GetSitesWithLockersByCity(cityId pgtype.Int8) ([]SiteWithLockers, error) {
+	sites, err := s.repo.GetSitesByCity(cityId)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]SiteWithLockers, 0, len(sites))
+	for _, site := range sites {
+		lockers, err := s.repo.GetLockersBySite(site.SiteId)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, SiteWithLockers{
+			SiteId:   site.SiteId,
+			Address:  site.Address,
+			TypeSite: site.TypeSite,
+			Lockers:  lockers,
+		})
+	}
+
+	return result, nil
+}
+
+func (s *Service) GetLockerById(id pgtype.Int8) (*Locker, error) {
+	return s.repo.GetLockerById(id)
+}
+
+func (s *Service) ClaimLocker(lockerId pgtype.Int8) (bool, error) {
+	return s.repo.ClaimLocker(lockerId)
+}

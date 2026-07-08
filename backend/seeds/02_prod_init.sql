@@ -21,7 +21,7 @@ INSERT INTO plans (name, description, price, billing_cycle, features, is_active)
 ('Free', 'Accès limité aux fonctionnalités de base', 0.00, 'monthly', '{"Vente d''objets", "Dépôt d''objets"}', true),
 ('Premium', 'Accès complet à toutes les fonctionnalités', 9.99, 'monthly', '{"Vente d''objets", "Dépôt d''objets", "Ateliers gratuits", "Événements VIP"}', true),
 ('Pro', 'Pour les professionnels de l''upcycling', 29.99, 'monthly', '{"Fonctionnalités Premium", "Statistiques avancées", "Publicité prioritaire"}', true)
-ON CONFLICT (name) DO UPDATE 
+ON CONFLICT (name) DO UPDATE
 SET description = EXCLUDED.description,
     price = EXCLUDED.price,
     billing_cycle = EXCLUDED.billing_cycle,
@@ -33,4 +33,5 @@ SET description = EXCLUDED.description,
 -- =========================
 INSERT INTO users (username, first_name, last_name, email, password_hash, role, created_at) VALUES
 ('clefevre', 'Charlie', 'Lefevre', 'charlie@test.com', '$2y$10$DJyaxQF22H1oHGvsjqk2HecoHyq8lqk1K.aMLKFFl/Z3hu.Qb0ewC', 'admin', NOW())
-ON CONFLICT (username) DO NOTHING;
+ON CONFLICT (username) DO UPDATE
+SET password_hash = EXCLUDED.password_hash;

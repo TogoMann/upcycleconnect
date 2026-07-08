@@ -3,11 +3,13 @@ package auth
 import (
 	"backend/internal/modules/companies"
 	"backend/internal/modules/plans"
+	"backend/internal/modules/settings"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/users"
 	"backend/internal/utils"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -15,15 +17,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Service struct {
-	userRepo *users.Repository
-	subRepo  *subscriptions.Repository
-	planRepo *plans.Repository
-	compRepo *companies.Repository
+func frontendURL() string {
+	url := os.Getenv("FRONTEND_URL")
+	if url == "" {
+		url = "http://localhost:5173"
+	}
+	return url
 }
 
-func NewService(userRepo *users.Repository, subRepo *subscriptions.Repository, planRepo *plans.Repository, compRepo *companies.Repository) *Service {
-	return &Service{userRepo: userRepo, subRepo: subRepo, planRepo: planRepo, compRepo: compRepo}
+type Service struct {
+	userRepo     *users.Repository
+	userService  *users.Service
+	subRepo      *subscriptions.Repository
+	planRepo     *plans.Repository
+	compRepo     *companies.Repository
+	settingsRepo *settings.Repository
+}
+
+func NewService(userRepo *users.Repository, userService *users.Service, subRepo *subscriptions.Repository, planRepo *plans.Repository, compRepo *companies.Repository, settingsRepo *settings.Repository) *Service {
+	return &Service{userRepo: userRepo, userService: userService, subRepo: subRepo, planRepo: planRepo, compRepo: compRepo, settingsRepo: settingsRepo}
 }
 
 func (s *Service) Login(username, password string) (*LoginResponse, error) {
@@ -52,6 +64,11 @@ func (s *Service) Login(username, password string) (*LoginResponse, error) {
 }
 
 func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
+	open, err := s.settingsRepo.IsRegistrationOpen()
+	if err == nil && !open {
+		return nil, errors.New("les inscriptions sont temporairement fermées")
+	}
+
 	req.Username = strings.TrimSpace(req.Username)
 	req.Email = strings.TrimSpace(req.Email)
 
@@ -86,6 +103,8 @@ func (s *Service) Register(req RegisterRequest) (*LoginResponse, error) {
 	if err != nil {
 		return nil, errors.New("erreur lors de la création du compte")
 	}
+
+	s.userService.AddScore(id, utils.ActionRegistration.Points, utils.ActionRegistration.Description)
 
 	tier := "Free"
 	var price float64 = 0.00
@@ -170,13 +189,45 @@ func (s *Service) AdminRequestPasswordReset(userId int64) error {
 	}
 
 	subject := "Réinitialisation de votre mot de passe - UpCycleConnect"
-	resetUrl := "http://localhost:5173/auth/reset-password?token=" + token
+	resetUrl := frontendURL() + "/auth/reset-password?token=" + token
 	body := fmt.Sprintf(`
 		<h1>Bonjour %s !</h1>
 		<p>Un administrateur a initié une réinitialisation de votre mot de passe.</p>
 		<p>Veuillez cliquer sur le lien ci-dessous pour choisir un nouveau mot de passe :</p>
 		<p><a href="%s">%s</a></p>
 		<p>Ce lien expirera dans 2 heures.</p>
+		<br/>
+		<p>L'équipe UpCycleConnect</p>
+	`, user.FirstName, resetUrl, resetUrl)
+
+	return utils.SendEmail(user.Email, subject, body)
+}
+
+func (s *Service) RequestPasswordReset(email string) error {
+	user, err := s.userRepo.GetByEmail(email)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return nil
+	}
+
+	token := utils.GenerateSecureToken()
+	expiresAt := pgtype.Timestamp{Time: time.Now().Add(time.Hour * 2), Valid: true}
+
+	err = s.userRepo.CreateResetToken(user.Id.Int64, token, expiresAt)
+	if err != nil {
+		return err
+	}
+
+	subject := "Réinitialisation de votre mot de passe - UpCycleConnect"
+	resetUrl := frontendURL() + "/auth/reset-password?token=" + token
+	body := fmt.Sprintf(`
+		<h1>Bonjour %s !</h1>
+		<p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+		<p>Veuillez cliquer sur le lien ci-dessous pour choisir un nouveau mot de passe :</p>
+		<p><a href="%s">%s</a></p>
+		<p>Ce lien expirera dans 2 heures. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>
 		<br/>
 		<p>L'équipe UpCycleConnect</p>
 	`, user.FirstName, resetUrl, resetUrl)

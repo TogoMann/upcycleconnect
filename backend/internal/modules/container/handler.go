@@ -141,6 +141,23 @@ func (h *Handler) GetUserAccesses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(accesses)
 }
 
+func (h *Handler) GetSitesWithLockers(w http.ResponseWriter, r *http.Request) {
+	cityIdStr := r.URL.Query().Get("city_id")
+	cityId, err := strconv.ParseInt(cityIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "city_id invalide", http.StatusBadRequest)
+		return
+	}
+
+	sites, err := h.service.GetSitesWithLockersByCity(pgtype.Int8{Int64: cityId, Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sites)
+}
+
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var c Container
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {

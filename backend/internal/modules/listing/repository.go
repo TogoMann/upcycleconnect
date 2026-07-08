@@ -37,8 +37,10 @@ func (r *Repository) GetAll(page, limit int) (*PaginatedListings, error) {
 		SELECT
 			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at,
 			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
+			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
-			COALESCE(u.username, '') as created_by_name
+			COALESCE(u.username, '') as created_by_name,
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
@@ -67,17 +69,23 @@ func (r *Repository) GetAll(page, limit int) (*PaginatedListings, error) {
 		TotalPages: totalPages,
 	}, nil
 }
-func (r *Repository) GetAllApproved() ([]Listing, error) {
+func (r *Repository) GetAllApproved(excludeUserId pgtype.Int8, minScore int32) ([]Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+		SELECT
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at,
 			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
+			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
-			COALESCE(u.username, '') as created_by_name
+			COALESCE(u.username, '') as created_by_name,
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
-		WHERE l.approved = true AND l.status = 'active'`)
+		WHERE l.approved = true AND l.status = 'active'
+		AND ($1::bigint IS NULL OR l.created_by != $1)
+		AND COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) >= $2
+		ORDER BY (SELECT COALESCE(SUM(points), 0) FROM score_history WHERE user_id = l.created_by) DESC, l.created_at DESC`,
+		excludeUserId, minScore)
 	if err != nil {
 		return nil, fmt.Errorf("package listing/repo GetAllApproved query: %w", err)
 	}
@@ -86,11 +94,13 @@ func (r *Repository) GetAllApproved() ([]Listing, error) {
 
 func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+		SELECT
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at,
 			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
+			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
-			COALESCE(u.username, '') as created_by_name
+			COALESCE(u.username, '') as created_by_name,
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
@@ -103,11 +113,13 @@ func (r *Repository) GetByUserId(userId pgtype.Int8) ([]Listing, error) {
 
 func (r *Repository) GetById(id pgtype.Int8) (*Listing, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at, 
+		SELECT
+			l.id, l.name, l.description, l.category, l.item_id, l.city_id, l.created_by, l.created_at,
 			l.approved, l.approved_by, l.approved_at, l.status, l.price, COALESCE(l.image_url, '') as image_url,
+			l.handoff_mode, COALESCE(l.address, '') as address, l.weight,
 			COALESCE(c.name, '') as city_name,
-			COALESCE(u.username, '') as created_by_name
+			COALESCE(u.username, '') as created_by_name,
+			CAST(COALESCE((SELECT SUM(points) FROM score_history WHERE user_id = l.created_by), 0) AS INTEGER) as seller_score
 		FROM listing l
 		LEFT JOIN city c ON l.city_id = c.id
 		LEFT JOIN users u ON l.created_by = u.id
@@ -128,8 +140,8 @@ func (r *Repository) Create(listingDto Listing) (pgtype.Int8, error) {
 	var id int64
 	err := r.db.QueryRow(
 		db.Ctx,
-		"INSERT INTO listing (name, description, category, item_id, city_id, created_by, price, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		listingDto.Name, listingDto.Description, listingDto.Category, listingDto.ItemId, listingDto.CityId, listingDto.CreatedBy, listingDto.Price, listingDto.ImageUrl).Scan(&id)
+		"INSERT INTO listing (name, description, category, item_id, city_id, created_by, price, image_url, handoff_mode, address, weight) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+		listingDto.Name, listingDto.Description, listingDto.Category, listingDto.ItemId, listingDto.CityId, listingDto.CreatedBy, listingDto.Price, listingDto.ImageUrl, listingDto.HandoffMode, listingDto.Address, listingDto.Weight).Scan(&id)
 
 	if err != nil {
 		return pgtype.Int8{}, err
@@ -151,8 +163,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 
 func (r *Repository) Update(id pgtype.Int8, l Listing) error {
 	tag, err := r.db.Exec(db.Ctx,
-		"UPDATE listing SET name=$1, description=$2, category=$3, item_id=$4, city_id=$5, created_by=$6, approved=$7, approved_by=$8, approved_at=$9, status=$10, price=$11, image_url=$12 WHERE id=$13",
-		l.Name, l.Description, l.Category, l.ItemId, l.CityId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, l.ImageUrl, id)
+		"UPDATE listing SET name=$1, description=$2, category=$3, item_id=$4, city_id=$5, created_by=$6, approved=$7, approved_by=$8, approved_at=$9, status=$10, price=$11, image_url=$12, handoff_mode=$13, address=$14, weight=$15 WHERE id=$16",
+		l.Name, l.Description, l.Category, l.ItemId, l.CityId, l.CreatedBy, l.Approved, l.ApprovedBy, l.ApprovedAt, l.Status, l.Price, l.ImageUrl, l.HandoffMode, l.Address, l.Weight, id)
 	if err != nil {
 		return err
 	}
@@ -212,7 +224,7 @@ func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 
 func (r *Repository) CountByUserId(userId pgtype.Int8) (int64, error) {
 	var count int64
-	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM listing WHERE created_by = $1", userId).Scan(&count)
+	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM listing WHERE created_by = $1 AND status = 'active'", userId).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("package listing/repo CountByUserId query: %w", err)
 	}

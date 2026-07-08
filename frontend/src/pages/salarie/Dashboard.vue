@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const stats = ref({ formations: 0, creneaux: 0, articles: 0, threads: 0 })
 
@@ -22,9 +24,9 @@ onMounted(async () => {
     <div class="dashboard">
         <div class="page-header">
             <h1 class="page-title">
-                Bonjour, {{ authStore.user?.first_name || authStore.user?.username || 'vous' }}.
+                {{ t('salarie.dashboard.greeting', { name: authStore.user?.first_name || authStore.user?.username || t('salarie.dashboard.you') }) }}
             </h1>
-            <p class="page-subtitle">Vue d'ensemble de votre activité.</p>
+            <p class="page-subtitle">{{ t('salarie.dashboard.subtitle') }}</p>
         </div>
 
         <div class="kpi-grid">
@@ -36,7 +38,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.formations }}</div>
-                <div class="kpi-label">Formations créées</div>
+                <div class="kpi-label">{{ t('salarie.dashboard.trainingsCreated') }}</div>
             </router-link>
 
             <router-link to="/salarie/planning" class="kpi-card kpi-card--link">
@@ -49,7 +51,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.creneaux }}</div>
-                <div class="kpi-label">Créneaux planifiés</div>
+                <div class="kpi-label">{{ t('salarie.dashboard.scheduledSlots') }}</div>
             </router-link>
 
             <router-link to="/salarie/conseils" class="kpi-card kpi-card--link">
@@ -60,7 +62,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.articles }}</div>
-                <div class="kpi-label">Articles publiés</div>
+                <div class="kpi-label">{{ t('salarie.dashboard.publishedArticles') }}</div>
             </router-link>
 
             <router-link to="/salarie/forum" class="kpi-card kpi-card--link">
@@ -70,12 +72,12 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.threads }}</div>
-                <div class="kpi-label">Discussions actives</div>
+                <div class="kpi-label">{{ t('salarie.dashboard.activeThreads') }}</div>
             </router-link>
         </div>
 
         <div class="actions-section">
-            <h2 class="section-title">Actions rapides</h2>
+            <h2 class="section-title">{{ t('salarie.dashboard.quickActions') }}</h2>
             <div class="actions-grid">
                 <router-link to="/salarie/formations/nouvelle" class="action-card">
                     <div class="action-icon">
@@ -85,8 +87,8 @@ onMounted(async () => {
                             <line x1="8" y1="12" x2="16" y2="12" />
                         </svg>
                     </div>
-                    <span class="action-label">Nouvelle formation</span>
-                    <span class="action-desc">Créer un module de formation</span>
+                    <span class="action-label">{{ t('salarie.dashboard.newTraining') }}</span>
+                    <span class="action-desc">{{ t('salarie.dashboard.newTrainingDesc') }}</span>
                 </router-link>
 
                 <router-link to="/salarie/conseils" class="action-card">
@@ -96,8 +98,8 @@ onMounted(async () => {
                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                         </svg>
                     </div>
-                    <span class="action-label">Écrire un conseil</span>
-                    <span class="action-desc">Publier un article</span>
+                    <span class="action-label">{{ t('salarie.dashboard.writeTip') }}</span>
+                    <span class="action-desc">{{ t('salarie.dashboard.writeTipDesc') }}</span>
                 </router-link>
 
                 <router-link to="/salarie/forum" class="action-card">
@@ -106,8 +108,8 @@ onMounted(async () => {
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
                     </div>
-                    <span class="action-label">Modérer le forum</span>
-                    <span class="action-desc">Gérer les discussions</span>
+                    <span class="action-label">{{ t('salarie.dashboard.moderateForum') }}</span>
+                    <span class="action-desc">{{ t('salarie.dashboard.moderateForumDesc') }}</span>
                 </router-link>
             </div>
         </div>

@@ -1,6 +1,7 @@
 package users
 
 import (
+	"backend/internal/utils"
 	"fmt"
 	"strings"
 
@@ -114,7 +115,57 @@ func (s *Service) AddScore(userId pgtype.Int8, points int32, description string)
 	if !userId.Valid || userId.Int64 < 1 {
 		return fmt.Errorf("users/service User ID invalide: %d", userId.Int64)
 	}
-	return s.repo.AddScore(userId, points, description)
+
+	if err := s.repo.AddScore(userId, points, description); err != nil {
+		return err
+	}
+
+	for _, quest := range utils.Quests {
+		if quest.ActionDescription != description {
+			continue
+		}
+
+		count, err := s.repo.CountScoreEventsSince(userId, description, quest.WindowDays)
+		if err != nil {
+			continue
+		}
+
+		if count > 0 && count%int64(quest.Threshold) == 0 {
+			_ = s.repo.AddScore(userId, quest.BonusPoints, quest.BonusDescription)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) GetQuestProgress(userId pgtype.Int8) ([]QuestProgress, error) {
+	if !userId.Valid || userId.Int64 < 1 {
+		return nil, fmt.Errorf("users/service User ID invalide: %d", userId.Int64)
+	}
+
+	progress := make([]QuestProgress, 0, len(utils.Quests))
+	for _, quest := range utils.Quests {
+		count, err := s.repo.CountScoreEventsSince(userId, quest.ActionDescription, quest.WindowDays)
+		if err != nil {
+			return nil, err
+		}
+
+		current := count % int64(quest.Threshold)
+		if count > 0 && current == 0 {
+			current = int64(quest.Threshold)
+		}
+
+		progress = append(progress, QuestProgress{
+			Description:      quest.ActionDescription,
+			Current:          current,
+			Threshold:        quest.Threshold,
+			WindowDays:       quest.WindowDays,
+			BonusPoints:      quest.BonusPoints,
+			BonusDescription: quest.BonusDescription,
+		})
+	}
+
+	return progress, nil
 }
 
 func (s *Service) UpdateTutorialSeen(id pgtype.Int8) error {

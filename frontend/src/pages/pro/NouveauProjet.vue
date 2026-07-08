@@ -3,7 +3,9 @@ import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -35,11 +37,11 @@ onMounted(async () => {
 
 async function submit() {
     if (!form.value.title.trim()) {
-        error.value = 'Le titre du projet est requis.'
+        error.value = t('pro.nouveauProjet.errorTitleRequired')
         return
     }
     if (!form.value.description.trim()) {
-        error.value = 'La description est requise.'
+        error.value = t('pro.nouveauProjet.errorDescriptionRequired')
         return
     }
     loading.value = true
@@ -66,10 +68,10 @@ async function submit() {
             router.push(`/pro/projets/${projectId}`)
         } else {
             const d = await res.text()
-            error.value = d || 'Erreur lors de la création.'
+            error.value = d || t('pro.nouveauProjet.errorCreate')
         }
     } catch {
-        error.value = 'Erreur réseau.'
+        error.value = t('pro.nouveauProjet.errorNetwork')
     }
     loading.value = false
 }
@@ -80,44 +82,44 @@ async function submit() {
         <div class="page-header">
             <router-link to="/pro/projets" class="back-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-                Retour aux projets
+                {{ t('pro.nouveauProjet.backToProjects') }}
             </router-link>
-            <h1 class="page-title">Nouveau projet.</h1>
-            <p class="page-subtitle">Créez un projet d'upcycling et documentez chaque étape de transformation.</p>
+            <h1 class="page-title">{{ t('pro.nouveauProjet.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.nouveauProjet.subtitle') }}</p>
         </div>
 
         <form class="form-card" @submit.prevent="submit">
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
             <div class="form-group">
-                <label class="form-label">Titre du projet *</label>
-                <input v-model="form.title" type="text" class="form-input" placeholder="Ex: Transformation d'une palette en étagère murale" maxlength="128" />
-                <p class="form-hint">{{ form.title.length }}/128 caractères</p>
+                <label class="form-label">{{ t('pro.nouveauProjet.titleLabel') }}</label>
+                <input v-model="form.title" type="text" class="form-input" :placeholder="t('pro.nouveauProjet.titlePlaceholder')" maxlength="128" />
+                <p class="form-hint">{{ t('pro.nouveauProjet.charCount', { count: form.title.length }) }}</p>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Description *</label>
-                <textarea v-model="form.description" class="form-input form-textarea" placeholder="Décrivez votre projet d'upcycling, les matériaux utilisés, l'objectif final..." rows="5"></textarea>
+                <label class="form-label">{{ t('pro.nouveauProjet.descriptionLabel') }}</label>
+                <textarea v-model="form.description" class="form-input form-textarea" :placeholder="t('pro.nouveauProjet.descriptionPlaceholder')" rows="5"></textarea>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Annonce associée</label>
+                <label class="form-label">{{ t('pro.nouveauProjet.linkedListingLabel') }}</label>
                 <select v-model.number="form.listing_id" class="form-input">
-                    <option :value="0">Aucune annonce liée</option>
+                    <option :value="0">{{ t('pro.nouveauProjet.noListingLinked') }}</option>
                     <option v-for="l in listings" :key="l.id.Int64" :value="l.id.Int64">{{ l.name }}</option>
                 </select>
-                <p class="form-hint">Optionnel — Liez ce projet à une annonce existante sur la plateforme</p>
+                <p class="form-hint">{{ t('pro.nouveauProjet.linkedListingHint') }}</p>
             </div>
 
             <div class="form-info">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <p>Après la création, vous pourrez ajouter les étapes détaillées de votre projet, modifier le statut, et le soumettre pour une mise en avant sur la plateforme.</p>
+                <p>{{ t('pro.nouveauProjet.infoText') }}</p>
             </div>
 
             <div class="form-actions">
-                <router-link to="/pro/projets" class="btn-secondary">Annuler</router-link>
+                <router-link to="/pro/projets" class="btn-secondary">{{ t('pro.nouveauProjet.cancel') }}</router-link>
                 <button type="submit" class="btn-primary" :disabled="loading">
-                    {{ loading ? 'Création...' : 'Créer le projet' }}
+                    {{ loading ? t('pro.nouveauProjet.creating') : t('pro.nouveauProjet.createProject') }}
                 </button>
             </div>
         </form>

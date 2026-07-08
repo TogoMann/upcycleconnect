@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const form = ref({
@@ -44,10 +46,10 @@ async function save() {
             await authStore.fetchCurrentUser()
         } else {
             const d = await res.json()
-            error.value = d.message ?? 'Erreur lors de la sauvegarde.'
+            error.value = d.message ?? t('pro.profil.saveError')
         }
     } catch {
-        error.value = 'Erreur réseau.'
+        error.value = t('pro.profil.networkError')
     }
     loading.value = false
 }
@@ -56,51 +58,51 @@ async function save() {
 <template>
     <div class="profil">
         <div class="page-header">
-            <h1 class="page-title">Mon Profil.</h1>
-            <p class="page-subtitle">Informations personnelles et entreprise.</p>
+            <h1 class="page-title">{{ t('pro.profil.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.profil.subtitle') }}</p>
         </div>
 
         <form class="form-card" @submit.prevent="save">
-            <div v-if="success" class="alert alert--success">Profil mis à jour.</div>
+            <div v-if="success" class="alert alert--success">{{ t('pro.profil.updated') }}</div>
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
-            <h3 class="form-section-title">Informations personnelles</h3>
+            <h3 class="form-section-title">{{ t('pro.profil.personalInfoSection') }}</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Prénom</label>
+                    <label class="form-label">{{ t('pro.profil.firstName') }}</label>
                     <input v-model="form.first_name" type="text" class="form-input" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Nom</label>
+                    <label class="form-label">{{ t('pro.profil.lastName') }}</label>
                     <input v-model="form.last_name" type="text" class="form-input" />
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label">Email</label>
+                <label class="form-label">{{ t('pro.profil.email') }}</label>
                 <input v-model="form.email" type="email" class="form-input" />
             </div>
             <div class="form-group">
-                <label class="form-label">Téléphone</label>
+                <label class="form-label">{{ t('pro.profil.phone') }}</label>
                 <input v-model="form.telephone" type="tel" class="form-input" />
             </div>
 
-            <h3 class="form-section-title">Entreprise</h3>
+            <h3 class="form-section-title">{{ t('pro.profil.companySection') }}</h3>
             <div class="form-group">
-                <label class="form-label">Nom de l'entreprise</label>
+                <label class="form-label">{{ t('pro.profil.companyName') }}</label>
                 <input v-model="form.entreprise" type="text" class="form-input" />
             </div>
             <div class="form-group">
-                <label class="form-label">SIRET</label>
+                <label class="form-label">{{ t('pro.profil.siret') }}</label>
                 <input v-model="form.siret" type="text" class="form-input" placeholder="00000000000000" />
             </div>
             <div class="form-group">
-                <label class="form-label">Adresse</label>
+                <label class="form-label">{{ t('pro.profil.address') }}</label>
                 <input v-model="form.adresse" type="text" class="form-input" />
             </div>
 
             <div class="form-actions">
                 <button type="submit" class="btn-primary" :disabled="loading">
-                    {{ loading ? 'Enregistrement…' : 'Enregistrer' }}
+                    {{ loading ? t('pro.profil.saving') : t('pro.profil.save') }}
                 </button>
             </div>
         </form>

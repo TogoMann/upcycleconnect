@@ -129,6 +129,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	role, _ := claims["role"].(string)
 
 	var input struct {
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
 		Date        string  `json:"date"`
 		StartTime   string  `json:"start_time"`
 		EndTime     string  `json:"end_time"`
@@ -143,10 +145,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if input.Title == "" {
+		http.Error(w, "Le titre de l'événement est requis", http.StatusBadRequest)
+		return
+	}
+
 	dto := Event{
-		CreatedBy: pgtype.Int8{Int64: int64(sub), Valid: true},
-		Location:  input.Location,
-		Approved:  role == "admin",
+		CreatedBy:   pgtype.Int8{Int64: int64(sub), Valid: true},
+		Title:       input.Title,
+		Description: pgtype.Text{String: input.Description, Valid: input.Description != ""},
+		Location:    input.Location,
+		Approved:    role == "admin",
 	}
 	if input.MaxCapacity != nil {
 		dto.MaxCapacity = pgtype.Int4{Int32: *input.MaxCapacity, Valid: true}

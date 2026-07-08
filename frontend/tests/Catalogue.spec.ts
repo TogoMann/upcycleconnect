@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
+import { createI18n } from 'vue-i18n'
 import Catalogue from '../src/pages/client/Catalogue.vue'
 import { useClientStore } from '../src/stores/client'
+import fr from '../src/i18n/locales/fr.json'
+import en from '../src/i18n/locales/en.json'
+
+const i18n = createI18n({ legacy: false, locale: 'fr', fallbackLocale: 'fr', messages: { fr, en } })
 
 // Mock router
 const router = createRouter({
@@ -26,7 +31,7 @@ describe('Catalogue Component', () => {
 
         const wrapper = mount(Catalogue, {
             global: {
-                plugins: [router]
+                plugins: [router, i18n]
             }
         })
 
@@ -44,7 +49,7 @@ describe('Catalogue Component', () => {
 
         const wrapper = mount(Catalogue, {
             global: {
-                plugins: [router]
+                plugins: [router, i18n]
             }
         })
 
@@ -66,7 +71,7 @@ describe('Catalogue Component', () => {
 
         const wrapper = mount(Catalogue, {
             global: {
-                plugins: [router]
+                plugins: [router, i18n]
             }
         })
 

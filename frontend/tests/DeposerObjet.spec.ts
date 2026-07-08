@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
+import { createI18n } from 'vue-i18n'
 import DeposerObjet from '../src/pages/client/DeposerObjet.vue'
 import { useClientStore } from '../src/stores/client'
+import fr from '../src/i18n/locales/fr.json'
+import en from '../src/i18n/locales/en.json'
+
+const i18n = createI18n({ legacy: false, locale: 'fr', fallbackLocale: 'fr', messages: { fr, en } })
 
 const router = createRouter({
     history: createWebHistory(),
@@ -18,7 +23,7 @@ describe('DeposerObjet Component', () => {
 
     it('shows validation errors when submitting empty form', async () => {
         const wrapper = mount(DeposerObjet, {
-            global: { plugins: [router] }
+            global: { plugins: [router, i18n] }
         })
 
         await wrapper.find('form').trigger('submit.prevent')
@@ -33,7 +38,7 @@ describe('DeposerObjet Component', () => {
         const createEntrySpy = vi.spyOn(store, 'createEntry').mockResolvedValue({ id: 2 })
 
         const wrapper = mount(DeposerObjet, {
-            global: { plugins: [router] }
+            global: { plugins: [router, i18n] }
         })
 
         // Fill form using indices

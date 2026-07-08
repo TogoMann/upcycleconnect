@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 interface PgtypeTime {
@@ -12,6 +14,8 @@ interface PgtypeTime {
 
 interface Event {
     id: number
+    title: string
+    description: string | null
     approved: boolean
     approved_by: number | null
     approved_at: string | null
@@ -31,7 +35,7 @@ interface Event {
 
 const events = ref<Event[]>([])
 const showForm = ref(false)
-const form = ref({ date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' })
+const form = ref({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' })
 const saving = ref(false)
 const selectedEvent = ref<Event | null>(null)
 
@@ -48,6 +52,8 @@ async function creer() {
     saving.value = true
     try {
         const body: Record<string, unknown> = {
+            title: form.value.title,
+            description: form.value.description,
             date: form.value.date,
             start_time: form.value.start_time + ':00',
             end_time: form.value.end_time + ':00',
@@ -66,7 +72,7 @@ async function creer() {
         if (res.ok) {
             const created = await res.json()
             events.value.unshift(created)
-            form.value = { date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' }
+            form.value = { title: '', description: '', date: '', start_time: '', end_time: '', location: '', price: '', max_capacity: '' }
             showForm.value = false
         }
     } catch {}
@@ -101,7 +107,7 @@ async function desapprouver(event: Event) {
 }
 
 async function supprimer(id: number) {
-    if (!confirm('Supprimer cet évènement ?')) return
+    if (!confirm(t('admin.evenements.confirmDelete'))) return
     try {
         const res = await fetch(`${API_BASE}/event/${id}`, {
             method: 'DELETE',
@@ -113,7 +119,7 @@ async function supprimer(id: number) {
 
 function fmtDate(iso: string | null): string {
     if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('fr-FR', {
+    return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -128,9 +134,9 @@ function getLocalDateString(): string {
     return `${y}-${m}-${day}`
 }
 
-function fmtTime(t: PgtypeTime | null): string {
-    if (!t || !t.Valid) return '—'
-    const totalSeconds = Math.floor(t.Microseconds / 1_000_000)
+function fmtTime(time: PgtypeTime | null): string {
+    if (!time || !time.Valid) return '—'
+    const totalSeconds = Math.floor(time.Microseconds / 1_000_000)
     const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0')
     const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')
     return `${h}:${m}`
@@ -138,7 +144,7 @@ function fmtTime(t: PgtypeTime | null): string {
 
 function fmtTimestamp(ts: string | null): string {
     if (!ts) return '—'
-    return new Date(ts).toLocaleString('fr-FR', {
+    return new Date(ts).toLocaleString(locale.value === 'en' ? 'en-US' : 'fr-FR', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -151,58 +157,66 @@ function fmtTimestamp(ts: string | null): string {
 <template>
     <div class="evenements">
         <div class="page-header">
-            <h1 class="page-title">Évènements.</h1>
-            <p class="page-subtitle">Gérez les évènements de la plateforme.</p>
+            <h1 class="page-title">{{ t('admin.evenements.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.evenements.subtitle') }}</p>
         </div>
 
         <div class="toolbar">
             <button class="btn-create" @click="showForm = !showForm">
-                {{ showForm ? 'Annuler' : '+ Nouvel évènement' }}
+                {{ showForm ? t('admin.evenements.cancel') : t('admin.evenements.newEvent') }}
             </button>
         </div>
 
         <div v-if="showForm" class="form-card">
-            <h3 class="form-title">Nouvel évènement</h3>
+            <h3 class="form-title">{{ t('admin.evenements.newEventTitle') }}</h3>
             <form @submit.prevent="creer" class="form-grid">
+                <div class="field field--wide">
+                    <label class="field-label">{{ t('admin.evenements.titleLabel') }}</label>
+                    <input v-model="form.title" type="text" class="field-input" :placeholder="t('admin.evenements.titlePlaceholder')" required />
+                </div>
+                <div class="field field--wide">
+                    <label class="field-label">{{ t('admin.evenements.descriptionLabel') }}</label>
+                    <input v-model="form.description" type="text" class="field-input" :placeholder="t('admin.evenements.descriptionPlaceholder')" />
+                </div>
                 <div class="field">
-                    <label class="field-label">Date</label>
+                    <label class="field-label">{{ t('admin.evenements.dateLabel') }}</label>
                     <input v-model="form.date" type="date" class="field-input" required :min="getLocalDateString()" />
                 </div>
                 <div class="field">
-                    <label class="field-label">Début</label>
+                    <label class="field-label">{{ t('admin.evenements.startLabel') }}</label>
                     <input v-model="form.start_time" type="time" class="field-input" required />
                 </div>
                 <div class="field">
-                    <label class="field-label">Fin</label>
+                    <label class="field-label">{{ t('admin.evenements.endLabel') }}</label>
                     <input v-model="form.end_time" type="time" class="field-input" required />
                 </div>
                 <div class="field">
-                    <label class="field-label">Lieu</label>
-                    <input v-model="form.location" type="text" class="field-input" placeholder="ex: Salle Polyvalente" required />
+                    <label class="field-label">{{ t('admin.evenements.locationLabel') }}</label>
+                    <input v-model="form.location" type="text" class="field-input" :placeholder="t('admin.evenements.locationPlaceholder')" required />
                 </div>
                 <div class="field">
-                    <label class="field-label">Prix (€)</label>
+                    <label class="field-label">{{ t('admin.evenements.priceLabel') }}</label>
                     <input
                         v-model="form.price"
                         type="number"
                         step="0.01"
                         min="0"
                         class="field-input"
-                        placeholder="Gratuit si vide"
+                        :placeholder="t('admin.evenements.pricePlaceholder')"
                     />
                 </div>
                 <div class="field">
-                    <label class="field-label">Capacité max (participants)</label>
+                    <label class="field-label">{{ t('admin.evenements.maxCapacityLabel') }}</label>
                     <input
                         v-model="form.max_capacity"
                         type="number"
                         min="1"
                         class="field-input"
-                        placeholder="Illimité si vide"
+                        :placeholder="t('admin.evenements.maxCapacityPlaceholder')"
                     />
                 </div>
                 <button type="submit" class="btn-save" :disabled="saving">
-                    {{ saving ? 'Création…' : 'Créer' }}
+                    {{ saving ? t('admin.evenements.creating') : t('admin.evenements.create') }}
                 </button>
             </form>
         </div>
@@ -211,11 +225,13 @@ function fmtTimestamp(ts: string | null): string {
             <div v-if="selectedEvent" class="modal-overlay" @click.self="selectedEvent = null">
                 <div class="modal">
                     <div class="modal-header">
-                        <h3 class="modal-title">Détails — Évènement #{{ selectedEvent.id }}</h3>
+                        <h3 class="modal-title">{{ selectedEvent.title }}</h3>
                         <button class="modal-close" @click="selectedEvent = null">✕</button>
                     </div>
                     <dl class="modal-dl">
-                        <dt>Créé par</dt>
+                        <dt>{{ t('admin.evenements.description') }}</dt>
+                        <dd>{{ selectedEvent.description || '—' }}</dd>
+                        <dt>{{ t('admin.evenements.createdBy') }}</dt>
                         <dd>
                             <template v-if="selectedEvent.creator_username">
                                 {{ selectedEvent.creator_username }}
@@ -223,9 +239,9 @@ function fmtTimestamp(ts: string | null): string {
                             </template>
                             <template v-else>—</template>
                         </dd>
-                        <dt>Créé le</dt>
+                        <dt>{{ t('admin.evenements.createdOn') }}</dt>
                         <dd>{{ fmtTimestamp(selectedEvent.created_at) }}</dd>
-                        <dt>Approuvé par</dt>
+                        <dt>{{ t('admin.evenements.approvedBy') }}</dt>
                         <dd>
                             <template v-if="selectedEvent.approver_username">
                                 {{ selectedEvent.approver_username }}
@@ -233,10 +249,10 @@ function fmtTimestamp(ts: string | null): string {
                             </template>
                             <template v-else>—</template>
                         </dd>
-                        <dt>Approuvé le</dt>
+                        <dt>{{ t('admin.evenements.approvedOn') }}</dt>
                         <dd>{{ fmtTimestamp(selectedEvent.approved_at) }}</dd>
-                        <dt>Capacité</dt>
-                        <dd>{{ selectedEvent.max_capacity != null && selectedEvent.max_capacity.Valid !== false ? (selectedEvent.max_capacity.Int32 ?? selectedEvent.max_capacity) + ' participants max' : 'Illimitée' }}</dd>
+                        <dt>{{ t('admin.evenements.capacity') }}</dt>
+                        <dd>{{ selectedEvent.max_capacity != null && selectedEvent.max_capacity.Valid !== false ? t('admin.evenements.maxParticipants', { count: selectedEvent.max_capacity.Int32 ?? selectedEvent.max_capacity }) : t('admin.evenements.unlimited') }}</dd>
                     </dl>
                 </div>
             </div>
@@ -246,42 +262,44 @@ function fmtTimestamp(ts: string | null): string {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>Début</th>
-                        <th>Fin</th>
-                        <th>Lieu</th>
-                        <th>Capacité</th>
-                        <th>Prix</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
+                        <th>{{ t('admin.evenements.colId') }}</th>
+                        <th>{{ t('admin.evenements.colTitle') }}</th>
+                        <th>{{ t('admin.evenements.colDate') }}</th>
+                        <th>{{ t('admin.evenements.colStart') }}</th>
+                        <th>{{ t('admin.evenements.colEnd') }}</th>
+                        <th>{{ t('admin.evenements.colLocation') }}</th>
+                        <th>{{ t('admin.evenements.colCapacity') }}</th>
+                        <th>{{ t('admin.evenements.colPrice') }}</th>
+                        <th>{{ t('admin.evenements.colStatus') }}</th>
+                        <th>{{ t('admin.evenements.colActions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="events.length === 0">
-                        <td colspan="9" class="empty">Aucun évènement.</td>
+                        <td colspan="10" class="empty">{{ t('admin.evenements.empty') }}</td>
                     </tr>
                     <tr v-for="e in events" :key="e.id">
                         <td class="td-id">#{{ e.id }}</td>
+                        <td class="td-bold">{{ e.title }}</td>
                         <td>{{ fmtDate(e.date) }}</td>
                         <td>{{ fmtTime(e.start_time) }}</td>
                         <td>{{ fmtTime(e.end_time) }}</td>
                         <td>{{ e.location || '—' }}</td>
-                        <td>{{ e.max_capacity != null && e.max_capacity.Valid !== false ? (e.max_capacity.Int32 ?? e.max_capacity) + ' places' : 'Illimitée' }}</td>
-                        <td>{{ e.price != null ? e.price + ' €' : 'Gratuit' }}</td>
+                        <td>{{ e.max_capacity != null && e.max_capacity.Valid !== false ? t('admin.evenements.seats', { count: e.max_capacity.Int32 ?? e.max_capacity }) : t('admin.evenements.unlimited') }}</td>
+                        <td>{{ e.price != null ? e.price + ' €' : t('admin.evenements.free') }}</td>
                         <td>
                             <span
                                 class="badge"
                                 :class="e.approved ? 'badge--ok' : 'badge--pending'"
                             >
-                                {{ e.approved ? 'Approuvé' : 'En attente' }}
+                                {{ e.approved ? t('admin.evenements.approved') : t('admin.evenements.pending') }}
                             </span>
                         </td>
                         <td class="td-actions">
-                            <button class="btn-sm btn-sm--info" @click="selectedEvent = e">Détails</button>
-                            <button v-if="!e.approved" class="btn-sm btn-sm--approve" @click="approuver(e)">Approuver</button>
-                            <button v-else class="btn-sm" @click="desapprouver(e)">Désapprouver</button>
-                            <button class="btn-sm btn-sm--danger" @click="supprimer(e.id)">Supprimer</button>
+                            <button class="btn-sm btn-sm--info" @click="selectedEvent = e">{{ t('admin.evenements.details') }}</button>
+                            <button v-if="!e.approved" class="btn-sm btn-sm--approve" @click="approuver(e)">{{ t('admin.evenements.approve') }}</button>
+                            <button v-else class="btn-sm" @click="desapprouver(e)">{{ t('admin.evenements.disapprove') }}</button>
+                            <button class="btn-sm btn-sm--danger" @click="supprimer(e.id)">{{ t('admin.evenements.delete') }}</button>
                         </td>
                     </tr>
                 </tbody>
@@ -349,6 +367,9 @@ function fmtTimestamp(ts: string | null): string {
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+.field--wide {
+    flex-basis: 100%;
 }
 .field-label {
     font-size: 0.78rem;
@@ -428,6 +449,9 @@ function fmtTimestamp(ts: string | null): string {
 .td-muted {
     opacity: 0.55;
     font-size: 0.85rem;
+}
+.td-bold {
+    font-weight: 600;
 }
 .td-actions {
     display: flex;

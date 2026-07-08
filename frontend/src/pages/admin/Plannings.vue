@@ -2,13 +2,19 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE } from '@/config'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 const HOUR_HEIGHT = 60
 const DAY_START = 7
 const DAY_END = 21
-const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const DAY_NAMES = computed(() => [
+    t('admin.plannings.dayMon'), t('admin.plannings.dayTue'), t('admin.plannings.dayWed'),
+    t('admin.plannings.dayThu'), t('admin.plannings.dayFri'), t('admin.plannings.daySat'), t('admin.plannings.daySun'),
+])
+const dateLocale = computed(() => locale.value === 'en' ? 'en-US' : 'fr-FR')
 
 const viewMode = ref<'month' | 'week'>('month')
 const currentDate = ref(new Date())
@@ -109,18 +115,18 @@ function eventsForDate(date: Date) {
     return filteredItems.value.filter(e => e.date === iso)
 }
 
-const TYPE: Record<string, { bg: string; border: string; text: string; label: string }> = {
-    formation: { bg: '#e8f8f5', border: '#1abc9c', text: '#0e6655', label: 'Formation' },
-    atelier:   { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Atelier' },
-    depot:     { bg: '#fef3c7', border: '#f59e0b', text: '#92400e', label: 'Dépôt' },
-    collecte:  { bg: '#ede9fe', border: '#8b5cf6', text: '#5b21b6', label: 'Collecte' },
-    workshop:  { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Atelier' },
-    event:     { bg: '#fef9e7', border: '#f39c12', text: '#9a6200', label: 'Événement' },
-    personal:  { bg: '#ebf5fb', border: '#3498db', text: '#1a6fa0', label: 'Personnel' },
-}
+const TYPE = computed<Record<string, { bg: string; border: string; text: string; label: string }>>(() => ({
+    formation: { bg: '#e8f8f5', border: '#1abc9c', text: '#0e6655', label: t('admin.plannings.typeFormation') },
+    atelier:   { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: t('admin.plannings.typeAtelier') },
+    depot:     { bg: '#fef3c7', border: '#f59e0b', text: '#92400e', label: t('admin.plannings.typeDepot') },
+    collecte:  { bg: '#ede9fe', border: '#8b5cf6', text: '#5b21b6', label: t('admin.plannings.typeCollecte') },
+    workshop:  { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: t('admin.plannings.typeAtelier') },
+    event:     { bg: '#fef9e7', border: '#f39c12', text: '#9a6200', label: t('admin.plannings.typeEvent') },
+    personal:  { bg: '#ebf5fb', border: '#3498db', text: '#1a6fa0', label: t('admin.plannings.typePersonal') },
+}))
 
 function ts(type: string) {
-    return TYPE[type] || { bg: '#f5f5f5', border: '#aaa', text: '#555', label: 'Autre' }
+    return TYPE.value[type] || { bg: '#f5f5f5', border: '#aaa', text: '#555', label: t('admin.plannings.typeOther') }
 }
 
 function parseHour(t: string): number {
@@ -145,11 +151,11 @@ function eventStyle(ev: any): Record<string, string> {
 
 const periodLabel = computed(() => {
     if (viewMode.value === 'month') {
-        return currentDate.value.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+        return currentDate.value.toLocaleDateString(dateLocale.value, { month: 'long', year: 'numeric' })
     }
     const days = weekDays.value
-    const s = days[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-    const e = days[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    const s = days[0].toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'short' })
+    const e = days[6].toLocaleDateString(dateLocale.value, { day: 'numeric', month: 'short', year: 'numeric' })
     return `${s} – ${e}`
 })
 
@@ -164,7 +170,7 @@ const selectedEvents = computed(() =>
 
 const selectedDateLabel = computed(() => {
     if (!selectedDate.value) return ''
-    return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString('fr-FR', {
+    return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString(dateLocale.value, {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     })
 })
@@ -211,28 +217,28 @@ onMounted(async () => {
                         class="filter-chip"
                         :class="{ active: filterType === '' }"
                         @click="filterType = ''"
-                    >Tous</button>
+                    >{{ t('admin.plannings.all') }}</button>
                     <button
-                        v-for="t in allTypes"
-                        :key="t"
+                        v-for="type in allTypes"
+                        :key="type"
                         class="filter-chip"
-                        :class="{ active: filterType === t }"
-                        :style="filterType === t ? { backgroundColor: ts(t).border, color: 'white', borderColor: ts(t).border } : {}"
-                        @click="filterType = filterType === t ? '' : t"
-                    >{{ ts(t).label }}</button>
+                        :class="{ active: filterType === type }"
+                        :style="filterType === type ? { backgroundColor: ts(type).border, color: 'white', borderColor: ts(type).border } : {}"
+                        @click="filterType = filterType === type ? '' : type"
+                    >{{ ts(type).label }}</button>
                 </div>
             </div>
 
             <div class="control-group">
-                <button class="today-btn" @click="goToday">Aujourd'hui</button>
+                <button class="today-btn" @click="goToday">{{ t('admin.plannings.today') }}</button>
                 <div class="view-toggle">
-                    <button :class="{ active: viewMode === 'month' }" @click="switchView('month')">Mois</button>
-                    <button :class="{ active: viewMode === 'week' }" @click="switchView('week')">Semaine</button>
+                    <button :class="{ active: viewMode === 'month' }" @click="switchView('month')">{{ t('admin.plannings.month') }}</button>
+                    <button :class="{ active: viewMode === 'week' }" @click="switchView('week')">{{ t('admin.plannings.week') }}</button>
                 </div>
             </div>
         </div>
 
-        <div v-if="isLoading" class="cal-loading">Chargement…</div>
+        <div v-if="isLoading" class="cal-loading">{{ t('admin.plannings.loading') }}</div>
 
         <template v-else-if="viewMode === 'month'">
             <div class="month-view">
@@ -263,7 +269,7 @@ onMounted(async () => {
                                 <span class="chip-title">{{ ev.title }}</span>
                             </div>
                             <div v-if="eventsForDate(cell.date).length > 3" class="event-more">
-                                +{{ eventsForDate(cell.date).length - 3 }} autres
+                                {{ t('admin.plannings.more', { count: eventsForDate(cell.date).length - 3 }) }}
                             </div>
                         </div>
                     </div>
@@ -275,7 +281,7 @@ onMounted(async () => {
                     <span class="day-panel-label">{{ selectedDateLabel }}</span>
                     <button class="close-btn" @click="selectedDate = null">×</button>
                 </div>
-                <div v-if="selectedEvents.length === 0" class="day-panel-empty">Aucun créneau ce jour.</div>
+                <div v-if="selectedEvents.length === 0" class="day-panel-empty">{{ t('admin.plannings.noSlotsToday') }}</div>
                 <div v-else class="day-panel-list">
                     <div v-for="ev in selectedEvents" :key="ev.id" class="day-ev-row" :style="{ borderLeft: `3px solid ${ts(ev.type).border}` }">
                         <div class="day-ev-time">{{ ft(ev.start_time) }} – {{ ft(ev.end_time) }}</div>
@@ -284,7 +290,7 @@ onMounted(async () => {
                             <div class="day-ev-meta">
                                 <span class="day-ev-type" :style="{ color: ts(ev.type).text }">{{ ts(ev.type).label }}</span>
                                 <span v-if="ev.responsable" class="day-ev-resp">· {{ ev.responsable }}</span>
-                                <span v-if="ev.participants" class="day-ev-part">· {{ ev.participants }} participant(s)</span>
+                                <span v-if="ev.participants" class="day-ev-part">· {{ t('admin.plannings.participants', { count: ev.participants }) }}</span>
                             </div>
                         </div>
                     </div>
@@ -348,7 +354,7 @@ onMounted(async () => {
                     <span class="day-panel-label">{{ selectedDateLabel }}</span>
                     <button class="close-btn" @click="selectedDate = null">×</button>
                 </div>
-                <div v-if="selectedEvents.length === 0" class="day-panel-empty">Aucun créneau ce jour.</div>
+                <div v-if="selectedEvents.length === 0" class="day-panel-empty">{{ t('admin.plannings.noSlotsToday') }}</div>
                 <div v-else class="day-panel-list">
                     <div v-for="ev in selectedEvents" :key="ev.id" class="day-ev-row" :style="{ borderLeft: `3px solid ${ts(ev.type).border}` }">
                         <div class="day-ev-time">{{ ft(ev.start_time) }} – {{ ft(ev.end_time) }}</div>
@@ -357,7 +363,7 @@ onMounted(async () => {
                             <div class="day-ev-meta">
                                 <span class="day-ev-type" :style="{ color: ts(ev.type).text }">{{ ts(ev.type).label }}</span>
                                 <span v-if="ev.responsable" class="day-ev-resp">· {{ ev.responsable }}</span>
-                                <span v-if="ev.participants" class="day-ev-part">· {{ ev.participants }} participant(s)</span>
+                                <span v-if="ev.participants" class="day-ev-part">· {{ t('admin.plannings.participants', { count: ev.participants }) }}</span>
                             </div>
                         </div>
                     </div>

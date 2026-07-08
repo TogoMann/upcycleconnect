@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 interface News {
@@ -49,7 +51,7 @@ async function creer() {
 }
 
 async function supprimer(id: number) {
-    if (!confirm('Supprimer cette actualité ?')) return
+    if (!confirm(t('admin.actualites.confirmDelete'))) return
     try {
         const res = await fetch(`${API_BASE}/news/${id}`, {
             method: 'DELETE',
@@ -61,36 +63,36 @@ async function supprimer(id: number) {
 
 function fmtDate(iso: string | null): string {
     if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+    return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 </script>
 
 <template>
     <div class="actualites">
         <div class="page-header">
-            <h1 class="page-title">Actualités.</h1>
-            <p class="page-subtitle">Publiez et gérez les actualités de la plateforme.</p>
+            <h1 class="page-title">{{ t('admin.actualites.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.actualites.subtitle') }}</p>
         </div>
 
         <div class="toolbar">
             <button class="btn-create" @click="showForm = !showForm">
-                {{ showForm ? 'Annuler' : '+ Nouvelle actualité' }}
+                {{ showForm ? t('admin.actualites.cancel') : t('admin.actualites.newNews') }}
             </button>
         </div>
 
         <div v-if="showForm" class="form-card">
-            <h3 class="form-title">Nouvelle actualité</h3>
+            <h3 class="form-title">{{ t('admin.actualites.newNewsTitle') }}</h3>
             <form @submit.prevent="creer" class="form-fields">
                 <div class="field">
-                    <label class="field-label">Titre</label>
-                    <input v-model="form.title" type="text" class="field-input" placeholder="Titre de l'actualité" required />
+                    <label class="field-label">{{ t('admin.actualites.titleLabel') }}</label>
+                    <input v-model="form.title" type="text" class="field-input" :placeholder="t('admin.actualites.titlePlaceholder')" required />
                 </div>
                 <div class="field">
-                    <label class="field-label">Contenu</label>
-                    <textarea v-model="form.content" class="field-textarea" rows="4" placeholder="Contenu…" required />
+                    <label class="field-label">{{ t('admin.actualites.contentLabel') }}</label>
+                    <textarea v-model="form.content" class="field-textarea" rows="4" :placeholder="t('admin.actualites.contentPlaceholder')" required />
                 </div>
                 <button type="submit" class="btn-save" :disabled="saving">
-                    {{ saving ? 'Publication…' : 'Publier' }}
+                    {{ saving ? t('admin.actualites.publishing') : t('admin.actualites.publish') }}
                 </button>
             </form>
         </div>
@@ -99,22 +101,22 @@ function fmtDate(iso: string | null): string {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Titre</th>
-                        <th>Date</th>
-                        <th>Votes</th>
-                        <th>Actions</th>
+                        <th>{{ t('admin.actualites.colTitle') }}</th>
+                        <th>{{ t('admin.actualites.colDate') }}</th>
+                        <th>{{ t('admin.actualites.colVotes') }}</th>
+                        <th>{{ t('admin.actualites.colActions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="news.length === 0">
-                        <td colspan="4" class="empty">Aucune actualité.</td>
+                        <td colspan="4" class="empty">{{ t('admin.actualites.empty') }}</td>
                     </tr>
                     <tr v-for="n in news" :key="n.id">
                         <td class="td-bold">{{ n.title }}</td>
                         <td class="td-muted">{{ fmtDate(n.created_at) }}</td>
                         <td>▲ {{ n.upvotes }}</td>
                         <td class="td-actions">
-                            <button class="btn-sm btn-sm--danger" @click="supprimer(n.id)">Supprimer</button>
+                            <button class="btn-sm btn-sm--danger" @click="supprimer(n.id)">{{ t('admin.actualites.delete') }}</button>
                         </td>
                     </tr>
                 </tbody>

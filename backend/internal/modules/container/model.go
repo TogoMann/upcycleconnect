@@ -58,3 +58,26 @@ type CreateLockerAccessRequest struct {
 	ItemId int64 `json:"item_id"`
 	UserId int64 `json:"user_id"`
 }
+
+type LockerOption struct {
+	Id          pgtype.Int8 `db:"id" json:"id"`
+	Label       string      `db:"label" json:"label"`
+	Size        string      `db:"size" json:"size"`
+	Status      string      `db:"status" json:"status"`
+	ContainerId pgtype.Int8 `db:"container_id" json:"container_id"`
+	SiteId      pgtype.Int8 `db:"site_id" json:"site_id"`
+	Address     string      `db:"address" json:"address"`
+}
+
+type SiteOption struct {
+	SiteId   pgtype.Int8 `db:"site_id" json:"site_id"`
+	Address  string      `db:"address" json:"address"`
+	TypeSite string      `db:"type_site" json:"type_site"`
+}
+
+type SiteWithLockers struct {
+	SiteId   pgtype.Int8    `json:"site_id"`
+	Address  string         `json:"address"`
+	TypeSite string         `json:"type_site"`
+	Lockers  []LockerOption `json:"lockers"`
+}

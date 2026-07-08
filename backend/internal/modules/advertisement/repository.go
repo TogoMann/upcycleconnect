@@ -88,3 +88,8 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	_, err := r.db.Exec(db.Ctx, "DELETE FROM advertisement WHERE id = $1", id)
 	return err
 }
+
+func (r *Repository) SetStripePaymentIntentId(id pgtype.Int8, stripeId string) error {
+	_, err := r.db.Exec(db.Ctx, "UPDATE advertisement SET stripe_payment_intent_id = $1 WHERE id = $2", stripeId, id)
+	return err
+}

@@ -2,8 +2,10 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const authStore = useAuthStore()
 const threadId = Number(route.params.id)
@@ -107,7 +109,7 @@ async function votePost(postId: number, dir: 'up' | 'down') {
 
 function fmtDate(iso: string | null): string {
     if (!iso) return '—'
-    return new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return new Date(iso).toLocaleString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function avatarChars(id: number | null): string {
@@ -119,7 +121,7 @@ function avatarChars(id: number | null): string {
     <div class="page-content">
         <section class="breadcrumb-bar">
             <div class="container">
-                <router-link to="/forum" class="breadcrumb-link">Forum</router-link>
+                <router-link to="/forum" class="breadcrumb-link">{{ t('layout.nav.forum') }}</router-link>
                 <span class="breadcrumb-sep">›</span>
                 <span class="breadcrumb-current">{{ thread?.title ?? '…' }}</span>
             </div>
@@ -127,7 +129,7 @@ function avatarChars(id: number | null): string {
 
         <section class="thread-section">
             <div class="container">
-                <div v-if="loading" class="loading">Chargement…</div>
+                <div v-if="loading" class="loading">{{ t('forum.loading') }}</div>
 
                 <template v-else-if="thread">
                     <div class="thread-header">
@@ -139,7 +141,7 @@ function avatarChars(id: number | null): string {
                             <div class="post-avatar">{{ avatarChars(thread.created_by) }}</div>
                             <div class="post-author-info">
                                 <span class="post-author-name">
-                                    {{ thread.username ?? 'Anonyme' }}
+                                    {{ thread.username ?? t('forum.anonymous') }}
                                     <small v-if="thread.email" class="post-author-email">{{ thread.email }}</small>
                                 </span>
                                 <span class="post-date">{{ fmtDate(thread.created_at) }}</span>
@@ -155,7 +157,7 @@ function avatarChars(id: number | null): string {
                                 class="vote-btn vote-btn--up"
                                 :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
                                 @click="voteThread('up')"
-                                title="Voter pour"
+                                :title="t('forum.voteUp')"
                             >
                                 ▲ {{ thread.upvotes }}
                             </button>
@@ -163,7 +165,7 @@ function avatarChars(id: number | null): string {
                                 class="vote-btn vote-btn--down"
                                 :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
                                 @click="voteThread('down')"
-                                title="Voter contre"
+                                :title="t('forum.voteDown')"
                             >
                                 ▼ {{ thread.downvotes }}
                             </button>
@@ -171,14 +173,14 @@ function avatarChars(id: number | null): string {
                             </div>
 
                             <div class="replies-section">
-                            <h2 class="replies-title">{{ posts.length }} réponse{{ posts.length !== 1 ? 's' : '' }}</h2>
+                            <h2 class="replies-title">{{ t('forum.replyCount', posts.length) }}</h2>
 
                             <div v-for="p in posts" :key="p.id" class="post">
                             <div class="post-author">
                                 <div class="post-avatar">{{ avatarChars(p.created_by) }}</div>
                                 <div class="post-author-info">
                                     <span class="post-author-name">
-                                        {{ p.username ?? 'Anonyme' }}
+                                        {{ p.username ?? t('forum.anonymous') }}
                                         <small v-if="p.email" class="post-author-email">{{ p.email }}</small>
                                     </span>
                                     <span class="post-date">{{ fmtDate(p.created_at) }}</span>
@@ -195,7 +197,7 @@ function avatarChars(id: number | null): string {
                                     class="vote-btn vote-btn--up"
                                     :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
                                     @click="votePost(p.id, 'up')"
-                                    title="Voter pour"
+                                    :title="t('forum.voteUp')"
                                 >
                                     ▲ {{ p.upvotes }}
                                 </button>
@@ -203,7 +205,7 @@ function avatarChars(id: number | null): string {
                                     class="vote-btn vote-btn--down"
                                     :class="{ 'vote-btn--disabled': !authStore.isAuthenticated }"
                                     @click="votePost(p.id, 'down')"
-                                    title="Voter contre"
+                                    :title="t('forum.voteDown')"
                                 >
                                     ▼ {{ p.downvotes }}
                                 </button>
@@ -212,11 +214,11 @@ function avatarChars(id: number | null): string {
                     </div>
 
                     <div class="reply-form-section">
-                        <h2 class="reply-form-title">Répondre à ce sujet</h2>
+                        <h2 class="reply-form-title">{{ t('forum.replyToThread') }}</h2>
                         <form class="reply-form" @submit.prevent="handleReply">
                             <textarea
                                 v-model="replyContent"
-                                placeholder="Partagez votre expérience ou vos conseils..."
+                                :placeholder="t('forum.replyPlaceholder')"
                                 class="reply-textarea"
                                 rows="6"
                                 :disabled="!authStore.isAuthenticated"
@@ -224,24 +226,24 @@ function avatarChars(id: number | null): string {
                             />
                             <div class="reply-form-footer">
                                 <router-link v-if="!authStore.isAuthenticated" to="/auth/login" class="reply-login-hint">
-                                    Connectez-vous pour répondre
+                                    {{ t('forum.loginToReply') }}
                                 </router-link>
                                 <span v-else class="reply-login-hint reply-login-hint--ok">
-                                    Connecté en tant que {{ authStore.user?.username }}
+                                    {{ t('forum.loggedInAs', { username: authStore.user?.username }) }}
                                 </span>
                                 <button
                                     type="submit"
                                     class="btn-reply"
                                     :disabled="!authStore.isAuthenticated || sending"
                                 >
-                                    {{ sending ? 'Envoi…' : 'Publier la réponse' }}
+                                    {{ sending ? t('forum.sending') : t('forum.publishReply') }}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </template>
 
-                <div v-else class="empty-state">Discussion introuvable.</div>
+                <div v-else class="empty-state">{{ t('forum.notFound') }}</div>
             </div>
         </section>
     </div>

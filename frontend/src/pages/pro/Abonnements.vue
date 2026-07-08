@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import { API_BASE } from '@/config'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
+const route = useRoute()
+const checkoutMessage = ref('')
 
 interface Subscription {
     id: { Int64: number; Valid: boolean }
@@ -34,6 +39,22 @@ const showConfirmModal = ref(false)
 const selectedPlan = ref<PlanOption | null>(null)
 const siretInput = ref('')
 const siretError = ref('')
+const siretStatus = ref<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
+
+watch(siretInput, async (val) => {
+    if (val.length !== 14) {
+        siretStatus.value = 'idle'
+        return
+    }
+    siretStatus.value = 'checking'
+    try {
+        const res = await fetch(`${API_BASE}/siret/verify?siret=${val}`)
+        const data = await res.json()
+        siretStatus.value = data.valid ? 'valid' : 'invalid'
+    } catch {
+        siretStatus.value = 'invalid'
+    }
+})
 
 const daysRemaining = computed(() => {
     if (!currentSub.value?.until?.Valid) return null
@@ -57,7 +78,7 @@ const isExpired = computed(() => daysRemaining.value !== null && daysRemaining.v
 
 function formatDate(d: { Time: string; Valid: boolean } | undefined) {
     if (!d?.Valid) return '—'
-    return new Date(d.Time).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    return new Date(d.Time).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 function planIcon(name: string) {
@@ -100,6 +121,21 @@ onMounted(async () => {
         hasPaymentMethod.value = false
     }
 
+    const sessionId = route.query.session_id as string | undefined
+    if (sessionId) {
+        try {
+            const verifyRes = await fetch(`${API_BASE}/payments/verify?session_id=${sessionId}`, { headers })
+            if (verifyRes.ok) {
+                const verifyData = await verifyRes.json()
+                checkoutMessage.value = verifyData.paid
+                    ? t('pro.abonnements.paymentConfirmed')
+                    : t('pro.abonnements.paymentNotConfirmed')
+            }
+        } catch {
+            checkoutMessage.value = t('pro.abonnements.paymentCheckError')
+        }
+    }
+
     loading.value = false
 })
 
@@ -114,12 +150,40 @@ function requestChangePlan(plan: PlanOption) {
 async function confirmChangePlan() {
     if (!selectedPlan.value) return
     if (selectedPlan.value.name === 'Pro' && !siretInput.value.trim()) {
-        siretError.value = 'Le SIRET est requis pour le plan Pro.'
+        siretError.value = t('pro.abonnements.errorSiretRequired')
+        return
+    }
+    if (selectedPlan.value.name === 'Pro' && siretStatus.value !== 'valid') {
+        siretError.value = t('pro.abonnements.errorSiretInvalid')
         return
     }
     changingPlan.value = true
     siretError.value = ''
     try {
+        if (selectedPlan.value.price > 0) {
+            const res = await fetch(`${API_BASE}/subscriptions/checkout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${authStore.token}`,
+                },
+                body: JSON.stringify({
+                    plan_id: selectedPlan.value.id,
+                    siret: selectedPlan.value.name === 'Pro' ? siretInput.value.trim() : '',
+                    return_path: '/pro/abonnements',
+                }),
+            })
+            if (res.ok) {
+                const data = await res.json()
+                window.location.href = data.url
+                return
+            }
+            const errText = await res.text()
+            siretError.value = errText || t('pro.abonnements.errorPaymentCreate')
+            changingPlan.value = false
+            return
+        }
+
         const res = await fetch(`${API_BASE}/subscriptions/choose`, {
             method: 'POST',
             headers: {
@@ -128,17 +192,17 @@ async function confirmChangePlan() {
             },
             body: JSON.stringify({
                 plan_id: selectedPlan.value.id,
-                siret: selectedPlan.value.name === 'Pro' ? siretInput.value.trim() : '',
+                siret: '',
             }),
         })
         if (res.ok) {
             window.location.reload()
         } else {
-            const d = await res.json().catch(() => ({ message: 'Erreur' }))
-            siretError.value = d.message || d.error || 'Erreur lors du changement.'
+            const d = await res.json().catch(() => ({ message: t('pro.abonnements.errorGeneric') }))
+            siretError.value = d.message || d.error || t('pro.abonnements.errorChange')
         }
     } catch {
-        siretError.value = 'Erreur réseau.'
+        siretError.value = t('pro.abonnements.errorNetwork')
     }
     changingPlan.value = false
 }
@@ -151,28 +215,36 @@ function closeModal() {
 function changeLabel(plan: PlanOption) {
     const current = currentTier.value.toLowerCase()
     const target = plan.name.toLowerCase()
-    if (current === target) return 'Plan actuel'
+    if (current === target) return t('pro.abonnements.currentPlan')
     const order = ['free', 'premium', 'pro']
-    return order.indexOf(target) > order.indexOf(current) ? 'Passer au supérieur' : 'Rétrograder'
+    return order.indexOf(target) > order.indexOf(current) ? t('pro.abonnements.upgrade') : t('pro.abonnements.downgrade')
 }
 </script>
 
 <template>
     <div class="abonnements">
         <div class="page-header">
-            <h1 class="page-title">Abonnements.</h1>
-            <p class="page-subtitle">Gérez votre formule et passez à un niveau supérieur.</p>
+            <h1 class="page-title">{{ t('pro.abonnements.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.abonnements.subtitle') }}</p>
         </div>
 
-        <div v-if="loading" class="loading-state">Chargement...</div>
+        <div v-if="loading" class="loading-state">{{ t('pro.abonnements.loading') }}</div>
 
         <template v-else>
+            <div v-if="checkoutMessage" class="alert-banner alert-banner--warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div>
+                    <strong>{{ t('pro.abonnements.payment') }}</strong>
+                    <span>{{ checkoutMessage }}</span>
+                </div>
+            </div>
+
             <!-- Bandeau carte bancaire manquante -->
             <div v-if="!hasPaymentMethod && currentTier !== 'Free'" class="alert-banner alert-banner--danger">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                 <div>
-                    <strong>Moyen de paiement manquant</strong>
-                    <span>Veuillez enregistrer une carte bancaire pour assurer la continuité de votre abonnement.</span>
+                    <strong>{{ t('pro.abonnements.missingPaymentTitle') }}</strong>
+                    <span>{{ t('pro.abonnements.missingPaymentDesc') }}</span>
                 </div>
             </div>
 
@@ -180,8 +252,8 @@ function changeLabel(plan: PlanOption) {
             <div v-if="isExpiringSoon && !isExpired" class="alert-banner alert-banner--warning">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <div>
-                    <strong>Abonnement bientôt expiré</strong>
-                    <span>Votre abonnement {{ currentTier }} expire dans {{ daysRemaining }} jour{{ daysRemaining !== 1 ? 's' : '' }}. Pensez à le renouveler.</span>
+                    <strong>{{ t('pro.abonnements.expiringSoonTitle') }}</strong>
+                    <span>{{ t('pro.abonnements.expiringSoonDesc', { tier: currentTier, days: daysRemaining, plural: daysRemaining !== 1 ? 's' : '' }) }}</span>
                 </div>
             </div>
 
@@ -189,8 +261,8 @@ function changeLabel(plan: PlanOption) {
             <div v-if="isExpired" class="alert-banner alert-banner--danger">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 <div>
-                    <strong>Abonnement expiré</strong>
-                    <span>Votre abonnement {{ currentTier }} a expiré. Renouvelez-le pour continuer à profiter des fonctionnalités.</span>
+                    <strong>{{ t('pro.abonnements.expiredTitle') }}</strong>
+                    <span>{{ t('pro.abonnements.expiredDesc', { tier: currentTier }) }}</span>
                 </div>
             </div>
 
@@ -198,21 +270,21 @@ function changeLabel(plan: PlanOption) {
             <div v-if="currentSub && currentTier !== 'Free'" class="current-sub-card">
                 <div class="sub-header">
                     <div class="sub-tier-badge" :class="`tier--${currentTier.toLowerCase()}`">{{ currentTier }}</div>
-                    <div class="sub-price">{{ currentSub.price.toFixed(2) }}€<span>/mois</span></div>
+                    <div class="sub-price">{{ currentSub.price.toFixed(2) }}€<span>{{ t('pro.abonnements.perMonth') }}</span></div>
                 </div>
                 <div class="sub-details">
                     <div class="sub-detail">
-                        <span class="sub-detail-label">Début de l'abonnement</span>
+                        <span class="sub-detail-label">{{ t('pro.abonnements.subscriptionStart') }}</span>
                         <span class="sub-detail-value">{{ formatDate(currentSub.created_at) }}</span>
                     </div>
                     <div class="sub-detail">
-                        <span class="sub-detail-label">Prochain paiement</span>
+                        <span class="sub-detail-label">{{ t('pro.abonnements.nextPayment') }}</span>
                         <span class="sub-detail-value">{{ formatDate(currentSub.until) }}</span>
                     </div>
                     <div class="sub-detail">
-                        <span class="sub-detail-label">Temps restant</span>
+                        <span class="sub-detail-label">{{ t('pro.abonnements.timeRemaining') }}</span>
                         <span class="sub-detail-value" :class="{ 'text-warning': isExpiringSoon, 'text-danger': isExpired }">
-                            {{ isExpired ? 'Expiré' : `${daysRemaining} jour${daysRemaining !== 1 ? 's' : ''}` }}
+                            {{ isExpired ? t('pro.abonnements.expired') : t('pro.abonnements.daysRemaining', { days: daysRemaining, plural: daysRemaining !== 1 ? 's' : '' }) }}
                         </span>
                     </div>
                 </div>
@@ -221,22 +293,22 @@ function changeLabel(plan: PlanOption) {
                         <div class="progress-fill" :class="{ 'progress--warning': isExpiringSoon }" :style="{ width: progressPercent + '%' }"></div>
                     </div>
                     <div class="progress-labels">
-                        <span>Début</span>
-                        <span>{{ progressPercent }}% écoulé</span>
-                        <span>Échéance</span>
+                        <span>{{ t('pro.abonnements.start') }}</span>
+                        <span>{{ t('pro.abonnements.elapsed', { percent: progressPercent }) }}</span>
+                        <span>{{ t('pro.abonnements.deadline') }}</span>
                     </div>
                 </div>
             </div>
 
             <div v-else-if="currentTier === 'Free'" class="current-sub-card current-sub-card--free">
                 <div class="sub-header">
-                    <div class="sub-tier-badge tier--free">Gratuit</div>
+                    <div class="sub-tier-badge tier--free">{{ t('pro.abonnements.free') }}</div>
                 </div>
-                <p class="free-message">Vous utilisez actuellement le plan gratuit. Passez à un plan supérieur pour accéder aux fonctionnalités avancées.</p>
+                <p class="free-message">{{ t('pro.abonnements.freeMessage') }}</p>
             </div>
 
             <!-- Grille des plans -->
-            <h2 class="section-title">Choisir un plan</h2>
+            <h2 class="section-title">{{ t('pro.abonnements.choosePlanTitle') }}</h2>
             <div class="plans-grid">
                 <div
                     v-for="plan in plans"
@@ -244,7 +316,7 @@ function changeLabel(plan: PlanOption) {
                     class="plan-card"
                     :class="{ 'plan-card--active': currentTier.toLowerCase() === plan.name.toLowerCase() }"
                 >
-                    <div class="plan-badge" v-if="currentTier.toLowerCase() === plan.name.toLowerCase()">Actif</div>
+                    <div class="plan-badge" v-if="currentTier.toLowerCase() === plan.name.toLowerCase()">{{ t('pro.abonnements.active') }}</div>
                     <div class="plan-icon" :class="`icon--${planIcon(plan.name)}`">
                         <svg v-if="planIcon(plan.name) === 'leaf'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66 .27-.77C8 16 14 14 17 8z"/><path d="M20.49 3.51c-3.11 3.11-6.89 4.19-9.49 4.49 2.5 2.5 5 4.5 9 3 .78-3.5-.53-6.12-1-7.49"/></svg>
                         <svg v-else-if="planIcon(plan.name) === 'star'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -254,7 +326,7 @@ function changeLabel(plan: PlanOption) {
                     <div class="plan-desc" v-if="plan.description">{{ plan.description }}</div>
                     <div class="plan-price">
                         <span class="plan-amount">{{ plan.price.toFixed(0) }}€</span>
-                        <span class="plan-period">/{{ plan.billing_cycle === 'yearly' ? 'an' : 'mois' }}</span>
+                        <span class="plan-period">{{ plan.billing_cycle === 'yearly' ? t('pro.abonnements.perYear') : t('pro.abonnements.perMonth') }}</span>
                     </div>
                     <ul class="plan-features" v-if="plan.features?.length">
                         <li v-for="f in plan.features" :key="f" class="plan-feature">
@@ -281,37 +353,40 @@ function changeLabel(plan: PlanOption) {
         <Teleport to="body">
             <div v-if="showConfirmModal" class="modal-overlay" @click.self="closeModal">
                 <div class="modal-card">
-                    <h3 class="modal-title">Changer d'abonnement</h3>
+                    <h3 class="modal-title">{{ t('pro.abonnements.changeSubscriptionTitle') }}</h3>
                     <div class="modal-body">
                         <div class="modal-change-summary">
                             <div class="change-from">
-                                <span class="change-label">Plan actuel</span>
+                                <span class="change-label">{{ t('pro.abonnements.currentPlan') }}</span>
                                 <span class="change-value">{{ currentTier }}</span>
                             </div>
                             <svg class="change-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             <div class="change-to">
-                                <span class="change-label">Nouveau plan</span>
+                                <span class="change-label">{{ t('pro.abonnements.newPlan') }}</span>
                                 <span class="change-value change-value--new">{{ selectedPlan?.name }}</span>
                             </div>
                         </div>
 
                         <div class="modal-price-info">
-                            <p>Vous serez facturé <strong>{{ selectedPlan?.price.toFixed(2) }}€/mois</strong> à compter d'aujourd'hui.</p>
-                            <p v-if="currentTier !== 'Free'" class="modal-note">Votre abonnement actuel sera remplacé immédiatement.</p>
+                            <p>{{ t('pro.abonnements.billedMessage', { price: selectedPlan?.price.toFixed(2) }) }}</p>
+                            <p v-if="currentTier !== 'Free'" class="modal-note">{{ t('pro.abonnements.replacedNote') }}</p>
                         </div>
 
                         <div v-if="selectedPlan?.name === 'Pro'" class="form-group">
-                            <label class="form-label">Numéro SIRET *</label>
+                            <label class="form-label">{{ t('pro.abonnements.siretLabel') }}</label>
                             <input v-model="siretInput" type="text" class="form-input" placeholder="Ex: 12345678901234" maxlength="14" />
-                            <p class="form-hint">Requis pour les comptes professionnels (14 chiffres)</p>
+                            <p v-if="siretStatus === 'checking'" class="form-hint">{{ t('pro.abonnements.siretChecking') }}</p>
+                            <p v-else-if="siretStatus === 'valid'" class="form-hint form-hint--valid">{{ t('pro.abonnements.siretValid') }}</p>
+                            <p v-else-if="siretStatus === 'invalid'" class="form-hint form-hint--invalid">{{ t('pro.abonnements.siretInvalid') }}</p>
+                            <p v-else class="form-hint">{{ t('pro.abonnements.siretHint') }}</p>
                         </div>
 
                         <div v-if="siretError" class="alert alert--error">{{ siretError }}</div>
                     </div>
                     <div class="modal-actions">
-                        <button class="btn-secondary" @click="closeModal" :disabled="changingPlan">Annuler</button>
+                        <button class="btn-secondary" @click="closeModal" :disabled="changingPlan">{{ t('pro.abonnements.cancel') }}</button>
                         <button class="btn-primary" @click="confirmChangePlan" :disabled="changingPlan">
-                            {{ changingPlan ? 'Traitement...' : 'Confirmer le changement' }}
+                            {{ changingPlan ? t('pro.abonnements.processing') : t('pro.abonnements.confirmChange') }}
                         </button>
                     </div>
                 </div>
@@ -411,6 +486,8 @@ function changeLabel(plan: PlanOption) {
 .form-input { padding: 11px 14px; font-size: 0.9rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--cream); color: var(--charcoal); font-family: inherit; outline: none; transition: border-color 0.2s; }
 .form-input:focus { border-color: var(--green-mid); background: var(--white); }
 .form-hint { font-size: 0.78rem; color: var(--charcoal); opacity: 0.45; margin: 0; }
+.form-hint--valid { color: var(--green-mid); opacity: 1; font-weight: 600; }
+.form-hint--invalid { color: #dc2626; opacity: 1; font-weight: 600; }
 .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.86rem; font-weight: 500; }
 .alert--error { background: #fee2e2; color: #991b1b; }
 .btn-primary { padding: 12px 24px; background: var(--green-dark); color: var(--white); border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }

@@ -25,6 +25,15 @@ type FinancierData struct {
 	Evolution []Evolution `json:"evolution"`
 }
 
+type Expense struct {
+	Id        int64  `db:"id" json:"id"`
+	Label     string `db:"label" json:"label"`
+	Amount    float64 `db:"amount" json:"amount"`
+	Category  string `db:"category" json:"category"`
+	CreatedBy pgtype.Int8 `db:"created_by" json:"created_by"`
+	CreatedAt string `db:"created_at" json:"created_at"`
+}
+
 type FinancialReport struct {
 	TotalRevenue        float64 `json:"total_revenue"`
 	ListingRevenue      float64 `json:"listing_revenue"`

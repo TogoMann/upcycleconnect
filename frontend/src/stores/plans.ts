@@ -37,8 +37,29 @@ export const usePlansStore = defineStore('plans', () => {
             const error = await res.text();
             throw new Error(error || 'Failed to update plan');
         }
-        await authStore.fetchCurrentUser(); // Refresh user role
+        await authStore.fetchCurrentUser();
     }
 
-    return { getPlans, choosePlan };
+    async function choosePlanCheckout(planId: number, siret?: string, returnPath?: string): Promise<string> {
+        const res = await fetch(`${API_BASE}/subscriptions/checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authStore.token}`
+            },
+            body: JSON.stringify({
+                plan_id: planId,
+                siret: siret,
+                return_path: returnPath
+            })
+        });
+        if (!res.ok) {
+            const error = await res.text();
+            throw new Error(error || 'Erreur lors de la création du paiement');
+        }
+        const data = await res.json();
+        return data.url;
+    }
+
+    return { getPlans, choosePlan, choosePlanCheckout };
 });

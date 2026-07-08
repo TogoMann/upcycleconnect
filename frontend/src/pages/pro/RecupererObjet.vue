@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const code = ref('')
 const result = ref<{ titre: string; categorie: string; poids: string } | null>(null)
@@ -28,10 +30,10 @@ async function recuperer() {
             code.value = ''
         } else {
             const d = await res.json()
-            error.value = d.message ?? 'Code introuvable.'
+            error.value = d.message ?? t('pro.recupererObjet.notFound')
         }
     } catch {
-        error.value = 'Erreur réseau.'
+        error.value = t('pro.recupererObjet.networkError')
     }
     loading.value = false
 }
@@ -40,8 +42,8 @@ async function recuperer() {
 <template>
     <div class="recuperer">
         <div class="page-header">
-            <h1 class="page-title">Récupérer un objet.</h1>
-            <p class="page-subtitle">Saisissez ou scannez le code-barres du conteneur.</p>
+            <h1 class="page-title">{{ t('pro.recupererObjet.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.recupererObjet.subtitle') }}</p>
         </div>
 
         <div class="scan-card">
@@ -55,28 +57,28 @@ async function recuperer() {
                     v-model="code"
                     type="text"
                     class="scan-input"
-                    placeholder="Code-barres (ex: UC-2024-00123)"
+                    :placeholder="t('pro.recupererObjet.placeholder')"
                     autofocus
                 />
                 <button type="submit" class="scan-btn" :disabled="loading || !code.trim()">
-                    {{ loading ? 'Recherche…' : 'Récupérer' }}
+                    {{ loading ? t('pro.recupererObjet.searching') : t('pro.recupererObjet.retrieve') }}
                 </button>
             </form>
 
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
             <div v-if="result" class="result-card">
-                <div class="result-title">Objet récupéré avec succès</div>
+                <div class="result-title">{{ t('pro.recupererObjet.successTitle') }}</div>
                 <div class="result-row">
-                    <span class="result-label">Titre</span>
+                    <span class="result-label">{{ t('pro.recupererObjet.title') }}</span>
                     <span class="result-value">{{ result.titre }}</span>
                 </div>
                 <div class="result-row">
-                    <span class="result-label">Catégorie</span>
+                    <span class="result-label">{{ t('pro.recupererObjet.category') }}</span>
                     <span class="result-value">{{ result.categorie }}</span>
                 </div>
                 <div class="result-row">
-                    <span class="result-label">Poids</span>
+                    <span class="result-label">{{ t('pro.recupererObjet.weight') }}</span>
                     <span class="result-value">{{ result.poids }}</span>
                 </div>
             </div>

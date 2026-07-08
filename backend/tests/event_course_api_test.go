@@ -15,9 +15,11 @@ func TestEventCourseAPI(t *testing.T) {
 	router := SetupTestRouter(pool)
 
 	token, _ := utils.GenerateJWT(2, "bdurand", "pro")
+	staffToken, _ := utils.GenerateJWT(3, "clefevre_staff_test", "interne")
 
 	t.Run("CreateEvent_Pro", func(t *testing.T) {
 		body := map[string]interface{}{
+			"title":      "Atelier réparation vélo",
 			"price":      19.99,
 			"date":       time.Now().AddDate(0, 0, 7).Format("2006-01-02"),
 			"start_time": "14:00:00",
@@ -48,7 +50,7 @@ func TestEventCourseAPI(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/course", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+staffToken)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)

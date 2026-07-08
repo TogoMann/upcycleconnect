@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { API_BASE } from '@/config'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const invoices = ref<any[]>([])
 const isLoading = ref(false)
@@ -17,7 +19,7 @@ async function fetchInvoices() {
                 'Authorization': `Bearer ${authStore.token}`
             }
         })
-        if (!res.ok) throw new Error('Erreur lors du chargement des factures')
+        if (!res.ok) throw new Error(t('pro.facturation.loadError'))
         invoices.value = await res.json()
     } catch (err: any) {
         error.value = err.message
@@ -33,7 +35,7 @@ async function downloadPDF(id: number, number: string) {
                 'Authorization': `Bearer ${authStore.token}`
             }
         })
-        if (!res.ok) throw new Error('Erreur lors du téléchargement')
+        if (!res.ok) throw new Error(t('pro.facturation.downloadError'))
         
         const blob = await res.blob()
         const url = window.URL.createObjectURL(blob)
@@ -55,24 +57,24 @@ onMounted(fetchInvoices)
 <template>
     <div class="facturation-page">
         <div class="page-header">
-            <h1 class="page-title">Mes Factures.</h1>
-            <p class="page-subtitle">Retrouvez l'historique de vos transactions et exportez vos justificatifs.</p>
+            <h1 class="page-title">{{ t('pro.facturation.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.facturation.subtitle') }}</p>
         </div>
 
-        <div v-if="isLoading" class="state-msg">Chargement...</div>
+        <div v-if="isLoading" class="state-msg">{{ t('pro.facturation.loading') }}</div>
         <div v-else-if="error" class="state-msg error">{{ error }}</div>
-        
+
         <div class="table-container" v-else>
             <table class="invoice-table">
                 <thead>
                     <tr>
-                        <th>N° Facture</th>
-                        <th>Type</th>
-                        <th>Rôle</th>
-                        <th>Date</th>
-                        <th>Montant HT</th>
-                        <th>Total TTC</th>
-                        <th>Action</th>
+                        <th>{{ t('pro.facturation.invoiceNumber') }}</th>
+                        <th>{{ t('pro.facturation.type') }}</th>
+                        <th>{{ t('pro.facturation.role') }}</th>
+                        <th>{{ t('pro.facturation.date') }}</th>
+                        <th>{{ t('pro.facturation.amountExclTax') }}</th>
+                        <th>{{ t('pro.facturation.totalInclTax') }}</th>
+                        <th>{{ t('pro.facturation.action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -81,7 +83,7 @@ onMounted(fetchInvoices)
                         <td class="capitalize">{{ inv.order_type }}</td>
                         <td>
                             <span :class="['badge-role', inv.user_id === authStore.user?.id ? 'purchase' : 'sale']">
-                                {{ inv.user_id === authStore.user?.id ? 'Achat' : 'Vente' }}
+                                {{ inv.user_id === authStore.user?.id ? t('pro.facturation.purchase') : t('pro.facturation.sale') }}
                             </span>
                         </td>
                         <td>{{ new Date(inv.created_at).toLocaleDateString() }}</td>
@@ -99,7 +101,7 @@ onMounted(fetchInvoices)
                         </td>
                     </tr>
                     <tr v-if="invoices.length === 0">
-                        <td colspan="8" class="empty-cell">Aucune facture disponible.</td>
+                        <td colspan="8" class="empty-cell">{{ t('pro.facturation.noInvoices') }}</td>
                     </tr>
                 </tbody>
             </table>

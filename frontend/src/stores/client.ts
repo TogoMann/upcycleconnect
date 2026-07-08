@@ -26,7 +26,7 @@ export const useClientStore = defineStore('client', () => {
     const { annonces, allAnnonces, conversations } = storeToRefs(listingStore)
     const { depots, sites, lockerAccesses } = storeToRefs(depositStore)
     const { entries, planning } = storeToRefs(planningStore)
-    const { score, scoreHistory } = storeToRefs(profileStore)
+    const { score, scoreHistory, quests } = storeToRefs(profileStore)
     const { events, courses, participations, courseOrders } = storeToRefs(catalogueStore)
     const { cities } = storeToRefs(locationStore)
     const { cart } = storeToRefs(cartStore)
@@ -61,6 +61,7 @@ export const useClientStore = defineStore('client', () => {
         planning,
         score,
         scoreHistory,
+        quests,
         events,
         courses,
         participations,
@@ -97,8 +98,9 @@ export const useClientStore = defineStore('client', () => {
         fetchAnnonces: listingStore.fetchAnnonces,
         fetchAllAnnonces: listingStore.fetchAllAnnonces,
         uploadImage: listingStore.uploadImage,
+        fetchSitesWithLockers: listingStore.fetchSitesWithLockers,
         createAnnonce: listingStore.createAnnonce,
-        createOrder: listingStore.createOrder,
+        createOrderCheckout: listingStore.createOrderCheckout,
         fetchConversations,
         isChattingWith,
 
@@ -111,6 +113,7 @@ export const useClientStore = defineStore('client', () => {
         // Profile
         fetchScore: profileStore.fetchScore,
         fetchScoreHistory: profileStore.fetchScoreHistory,
+        fetchQuests: profileStore.fetchQuests,
         markTutorialSeen: profileStore.markTutorialSeen,
         updateProfile: profileStore.updateProfile,
 
@@ -136,6 +139,7 @@ export const useClientStore = defineStore('client', () => {
         fetchCart: cartStore.fetchCart,
         addToCart: cartStore.addToCart,
         removeFromCart: cartStore.removeFromCart,
+        clearCart: cartStore.clearCart,
         checkoutCart: cartStore.checkoutCart,
     }
 })

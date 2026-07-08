@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import { API_BASE } from '@/config'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Stats {
@@ -33,8 +35,8 @@ onMounted(async () => {
 <template>
     <div class="tba">
         <div class="page-header">
-            <h1 class="page-title">Tableau avancé.</h1>
-            <p class="page-subtitle">Statistiques approfondies de votre activité.</p>
+            <h1 class="page-title">{{ t('pro.tableauBordAvance.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.tableauBordAvance.subtitle') }}</p>
         </div>
 
         <div v-if="locked" class="locked-card">
@@ -44,33 +46,33 @@ onMounted(async () => {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
             </div>
-            <div class="locked-title">Fonctionnalité Premium</div>
-            <div class="locked-desc">Le tableau de bord avancé est réservé aux abonnements Premium.</div>
-            <router-link to="/pro/abonnements" class="btn-primary">Passer à Premium</router-link>
+            <div class="locked-title">{{ t('pro.tableauBordAvance.premiumFeature') }}</div>
+            <div class="locked-desc">{{ t('pro.tableauBordAvance.premiumDesc') }}</div>
+            <router-link to="/pro/abonnements" class="btn-primary">{{ t('pro.tableauBordAvance.upgradeToPremium') }}</router-link>
         </div>
 
         <template v-else-if="stats">
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-label">CA ce mois</div>
+                    <div class="kpi-label">{{ t('pro.tableauBordAvance.revenueMonth') }}</div>
                     <div class="kpi-value">{{ stats.ca_mois.toFixed(0) }} €</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Objets recyclés</div>
+                    <div class="kpi-label">{{ t('pro.tableauBordAvance.recycledItems') }}</div>
                     <div class="kpi-value">{{ stats.objets_recycles }}</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Taux conversion</div>
+                    <div class="kpi-label">{{ t('pro.tableauBordAvance.conversionRate') }}</div>
                     <div class="kpi-value">{{ stats.taux_conversion }} %</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Score éco</div>
+                    <div class="kpi-label">{{ t('pro.tableauBordAvance.ecoScore') }}</div>
                     <div class="kpi-value">{{ stats.score_eco }}</div>
                 </div>
             </div>
 
             <div class="chart-section">
-                <h2 class="section-title">Évolution mensuelle</h2>
+                <h2 class="section-title">{{ t('pro.tableauBordAvance.monthlyEvolution') }}</h2>
                 <div class="chart-bars">
                     <div
                         v-for="e in stats.evolution"
@@ -87,7 +89,7 @@ onMounted(async () => {
             </div>
         </template>
 
-        <div v-else class="loading">Chargement des statistiques…</div>
+        <div v-else class="loading">{{ t('pro.tableauBordAvance.loading') }}</div>
     </div>
 </template>
 

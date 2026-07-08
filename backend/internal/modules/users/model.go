@@ -59,3 +59,12 @@ type ScoreHistory struct {
 	Description string      `db:"description" json:"description"`
 	CreatedAt   string      `db:"created_at" json:"created_at"`
 }
+
+type QuestProgress struct {
+	Description      string `json:"description"`
+	Current          int64  `json:"current"`
+	Threshold        int    `json:"threshold"`
+	WindowDays       int    `json:"window_days"`
+	BonusPoints      int32  `json:"bonus_points"`
+	BonusDescription string `json:"bonus_description"`
+}

@@ -67,7 +67,29 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	role, _ := claims["role"].(string)
+	if !ok {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
 	listing_order, err := h.service.GetById(pgtype.Int8{Int64: idInt, Valid: true})
+	if err != nil {
+		http.Error(w, "Listing order not found", http.StatusNotFound)
+		return
+	}
+
+	if listing_order.UserId.Int64 != int64(sub) && role != "admin" {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 
 	res, _ := json.Marshal(listing_order)
 	fmt.Fprintf(w, "%s", string(res))

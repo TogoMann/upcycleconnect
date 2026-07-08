@@ -1,41 +1,63 @@
 <script setup lang="ts">
-import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 
-const authStore = useAuthStore()
+const { t, locale } = useI18n()
+const clientStore = useClientStore()
 
-interface Annonce {
-    id: number
-    titre: string
-    categorie: string
-    prix: number
-    statut: string
-    date: string
-}
+const CATEGORIES = ['Mobilier', 'Décoration', 'Vêtements', 'Jouet', 'Electronique', 'Outils']
 
-const annonces = ref<Annonce[]>([])
 const search = ref('')
-const filterStatut = ref('')
+const filterCategorie = ref('')
+const buyingId = ref<number | null>(null)
+const errorMsg = ref('')
+
+onMounted(async () => {
+    await clientStore.fetchAllAnnonces()
+})
+
+const annonces = computed(() => {
+    return clientStore.allAnnonces.map((a: any) => {
+        const p = a.price
+        const priceVal = p ? (typeof p === 'object' ? (p.Float64 ?? p.Int64) : Number(p)) : 0
+        return {
+            id: a.id?.Int64 ?? a.id,
+            titre: a.name,
+            categorie: a.category || t('pro.annonces.uncategorized'),
+            prix: Number(priceVal) || 0,
+            statut: a.status,
+            date: new Date(a.created_at?.Time ?? a.created_at).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
+            handoffMode: a.handoff_mode === 'casier' ? t('pro.annonces.handoffLocker') : t('pro.annonces.handoffInPerson'),
+        }
+    })
+})
 
 const filtered = computed(() =>
     annonces.value.filter(a => {
         const matchSearch = a.titre.toLowerCase().includes(search.value.toLowerCase())
-        const matchStatut = !filterStatut.value || a.statut === filterStatut.value
-        return matchSearch && matchStatut
+        const matchCategorie = !filterCategorie.value || a.categorie === filterCategorie.value
+        return matchSearch && matchCategorie
     })
 )
 
-onMounted(async () => {
-    const token = authStore.token
-    if (!token) return
+async function handleBuy(a: { id: number; prix: number; statut: string }) {
+    if (a.statut !== 'active') return
+    buyingId.value = a.id
+    errorMsg.value = ''
     try {
-        const res = await fetch(`${API_BASE}/pro/annonces`, {
-            headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) annonces.value = await res.json()
-    } catch {}
-})
+        const data = await clientStore.createOrderCheckout(a.id)
+        if (data.free) {
+            await clientStore.fetchAllAnnonces()
+        } else if (data.url) {
+            window.location.href = data.url
+        }
+    } catch (e: any) {
+        errorMsg.value = e.message || t('pro.annonces.buyError')
+    } finally {
+        buyingId.value = null
+    }
+}
 
 function badgeClass(s: string) {
     if (s === 'active') return 'badge badge--active'
@@ -43,31 +65,31 @@ function badgeClass(s: string) {
     return 'badge badge--draft'
 }
 function badgeLabel(s: string) {
-    if (s === 'active') return 'Active'
-    if (s === 'sold') return 'Vendu'
-    return 'Brouillon'
+    if (s === 'active') return t('pro.annonces.statusActive')
+    if (s === 'sold') return t('pro.annonces.statusSold')
+    return t('pro.annonces.statusCancelled')
 }
 </script>
 
 <template>
     <div class="annonces">
         <div class="page-header">
-            <h1 class="page-title">Annonces.</h1>
-            <p class="page-subtitle">Catalogue de vos annonces avec filtres avancés.</p>
+            <h1 class="page-title">{{ t('pro.annonces.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.annonces.subtitle') }}</p>
         </div>
+
+        <div v-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
 
         <div class="filters-row">
             <input
                 v-model="search"
                 type="text"
                 class="filter-input"
-                placeholder="Rechercher une annonce…"
+                :placeholder="t('pro.annonces.searchPlaceholder')"
             />
-            <select v-model="filterStatut" class="filter-select">
-                <option value="">Tous les statuts</option>
-                <option value="active">Active</option>
-                <option value="sold">Vendu</option>
-                <option value="draft">Brouillon</option>
+            <select v-model="filterCategorie" class="filter-select">
+                <option value="">{{ t('pro.annonces.allCategories') }}</option>
+                <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
             </select>
         </div>
 
@@ -75,23 +97,36 @@ function badgeLabel(s: string) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Titre</th>
-                        <th>Catégorie</th>
-                        <th>Prix</th>
-                        <th>Date</th>
-                        <th>Statut</th>
+                        <th>{{ t('pro.annonces.title') }}</th>
+                        <th>{{ t('pro.annonces.category') }}</th>
+                        <th>{{ t('pro.annonces.transaction') }}</th>
+                        <th>{{ t('pro.annonces.price') }}</th>
+                        <th>{{ t('pro.annonces.date') }}</th>
+                        <th>{{ t('pro.annonces.status') }}</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="filtered.length === 0">
-                        <td colspan="5" class="empty">Aucune annonce trouvée.</td>
+                        <td colspan="7" class="empty">{{ t('pro.annonces.noResults') }}</td>
                     </tr>
                     <tr v-for="a in filtered" :key="a.id">
                         <td class="td-bold">{{ a.titre }}</td>
                         <td class="td-muted">{{ a.categorie }}</td>
-                        <td>{{ a.prix.toFixed(2) }} €</td>
+                        <td class="td-muted">{{ a.handoffMode }}</td>
+                        <td>{{ a.prix === 0 ? t('pro.annonces.don') : a.prix.toFixed(2) + ' €' }}</td>
                         <td class="td-muted">{{ a.date }}</td>
                         <td><span :class="badgeClass(a.statut)">{{ badgeLabel(a.statut) }}</span></td>
+                        <td>
+                            <button
+                                v-if="a.statut === 'active'"
+                                class="btn-buy"
+                                :disabled="buyingId === a.id"
+                                @click="handleBuy(a)"
+                            >
+                                {{ buyingId === a.id ? t('pro.annonces.buying') : (a.prix === 0 ? t('pro.annonces.retrieve') : t('pro.annonces.buy')) }}
+                            </button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -103,6 +138,7 @@ function badgeLabel(s: string) {
 .page-header { margin-bottom: 24px; }
 .page-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; color: var(--charcoal); letter-spacing: -0.03em; margin: 0 0 8px; line-height: 1.08; }
 .page-subtitle { font-size: 0.9rem; color: var(--charcoal); opacity: 0.6; margin: 0; }
+.error-banner { background: rgba(229, 62, 62, 0.08); border: 1px solid rgba(229, 62, 62, 0.25); border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; color: #e53e3e; margin-bottom: 16px; }
 .filters-row { display: flex; gap: 12px; margin-bottom: 20px; }
 .filter-input { flex: 1; padding: 10px 14px; font-size: 0.9rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--white); color: var(--charcoal); font-family: inherit; outline: none; transition: border-color 0.2s; }
 .filter-input:focus { border-color: var(--green-mid); }
@@ -120,4 +156,7 @@ function badgeLabel(s: string) {
 .badge--active { background: var(--green-pale); color: var(--green-dark); }
 .badge--sold { background: rgba(53,53,53,0.08); color: var(--charcoal); }
 .badge--draft { background: #fef3c7; color: #92400e; }
+.btn-buy { padding: 7px 16px; background: var(--green-dark); color: var(--white); border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+.btn-buy:hover:not(:disabled) { background: var(--green-mid); }
+.btn-buy:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

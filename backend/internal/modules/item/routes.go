@@ -2,6 +2,7 @@ package item
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/users"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -9,7 +10,11 @@ import (
 
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
 	repo := NewRepository(db)
-	service := NewService(repo)
+
+	userRepo := users.NewRepository(db)
+	userService := users.NewService(userRepo)
+
+	service := NewService(repo, userService)
 	handler := NewHandler(service)
 
 	r.HandleFunc("GET /items/me", middlewares.Authenticated(handler.GetByUserId))

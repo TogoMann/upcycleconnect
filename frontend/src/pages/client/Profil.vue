@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const clientStore = useClientStore()
 
@@ -32,12 +34,12 @@ watch(
     },
 )
 
-const roleLabels: Record<string, string> = {
-    client: 'Particulier',
-    pro: 'Professionnel',
-    interne: 'Interne',
-    admin: 'Administrateur',
-}
+const roleLabels = computed<Record<string, string>>(() => ({
+    client: t('client.profil.roleClient'),
+    pro: t('client.profil.rolePro'),
+    interne: t('client.profil.roleInterne'),
+    admin: t('client.profil.roleAdmin'),
+}))
 
 function startEdit() {
     editing.value = true
@@ -72,7 +74,7 @@ async function handleSave() {
 
 <template>
     <div class="page">
-        <h1 class="page-title">Mon Profil.</h1>
+        <h1 class="page-title">{{ t('client.profil.pageTitle') }}</h1>
 
         <div class="profile-layout">
             <div class="profile-card">
@@ -87,7 +89,7 @@ async function handleSave() {
                             {{ authStore.user?.first_name || '' }} {{ authStore.user?.last_name || authStore.user?.username || '' }}
                         </p>
                         <span class="role-badge">
-                            {{ roleLabels[authStore.user?.role ?? ''] ?? authStore.user?.role ?? 'Particulier' }}
+                            {{ roleLabels[authStore.user?.role ?? ''] ?? authStore.user?.role ?? t('client.profil.roleClient') }}
                         </span>
                     </div>
                 </div>
@@ -96,25 +98,25 @@ async function handleSave() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="20 6 9 17 4 12" />
                     </svg>
-                    Profil mis à jour
+                    {{ t('client.profil.profileUpdated') }}
                 </div>
 
                 <template v-if="!editing">
                     <div class="info-grid">
                         <div class="info-item">
-                            <span class="info-label">Prénom</span>
+                            <span class="info-label">{{ t('client.profil.firstName') }}</span>
                             <span class="info-value">{{ authStore.user?.first_name || '—' }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Nom</span>
+                            <span class="info-label">{{ t('client.profil.lastName') }}</span>
                             <span class="info-value">{{ authStore.user?.last_name || '—' }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Nom d'utilisateur</span>
+                            <span class="info-label">{{ t('client.profil.username') }}</span>
                             <span class="info-value">{{ authStore.user?.username || '—' }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Email</span>
+                            <span class="info-label">{{ t('client.profil.email') }}</span>
                             <span class="info-value">{{ authStore.user?.email || '—' }}</span>
                         </div>
                     </div>
@@ -124,7 +126,7 @@ async function handleSave() {
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
-                        Modifier le profil
+                        {{ t('client.profil.editProfile') }}
                     </button>
                 </template>
 
@@ -132,22 +134,22 @@ async function handleSave() {
                     <form class="edit-form" @submit.prevent="handleSave">
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Prénom</label>
-                                <input v-model="form.first_name" type="text" class="form-input" placeholder="Prénom" />
+                                <label class="form-label">{{ t('client.profil.firstName') }}</label>
+                                <input v-model="form.first_name" type="text" class="form-input" :placeholder="t('client.profil.firstName')" />
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Nom</label>
-                                <input v-model="form.last_name" type="text" class="form-input" placeholder="Nom" />
+                                <label class="form-label">{{ t('client.profil.lastName') }}</label>
+                                <input v-model="form.last_name" type="text" class="form-input" :placeholder="t('client.profil.lastName')" />
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Email</label>
+                            <label class="form-label">{{ t('client.profil.email') }}</label>
                             <input v-model="form.email" type="email" class="form-input" placeholder="email@exemple.com" />
                         </div>
                         <div v-if="saveError" class="save-error">{{ saveError }}</div>
                         <div class="form-actions">
-                            <button type="button" class="btn-cancel" @click="cancelEdit">Annuler</button>
-                            <button type="submit" class="btn-save">Enregistrer</button>
+                            <button type="button" class="btn-cancel" @click="cancelEdit">{{ t('client.profil.cancel') }}</button>
+                            <button type="submit" class="btn-save">{{ t('client.profil.save') }}</button>
                         </div>
                     </form>
                 </template>
@@ -161,12 +163,12 @@ async function handleSave() {
                         </svg>
                     </div>
                     <div>
-                        <p class="side-card-label">Score upcycling</p>
+                        <p class="side-card-label">{{ t('client.profil.upcyclingScore') }}</p>
                         <p class="side-card-value">{{ clientStore.score }} pts</p>
                     </div>
                     <div class="side-card-actions">
-                        <router-link to="/particulier/score" class="side-card-link">Voir →</router-link>
-                        <button class="btn-history-small" @click="showHistory = true">Historique</button>
+                        <router-link to="/particulier/score" class="side-card-link">{{ t('client.profil.view') }}</router-link>
+                        <button class="btn-history-small" @click="showHistory = true">{{ t('client.profil.history') }}</button>
                     </div>
                 </div>
 
@@ -178,10 +180,10 @@ async function handleSave() {
                         </svg>
                     </div>
                     <div>
-                        <p class="side-card-label">Annonces</p>
+                        <p class="side-card-label">{{ t('client.profil.listings') }}</p>
                         <p class="side-card-value">{{ clientStore.annonces.length }}</p>
                     </div>
-                    <router-link to="/particulier/annonces" class="side-card-link">Voir →</router-link>
+                    <router-link to="/particulier/annonces" class="side-card-link">{{ t('client.profil.view') }}</router-link>
                 </div>
 
                 <div class="side-card">
@@ -191,10 +193,25 @@ async function handleSave() {
                         </svg>
                     </div>
                     <div>
-                        <p class="side-card-label">Dépôts</p>
+                        <p class="side-card-label">{{ t('client.profil.deposits') }}</p>
                         <p class="side-card-value">{{ clientStore.depots.length }}</p>
                     </div>
-                    <router-link to="/particulier/conteneurs" class="side-card-link">Voir →</router-link>
+                    <router-link to="/particulier/conteneurs" class="side-card-link">{{ t('client.profil.view') }}</router-link>
+                </div>
+
+                <div class="side-card side-card--upgrade">
+                    <div class="side-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="side-card-label">{{ t('client.profil.myPlan') }}</p>
+                        <p class="side-card-value">{{ roleLabels[authStore.user?.role ?? ''] ?? t('client.profil.roleClient') }}</p>
+                    </div>
+                    <router-link to="/particulier/plans" class="side-card-link">
+                        {{ authStore.user?.role === 'pro' ? t('client.profil.manage') : t('client.profil.upgradePlan') }}
+                    </router-link>
                 </div>
             </div>
         </div>
@@ -203,7 +220,7 @@ async function handleSave() {
         <div v-if="showHistory" class="modal-overlay" @click.self="showHistory = false">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Mon historique de points</h3>
+                    <h3 class="modal-title">{{ t('client.profil.historyModalTitle') }}</h3>
                     <button class="btn-close" @click="showHistory = false">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -211,10 +228,10 @@ async function handleSave() {
                         </svg>
                     </button>
                 </div>
-                
+
                 <div class="modal-body history-modal-body">
-                    <div v-if="clientStore.isLoading" class="history-loading">Chargement...</div>
-                    <div v-else-if="clientStore.scoreHistory.length === 0" class="history-empty">Aucun historique trouvé.</div>
+                    <div v-if="clientStore.isLoading" class="history-loading">{{ t('client.profil.loading') }}</div>
+                    <div v-else-if="clientStore.scoreHistory.length === 0" class="history-empty">{{ t('client.profil.noHistory') }}</div>
                     <div v-else class="history-list">
                         <div v-for="item in clientStore.scoreHistory" :key="item.id" class="history-item">
                             <div class="history-item-main">

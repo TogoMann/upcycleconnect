@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const form = ref({
@@ -44,10 +46,10 @@ async function save() {
         if (res.ok) success.value = true
         else {
             const d = await res.json()
-            error.value = d.message ?? 'Erreur.'
+            error.value = d.message ?? t('admin.parametres.errorGeneric')
         }
     } catch {
-        error.value = 'Erreur réseau.'
+        error.value = t('admin.parametres.errorNetwork')
     }
     loading.value = false
 }
@@ -56,56 +58,56 @@ async function save() {
 <template>
     <div class="parametres">
         <div class="page-header">
-            <h1 class="page-title">Paramètres.</h1>
-            <p class="page-subtitle">Configuration globale de la plateforme.</p>
+            <h1 class="page-title">{{ t('admin.parametres.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.parametres.subtitle') }}</p>
         </div>
 
         <form class="form-sections" @submit.prevent="save">
-            <div v-if="success" class="alert alert--success">Paramètres enregistrés.</div>
+            <div v-if="success" class="alert alert--success">{{ t('admin.parametres.saved') }}</div>
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
             <div class="form-card">
-                <h3 class="card-title">Identité</h3>
+                <h3 class="card-title">{{ t('admin.parametres.identitySection') }}</h3>
                 <div class="form-group">
-                    <label class="form-label">Nom du site</label>
+                    <label class="form-label">{{ t('admin.parametres.siteName') }}</label>
                     <input v-model="form.nom_site" type="text" class="form-input" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">URL du logo</label>
+                    <label class="form-label">{{ t('admin.parametres.logoUrl') }}</label>
                     <input v-model="form.logo_url" type="text" class="form-input" placeholder="https://…" />
                 </div>
             </div>
 
             <div class="form-card">
-                <h3 class="card-title">Contact</h3>
+                <h3 class="card-title">{{ t('admin.parametres.contactSection') }}</h3>
                 <div class="form-group">
-                    <label class="form-label">Email de contact</label>
+                    <label class="form-label">{{ t('admin.parametres.contactEmail') }}</label>
                     <input v-model="form.email_contact" type="email" class="form-input" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Téléphone</label>
+                    <label class="form-label">{{ t('admin.parametres.phone') }}</label>
                     <input v-model="form.telephone" type="tel" class="form-input" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Adresse</label>
+                    <label class="form-label">{{ t('admin.parametres.address') }}</label>
                     <input v-model="form.adresse" type="text" class="form-input" />
                 </div>
             </div>
 
             <div class="form-card">
-                <h3 class="card-title">Commercial</h3>
+                <h3 class="card-title">{{ t('admin.parametres.commercialSection') }}</h3>
                 <div class="form-group">
-                    <label class="form-label">Taux de commission (%)</label>
+                    <label class="form-label">{{ t('admin.parametres.commissionRate') }}</label>
                     <input v-model="form.commission_taux" type="number" step="0.1" min="0" max="100" class="form-input" />
                 </div>
             </div>
 
             <div class="form-card">
-                <h3 class="card-title">Système</h3>
+                <h3 class="card-title">{{ t('admin.parametres.systemSection') }}</h3>
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <div class="toggle-title">Mode maintenance</div>
-                        <div class="toggle-desc">Le site public affiche une page de maintenance.</div>
+                        <div class="toggle-title">{{ t('admin.parametres.maintenanceMode') }}</div>
+                        <div class="toggle-desc">{{ t('admin.parametres.maintenanceDesc') }}</div>
                     </div>
                     <button
                         type="button"
@@ -118,8 +120,8 @@ async function save() {
                 </div>
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <div class="toggle-title">Inscriptions ouvertes</div>
-                        <div class="toggle-desc">Autoriser les nouveaux comptes.</div>
+                        <div class="toggle-title">{{ t('admin.parametres.openRegistration') }}</div>
+                        <div class="toggle-desc">{{ t('admin.parametres.openRegistrationDesc') }}</div>
                     </div>
                     <button
                         type="button"
@@ -133,7 +135,7 @@ async function save() {
             </div>
 
             <button type="submit" class="btn-primary" :disabled="loading">
-                {{ loading ? 'Enregistrement…' : 'Enregistrer les paramètres' }}
+                {{ loading ? t('admin.parametres.saving') : t('admin.parametres.save') }}
             </button>
         </form>
     </div>

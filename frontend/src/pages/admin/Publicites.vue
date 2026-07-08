@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Pub {
@@ -63,7 +65,7 @@ async function rejeter(p: Pub) {
 }
 
 async function supprimer(id: number) {
-    if (!confirm('Supprimer cette publicité ?')) return
+    if (!confirm(t('admin.publicites.confirmDelete'))) return
     try {
         const res = await fetch(`${API_BASE}/admin/publicites/${id}`, {
             method: 'DELETE',
@@ -72,44 +74,48 @@ async function supprimer(id: number) {
         if (res.ok) pubs.value = pubs.value.filter(p => p.id !== id)
     } catch {}
 }
+
+function filterLabel(f: string): string {
+    if (f === 'all') return t('admin.publicites.filterAll')
+    if (f === 'active') return t('admin.publicites.filterActive')
+    return t('admin.publicites.filterPendingRejected')
+}
 </script>
 
 <template>
     <div class="publicites">
         <div class="page-header">
-            <h1 class="page-title">Publicités.</h1>
-            <p class="page-subtitle">Gestion et validation des publicités sur la plateforme.</p>
+            <h1 class="page-title">{{ t('admin.publicites.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.publicites.subtitle') }}</p>
         </div>
 
-        <div v-if="loading" class="loading-state">Chargement...</div>
+        <div v-if="loading" class="loading-state">{{ t('admin.publicites.loading') }}</div>
 
         <template v-else>
-            <!-- KPIs -->
             <div class="kpi-row">
                 <div class="kpi-sm">
                     <div class="kpi-sm-value">{{ stats.total }}</div>
-                    <div class="kpi-sm-label">Total</div>
+                    <div class="kpi-sm-label">{{ t('admin.publicites.kpiTotal') }}</div>
                 </div>
                 <div class="kpi-sm kpi-sm--green">
                     <div class="kpi-sm-value">{{ stats.active }}</div>
-                    <div class="kpi-sm-label">Actives</div>
+                    <div class="kpi-sm-label">{{ t('admin.publicites.kpiActive') }}</div>
                 </div>
                 <div class="kpi-sm kpi-sm--yellow">
                     <div class="kpi-sm-value">{{ stats.pending }}</div>
-                    <div class="kpi-sm-label">En attente</div>
+                    <div class="kpi-sm-label">{{ t('admin.publicites.kpiPending') }}</div>
                 </div>
                 <div class="kpi-sm">
                     <div class="kpi-sm-value">{{ stats.revenue.toFixed(0) }}€</div>
-                    <div class="kpi-sm-label">Revenus actifs</div>
+                    <div class="kpi-sm-label">{{ t('admin.publicites.kpiRevenue') }}</div>
                 </div>
             </div>
 
-            <!-- Filtres -->
             <div class="filter-row">
                 <button v-for="f in ['all', 'active', 'inactive']" :key="f"
                     class="filter-btn" :class="{ 'filter-btn--active': filter === f }"
                     @click="filter = f">
-                    {{ f === 'all' ? 'Toutes' : f === 'active' ? 'Actives' : 'En attente / Rejetées' }}
+                    {{ filterLabel(f) }}
                 </button>
             </div>
 
@@ -117,18 +123,18 @@ async function supprimer(id: number) {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Titre</th>
-                            <th>Annonceur</th>
-                            <th>Type</th>
-                            <th>Période</th>
-                            <th>Budget</th>
-                            <th>Statut</th>
-                            <th>Actions</th>
+                            <th>{{ t('admin.publicites.colTitle') }}</th>
+                            <th>{{ t('admin.publicites.colAdvertiser') }}</th>
+                            <th>{{ t('admin.publicites.colType') }}</th>
+                            <th>{{ t('admin.publicites.colPeriod') }}</th>
+                            <th>{{ t('admin.publicites.colBudget') }}</th>
+                            <th>{{ t('admin.publicites.colStatus') }}</th>
+                            <th>{{ t('admin.publicites.colActions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="filteredPubs.length === 0">
-                            <td colspan="7" class="empty">Aucune publicité.</td>
+                            <td colspan="7" class="empty">{{ t('admin.publicites.empty') }}</td>
                         </tr>
                         <tr v-for="p in filteredPubs" :key="p.id">
                             <td class="td-bold">{{ p.titre }}</td>
@@ -138,18 +144,18 @@ async function supprimer(id: number) {
                             <td class="td-budget">{{ p.budget.toFixed(0) }} €</td>
                             <td>
                                 <span class="badge" :class="p.statut === 'active' ? 'badge--active' : 'badge--inactive'">
-                                    {{ p.statut === 'active' ? 'Active' : 'Inactive' }}
+                                    {{ p.statut === 'active' ? t('admin.publicites.active') : t('admin.publicites.inactive') }}
                                 </span>
                             </td>
                             <td>
                                 <div class="action-group">
-                                    <button v-if="p.statut !== 'active'" class="btn-icon btn-icon--approve" @click="approuver(p)" title="Approuver">
+                                    <button v-if="p.statut !== 'active'" class="btn-icon btn-icon--approve" @click="approuver(p)" :title="t('admin.publicites.approve')">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                     </button>
-                                    <button v-if="p.statut === 'active'" class="btn-icon btn-icon--reject" @click="rejeter(p)" title="Désactiver">
+                                    <button v-if="p.statut === 'active'" class="btn-icon btn-icon--reject" @click="rejeter(p)" :title="t('admin.publicites.deactivate')">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                                     </button>
-                                    <button class="btn-icon btn-icon--danger" @click="supprimer(p.id)" title="Supprimer">
+                                    <button class="btn-icon btn-icon--danger" @click="supprimer(p.id)" :title="t('admin.publicites.delete')">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                                     </button>
                                 </div>

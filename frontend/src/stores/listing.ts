@@ -63,36 +63,47 @@ export const useListingStore = defineStore('listing', () => {
         return data.url
     }
 
-    async function createAnnonce(data: { name: string; description: string; price: number; category?: string; city_id?: number; image_url?: string }) {
+    async function fetchSitesWithLockers(cityId: number): Promise<any[]> {
+        const res = await fetch(`${API_BASE}/sites/lockers?city_id=${cityId}`, { headers: authHeaders() })
+        if (!res.ok) throw new Error('Erreur chargement des sites de dépôt')
+        const data = await res.json()
+        return Array.isArray(data) ? data : []
+    }
+
+    async function createAnnonce(data: { name: string; description: string; price: number; category?: string; city_id?: number; image_url?: string; handoff_mode?: string; address?: string; weight?: number; locker_id?: number; physical_state?: string; size?: string }) {
         const res = await fetch(`${API_BASE}/listing/`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         })
-        if (!res.ok) throw new Error('Erreur création annonce')
+        if (!res.ok) {
+            const errText = await res.text()
+            throw new Error(errText || 'Erreur création annonce')
+        }
         return await res.json()
     }
 
-    async function createOrder(listingId: number, price: number) {
+    async function createOrderCheckout(listingId: number): Promise<{ free: boolean; url?: string; order_id?: number }> {
         const cartStore = useCartStore()
-        const res = await fetch(`${API_BASE}/listing-order/`, {
+        const res = await fetch(`${API_BASE}/listing-order/checkout`, {
             method: 'POST',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                listing_id: listingId,
-                price: price,
-            }),
+            body: JSON.stringify({ listing_id: listingId }),
         })
-        if (!res.ok) throw new Error('Erreur création commande')
-        
-        // Remove from cart if present
+        if (!res.ok) {
+            const errText = await res.text()
+            throw new Error(errText || 'Erreur lors de la création de la commande')
+        }
+
+        const data = await res.json()
+
         try {
             await cartStore.removeFromCart('listing', listingId)
         } catch (e) {
             console.warn('Could not remove from cart after order:', e)
         }
-        
-        return await res.json()
+
+        return data
     }
 
     return {
@@ -104,7 +115,8 @@ export const useListingStore = defineStore('listing', () => {
         fetchAnnonces,
         fetchAllAnnonces,
         uploadImage,
+        fetchSitesWithLockers,
         createAnnonce,
-        createOrder
+        createOrderCheckout
     }
 })

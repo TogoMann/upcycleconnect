@@ -101,6 +101,22 @@ func (r *Repository) GetByUsername(username string) (*User, error) {
 	return &user, nil
 }
 
+func (r *Repository) GetByEmail(email string) (*User, error) {
+	rows, err := r.db.Query(db.Ctx, "SELECT id, username, first_name, last_name, email, password_hash, role, language_preference, has_seen_tutorial, created_at, company_id FROM users WHERE email = $1", email)
+	if err != nil {
+		return nil, fmt.Errorf("package users/repo GetByEmail query: %w", err)
+	}
+
+	user, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("package users/repo GetByEmail: %v", err.Error())
+	}
+	return &user, nil
+}
+
 func (r *Repository) GetMe(username string) (*UserFrontend, error) {
 	var u UserFrontend
 	err := r.db.QueryRow(db.Ctx, `
@@ -215,6 +231,17 @@ func (r *Repository) AddScore(userId pgtype.Int8, points int32, description stri
 		return fmt.Errorf("package users/repo AddScore: %w", err)
 	}
 	return nil
+}
+
+func (r *Repository) CountScoreEventsSince(userId pgtype.Int8, description string, windowDays int) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(db.Ctx,
+		"SELECT COUNT(*) FROM score_history WHERE user_id = $1 AND description = $2 AND created_at >= NOW() - make_interval(days => $3)",
+		userId, description, windowDays).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("package users/repo CountScoreEventsSince: %w", err)
+	}
+	return count, nil
 }
 
 func (r *Repository) CreateResetToken(userId int64, token string, expiresAt pgtype.Timestamp) error {

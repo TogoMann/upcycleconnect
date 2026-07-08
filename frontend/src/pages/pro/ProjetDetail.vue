@@ -3,7 +3,9 @@ import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -76,15 +78,15 @@ async function loadProject() {
 
 function formatDate(d: { Time: string; Valid: boolean } | undefined) {
     if (!d?.Valid) return '—'
-    return new Date(d.Time).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    return new Date(d.Time).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 function statusConfig(s: string) {
     const map: Record<string, { label: string; class: string }> = {
-        'in progress': { label: 'En cours', class: 'badge--progress' },
-        'done': { label: 'Terminé', class: 'badge--done' },
-        'featured': { label: 'Mis en avant', class: 'badge--featured' },
-        'cancelled': { label: 'Annulé', class: 'badge--cancelled' },
+        'in progress': { label: t('pro.projetDetail.statusInProgress'), class: 'badge--progress' },
+        'done': { label: t('pro.projetDetail.statusDone'), class: 'badge--done' },
+        'featured': { label: t('pro.projetDetail.statusFeatured'), class: 'badge--featured' },
+        'cancelled': { label: t('pro.projetDetail.statusCancelled'), class: 'badge--cancelled' },
     }
     return map[s] || { label: s, class: 'badge--default' }
 }
@@ -213,10 +215,10 @@ async function deleteStep(stepId: number) {
     <div class="projet-detail">
         <router-link to="/pro/projets" class="back-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            Retour aux projets
+            {{ t('pro.projetDetail.backToProjects') }}
         </router-link>
 
-        <div v-if="loading" class="loading-state">Chargement...</div>
+        <div v-if="loading" class="loading-state">{{ t('pro.projetDetail.loading') }}</div>
 
         <template v-else-if="project">
             <!-- En-tête projet -->
@@ -225,14 +227,14 @@ async function deleteStep(stepId: number) {
                     <div class="project-title-area">
                         <template v-if="!editing">
                             <h1 class="page-title">{{ project.title }}</h1>
-                            <p class="project-description">{{ project.description || 'Aucune description.' }}</p>
+                            <p class="project-description">{{ project.description || t('pro.projetDetail.noDescription') }}</p>
                         </template>
                         <template v-else>
-                            <input v-model="editForm.title" class="edit-title-input" placeholder="Titre du projet" />
-                            <textarea v-model="editForm.description" class="edit-desc-input" rows="3" placeholder="Description..."></textarea>
+                            <input v-model="editForm.title" class="edit-title-input" :placeholder="t('pro.projetDetail.titlePlaceholder')" />
+                            <textarea v-model="editForm.description" class="edit-desc-input" rows="3" :placeholder="t('pro.projetDetail.descriptionPlaceholder')"></textarea>
                             <div class="edit-actions">
-                                <button class="btn-sm btn-sm--secondary" @click="editing = false">Annuler</button>
-                                <button class="btn-sm btn-sm--primary" @click="saveEdit" :disabled="saving">Enregistrer</button>
+                                <button class="btn-sm btn-sm--secondary" @click="editing = false">{{ t('pro.projetDetail.cancel') }}</button>
+                                <button class="btn-sm btn-sm--primary" @click="saveEdit" :disabled="saving">{{ t('pro.projetDetail.save') }}</button>
                             </div>
                         </template>
                     </div>
@@ -248,7 +250,7 @@ async function deleteStep(stepId: number) {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
                         <div>
-                            <div class="info-label">Créé le</div>
+                            <div class="info-label">{{ t('pro.projetDetail.createdOn') }}</div>
                             <div class="info-value">{{ formatDate(project.created_at) }}</div>
                         </div>
                     </div>
@@ -257,7 +259,7 @@ async function deleteStep(stepId: number) {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
                         <div>
-                            <div class="info-label">Terminé le</div>
+                            <div class="info-label">{{ t('pro.projetDetail.completedOn') }}</div>
                             <div class="info-value">{{ formatDate(project.completed_at) }}</div>
                         </div>
                     </div>
@@ -266,7 +268,7 @@ async function deleteStep(stepId: number) {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         </div>
                         <div>
-                            <div class="info-label">Score Upcycling</div>
+                            <div class="info-label">{{ t('pro.projetDetail.upcyclingScore') }}</div>
                             <div class="info-value">{{ project.final_score.Int32 }} pts</div>
                         </div>
                     </div>
@@ -275,7 +277,7 @@ async function deleteStep(stepId: number) {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div>
-                            <div class="info-label">Étapes</div>
+                            <div class="info-label">{{ t('pro.projetDetail.steps') }}</div>
                             <div class="info-value">{{ steps.length }}</div>
                         </div>
                     </div>
@@ -285,15 +287,15 @@ async function deleteStep(stepId: number) {
                 <div class="action-bar">
                     <button class="btn-action" @click="startEdit" v-if="!editing">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Modifier
+                        {{ t('pro.projetDetail.edit') }}
                     </button>
                     <button class="btn-action" @click="showStatusModal = true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                        Changer le statut
+                        {{ t('pro.projetDetail.changeStatus') }}
                     </button>
                     <button class="btn-action btn-action--danger" @click="showDeleteModal = true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                        Supprimer
+                        {{ t('pro.projetDetail.delete') }}
                     </button>
                 </div>
             </div>
@@ -301,8 +303,8 @@ async function deleteStep(stepId: number) {
             <!-- Section étapes -->
             <div class="steps-section">
                 <div class="steps-header">
-                    <h2 class="section-title">Étapes du projet</h2>
-                    <span class="steps-count">{{ steps.length }} étape{{ steps.length !== 1 ? 's' : '' }}</span>
+                    <h2 class="section-title">{{ t('pro.projetDetail.stepsTitle') }}</h2>
+                    <span class="steps-count">{{ t('pro.projetDetail.stepsCount', { count: steps.length, plural: steps.length !== 1 ? 's' : '' }) }}</span>
                 </div>
 
                 <!-- Timeline des étapes -->
@@ -318,10 +320,10 @@ async function deleteStep(stepId: number) {
                                 <div class="step-meta">
                                     <span class="step-date">{{ formatDate(step.created_at) }}</span>
                                     <div class="step-actions">
-                                        <button class="step-btn" @click="startEditStep(step)" title="Modifier">
+                                        <button class="step-btn" @click="startEditStep(step)" :title="t('pro.projetDetail.edit')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                         </button>
-                                        <button class="step-btn step-btn--danger" @click="deleteStep(step.id.Int64)" title="Supprimer">
+                                        <button class="step-btn step-btn--danger" @click="deleteStep(step.id.Int64)" :title="t('pro.projetDetail.delete')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                         </button>
                                     </div>
@@ -330,8 +332,8 @@ async function deleteStep(stepId: number) {
                             <template v-else>
                                 <textarea v-model="editStepDesc" class="step-edit-input" rows="2"></textarea>
                                 <div class="step-edit-actions">
-                                    <button class="btn-sm btn-sm--secondary" @click="editingStepId = null">Annuler</button>
-                                    <button class="btn-sm btn-sm--primary" @click="saveStep(step)" :disabled="savingStep">Enregistrer</button>
+                                    <button class="btn-sm btn-sm--secondary" @click="editingStepId = null">{{ t('pro.projetDetail.cancel') }}</button>
+                                    <button class="btn-sm btn-sm--primary" @click="saveStep(step)" :disabled="savingStep">{{ t('pro.projetDetail.save') }}</button>
                                 </div>
                             </template>
                         </div>
@@ -339,7 +341,7 @@ async function deleteStep(stepId: number) {
                 </div>
 
                 <div v-else class="steps-empty">
-                    <p>Aucune étape ajoutée. Documentez la transformation de votre projet étape par étape.</p>
+                    <p>{{ t('pro.projetDetail.noSteps') }}</p>
                 </div>
 
                 <!-- Ajouter une étape -->
@@ -348,9 +350,9 @@ async function deleteStep(stepId: number) {
                         <span>+</span>
                     </div>
                     <div class="add-step-content">
-                        <textarea v-model="newStepDesc" class="form-input form-textarea-sm" placeholder="Décrivez cette étape de transformation..." rows="2"></textarea>
+                        <textarea v-model="newStepDesc" class="form-input form-textarea-sm" :placeholder="t('pro.projetDetail.addStepPlaceholder')" rows="2"></textarea>
                         <button class="btn-primary btn-sm" @click="addStep" :disabled="addingStep || !newStepDesc.trim()">
-                            {{ addingStep ? 'Ajout...' : 'Ajouter l\'étape' }}
+                            {{ addingStep ? t('pro.projetDetail.adding') : t('pro.projetDetail.addStep') }}
                         </button>
                     </div>
                 </div>
@@ -361,17 +363,17 @@ async function deleteStep(stepId: number) {
         <Teleport to="body">
             <div v-if="showStatusModal" class="modal-overlay" @click.self="showStatusModal = false">
                 <div class="modal-card">
-                    <h3 class="modal-title">Changer le statut</h3>
+                    <h3 class="modal-title">{{ t('pro.projetDetail.changeStatusTitle') }}</h3>
                     <div class="status-options">
                         <button v-for="s in ['in progress', 'done', 'cancelled']" :key="s"
                             class="status-option" :class="{ 'status-option--active': project?.status === s }"
                             @click="changeStatus(s)" :disabled="project?.status === s">
                             <span class="badge" :class="statusConfig(s).class">{{ statusConfig(s).label }}</span>
-                            <span v-if="project?.status === s" class="status-current">Statut actuel</span>
+                            <span v-if="project?.status === s" class="status-current">{{ t('pro.projetDetail.currentStatus') }}</span>
                         </button>
                     </div>
                     <div class="modal-actions">
-                        <button class="btn-secondary" @click="showStatusModal = false">Fermer</button>
+                        <button class="btn-secondary" @click="showStatusModal = false">{{ t('pro.projetDetail.close') }}</button>
                     </div>
                 </div>
             </div>
@@ -381,11 +383,11 @@ async function deleteStep(stepId: number) {
         <Teleport to="body">
             <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
                 <div class="modal-card">
-                    <h3 class="modal-title modal-title--danger">Supprimer le projet</h3>
-                    <p class="modal-text">Cette action est irréversible. Toutes les étapes associées seront également supprimées.</p>
+                    <h3 class="modal-title modal-title--danger">{{ t('pro.projetDetail.deleteProjectTitle') }}</h3>
+                    <p class="modal-text">{{ t('pro.projetDetail.deleteProjectText') }}</p>
                     <div class="modal-actions">
-                        <button class="btn-secondary" @click="showDeleteModal = false">Annuler</button>
-                        <button class="btn-danger" @click="deleteProject">Supprimer définitivement</button>
+                        <button class="btn-secondary" @click="showDeleteModal = false">{{ t('pro.projetDetail.cancel') }}</button>
+                        <button class="btn-danger" @click="deleteProject">{{ t('pro.projetDetail.deletePermanently') }}</button>
                     </div>
                 </div>
             </div>

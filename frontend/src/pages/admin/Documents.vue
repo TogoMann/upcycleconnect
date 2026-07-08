@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Document {
@@ -26,36 +28,50 @@ onMounted(async () => {
     } catch {}
 })
 
-function download(doc: Document) {
-    const a = document.createElement('a')
-    a.href = doc.url
-    a.download = doc.nom
-    a.click()
+async function download(doc: Document) {
+    try {
+        const res = await fetch(doc.url.startsWith('http') ? doc.url : `${API_BASE}${doc.url}`, {
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (!res.ok) throw new Error(t('admin.documents.errorDownload'))
+
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = doc.nom
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+    } catch (err: any) {
+        alert(err.message)
+    }
 }
 </script>
 
 <template>
     <div class="documents">
         <div class="page-header">
-            <h1 class="page-title">Documents.</h1>
-            <p class="page-subtitle">Tous les PDF générés sur la plateforme.</p>
+            <h1 class="page-title">{{ t('admin.documents.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.documents.subtitle') }}</p>
         </div>
 
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Nom</th>
-                        <th>Type</th>
-                        <th>Utilisateur</th>
-                        <th>Date</th>
-                        <th>Taille</th>
+                        <th>{{ t('admin.documents.colName') }}</th>
+                        <th>{{ t('admin.documents.colType') }}</th>
+                        <th>{{ t('admin.documents.colUser') }}</th>
+                        <th>{{ t('admin.documents.colDate') }}</th>
+                        <th>{{ t('admin.documents.colSize') }}</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="documents.length === 0">
-                        <td colspan="6" class="empty">Aucun document.</td>
+                        <td colspan="6" class="empty">{{ t('admin.documents.empty') }}</td>
                     </tr>
                     <tr v-for="d in documents" :key="d.id">
                         <td>

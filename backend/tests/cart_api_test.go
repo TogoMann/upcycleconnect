@@ -55,8 +55,8 @@ func TestCartAPI(t *testing.T) {
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		if rr.Code != http.StatusCreated && rr.Code != http.StatusInternalServerError {
-			t.Errorf("Expected status Created or ServerError, got %v", rr.Code)
+		if rr.Code != http.StatusCreated {
+			t.Errorf("Expected status Created, got %v", rr.Code)
 		}
 	})
 
@@ -66,8 +66,8 @@ func TestCartAPI(t *testing.T) {
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 
-		if rr.Code != http.StatusOK && rr.Code != http.StatusInternalServerError {
-			t.Errorf("Expected status OK or ServerError, got %v", rr.Code)
+		if rr.Code != http.StatusOK {
+			t.Errorf("Expected status OK, got %v", rr.Code)
 		}
 	})
 }
