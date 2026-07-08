@@ -3,7 +3,9 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useChatStore, type Conversation, type Message } from '@/stores/chat';
 import { useAuthStore } from '@/stores/auth';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const chatStore = useChatStore();
 const authStore = useAuthStore();
 const router = useRouter();
@@ -128,19 +130,19 @@ watch(() => route.query.listingId, () => {
 <template>
     <div class="pro-chat">
         <div class="page-header">
-            <h1 class="page-title">Messagerie.</h1>
-            <p class="page-subtitle">Discutez avec vos acheteurs et négociez vos ventes.</p>
+            <h1 class="page-title">{{ t('pro.chat.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('pro.chat.subtitle') }}</p>
         </div>
 
         <div class="chat-container">
             <div class="conv-list">
                 <div class="conv-list-header">
-                    <h3>Conversations</h3>
+                    <h3>{{ t('pro.chat.conversations') }}</h3>
                 </div>
                 <div v-if="conversations.length === 0" class="empty-conv">
-                    Aucune conversation en cours.
+                    {{ t('pro.chat.noConversations') }}
                 </div>
-                <div v-for="conv in conversations" :key="conv.id" 
+                <div v-for="conv in conversations" :key="conv.id"
                     class="conv-item" :class="{ active: selectedConv?.id === conv.id }"
                     @click="selectConversation(conv)">
                     <div class="conv-item-icon">
@@ -149,7 +151,7 @@ watch(() => route.query.listingId, () => {
                         </svg>
                     </div>
                     <div class="conv-item-info">
-                        <p class="conv-item-title">Annonce #{{ getNumericId(conv.listing_id) }}</p>
+                        <p class="conv-item-title">{{ t('pro.chat.listing', { id: getNumericId(conv.listing_id) }) }}</p>
                         <small class="conv-item-date">{{ new Date(conv.updated_at.Time ?? conv.updated_at).toLocaleDateString() }}</small>
                     </div>
                 </div>
@@ -157,36 +159,36 @@ watch(() => route.query.listingId, () => {
 
             <div class="chat-window" v-if="selectedConv">
                 <div class="chat-header">
-                    <h3>{{ getNumericId(selectedConv.id) === 0 ? 'Nouvelle conversation' : 'Conversation' }} - Annonce #{{ getNumericId(selectedConv.listing_id) }}</h3>
-                    <span v-if="selectedConv.is_closed" class="status-closed">Discussion fermée (Objet vendu)</span>
+                    <h3>{{ getNumericId(selectedConv.id) === 0 ? t('pro.chat.newConversation') : t('pro.chat.conversation') }} - {{ t('pro.chat.listing', { id: getNumericId(selectedConv.listing_id) }) }}</h3>
+                    <span v-if="selectedConv.is_closed" class="status-closed">{{ t('pro.chat.closedDiscussion') }}</span>
                 </div>
                 <div class="messages">
-                    <div v-for="msg in messages" :key="msg.id" 
+                    <div v-for="msg in messages" :key="msg.id"
                         class="message" :class="{ mine: msg.sender_id === authStore.user?.id }">
                         <div class="bubble">
                             <p v-if="msg.content">{{ msg.content }}</p>
-                            
+
                             <div v-if="msg.message_type === 'price_proposal'" class="proposal-box">
-                                <strong>Proposition de prix : {{ msg.proposed_price }}€</strong>
+                                <strong>{{ t('pro.chat.priceProposal', { price: msg.proposed_price }) }}</strong>
                                 <div v-if="msg.proposal_status === 'pending'">
-                                    <span class="badge pending">En attente</span>
+                                    <span class="badge pending">{{ t('pro.chat.pending') }}</span>
                                     <div v-if="msg.sender_id !== authStore.user?.id && !selectedConv.is_closed" class="actions">
-                                        <button @click="respondToProposal(msg.id, true)" class="btn-accept">Accepter</button>
-                                        <button @click="respondToProposal(msg.id, false)" class="btn-decline">Refuser</button>
+                                        <button @click="respondToProposal(msg.id, true)" class="btn-accept">{{ t('pro.chat.accept') }}</button>
+                                        <button @click="respondToProposal(msg.id, false)" class="btn-decline">{{ t('pro.chat.decline') }}</button>
                                     </div>
                                 </div>
                                 <div v-else-if="msg.proposal_status === 'accepted'">
-                                    <span class="badge accepted">Acceptée</span>
+                                    <span class="badge accepted">{{ t('pro.chat.accepted') }}</span>
                                 </div>
-                                <span v-else-if="msg.proposal_status === 'declined'" class="badge declined">Refusée</span>
+                                <span v-else-if="msg.proposal_status === 'declined'" class="badge declined">{{ t('pro.chat.declined') }}</span>
                             </div>
                             <small class="time">
                                 {{ new Date(msg.created_at.Time ?? msg.created_at).toLocaleTimeString() }}
-                                <span v-if="msg.is_edited" class="edited-label">(modifié)</span>
+                                <span v-if="msg.is_edited" class="edited-label">{{ t('pro.chat.edited') }}</span>
                             </small>
-                            
+
                             <div v-if="msg.sender_id === authStore.user?.id && !editingMessage && !selectedConv.is_closed" class="msg-actions">
-                                <button @click="startEdit(msg)" class="btn-text">Modifier</button>
+                                <button @click="startEdit(msg)" class="btn-text">{{ t('pro.chat.edit') }}</button>
                             </div>
                         </div>
                     </div>
@@ -194,19 +196,19 @@ watch(() => route.query.listingId, () => {
 
                 <div class="input-area" v-if="!selectedConv.is_closed">
                     <div v-if="editingMessage" class="edit-banner">
-                        Mode édition <button @click="cancelEdit" class="btn-text">Annuler</button>
+                        {{ t('pro.chat.editMode') }} <button @click="cancelEdit" class="btn-text">{{ t('pro.chat.cancel') }}</button>
                     </div>
-                    <textarea v-model="newMessage" :placeholder="editingMessage ? 'Modifier votre message...' : 'Votre message professionnel...'"></textarea>
+                    <textarea v-model="newMessage" :placeholder="editingMessage ? t('pro.chat.editPlaceholder') : t('pro.chat.messagePlaceholder')"></textarea>
                     <div class="controls">
                         <button @click="showProposalInput = !showProposalInput" class="btn-alt" :disabled="editingMessage && editingMessage.message_type === 'text'">
-                            {{ showProposalInput ? 'Annuler proposition' : 'Négocier prix' }}
+                            {{ showProposalInput ? t('pro.chat.cancelProposal') : t('pro.chat.negotiatePrice') }}
                         </button>
-                        <input v-if="showProposalInput" type="number" v-model="proposedPrice" placeholder="Prix (€)" class="price-input">
-                        <button @click="send" class="btn-send">{{ editingMessage ? 'Mettre à jour' : 'Envoyer' }}</button>
+                        <input v-if="showProposalInput" type="number" v-model="proposedPrice" :placeholder="t('pro.chat.priceLabel')" class="price-input">
+                        <button @click="send" class="btn-send">{{ editingMessage ? t('pro.chat.update') : t('pro.chat.send') }}</button>
                     </div>
                 </div>
                 <div class="input-area closed-notice" v-else>
-                    Cette discussion est terminée car l'objet a été vendu.
+                    {{ t('pro.chat.closedNotice') }}
                 </div>
             </div>
             <div class="no-chat" v-else>
@@ -214,7 +216,7 @@ watch(() => route.query.listingId, () => {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>
-                    <p>Sélectionnez une conversation pour commencer à échanger avec vos acheteurs.</p>
+                    <p>{{ t('pro.chat.selectConversation') }}</p>
                 </div>
             </div>
         </div>

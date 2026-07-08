@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -19,9 +22,9 @@ function logout() {
                 <div class="nav-profile">
                     <div class="profile-info">
                         <span class="profile-name">
-                            {{ authStore.user?.first_name || authStore.user?.username || 'Professionnel' }}
+                            {{ authStore.user?.first_name || authStore.user?.username || t('proLayout.professional') }}
                         </span>
-                        <span class="profile-role">Espace professionnel</span>
+                        <span class="profile-role">{{ t('proLayout.profRole') }}</span>
                     </div>
                     <button class="btn-logout" @click="logout">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -43,7 +46,7 @@ function logout() {
                             <rect x="10" y="7" width="4" height="14" />
                             <rect x="17" y="3" width="4" height="18" />
                         </svg>
-                        <span>Tableau de bord</span>
+                        <span>{{ t('proLayout.nav.dashboard') }}</span>
                     </router-link>
 
                     <router-link to="/pro/abonnements" class="sidebar-item" active-class="sidebar-item--active">
@@ -51,14 +54,14 @@ function logout() {
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                             <line x1="1" y1="10" x2="23" y2="10" />
                         </svg>
-                        <span>Abonnements</span>
+                        <span>{{ t('proLayout.nav.subscriptions') }}</span>
                     </router-link>
 
                     <router-link v-if="authStore.user?.plan === 'Premium' || authStore.user?.plan === 'Pro' || authStore.user?.role === 'admin'" to="/pro/publicites" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                         </svg>
-                        <span>Publicités</span>
+                        <span>{{ t('proLayout.nav.ads') }}</span>
                     </router-link>
 
                     <router-link to="/pro/facturation" class="sidebar-item" active-class="sidebar-item--active">
@@ -68,7 +71,7 @@ function logout() {
                             <line x1="16" y1="13" x2="8" y2="13" />
                             <line x1="16" y1="17" x2="8" y2="17" />
                         </svg>
-                        <span>Facturation</span>
+                        <span>{{ t('proLayout.nav.billing') }}</span>
                     </router-link>
 
                     <router-link to="/pro/annonces" class="sidebar-item" active-class="sidebar-item--active">
@@ -78,28 +81,28 @@ function logout() {
                             <rect x="14" y="14" width="7" height="7" />
                             <rect x="3" y="14" width="7" height="7" />
                         </svg>
-                        <span>Annonces</span>
+                        <span>{{ t('proLayout.nav.listings') }}</span>
                     </router-link>
 
                     <router-link to="/pro/chat" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
-                        <span>Messagerie</span>
+                        <span>{{ t('proLayout.nav.messaging') }}</span>
                     </router-link>
 
                     <router-link to="/pro/conteneurs/recuperer" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                         </svg>
-                        <span>Récupérer un objet</span>
+                        <span>{{ t('proLayout.nav.retrieveItem') }}</span>
                     </router-link>
 
                     <router-link to="/pro/projets" class="sidebar-item" active-class="sidebar-item--active">
                         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                         </svg>
-                        <span>Mes Projets</span>
+                        <span>{{ t('proLayout.nav.myProjects') }}</span>
                     </router-link>
 
                     <router-link v-if="authStore.user?.plan === 'Premium' || authStore.user?.plan === 'Pro' || authStore.user?.role === 'admin'" to="/pro/dashboard-avance" class="sidebar-item" active-class="sidebar-item--active">
@@ -107,7 +110,7 @@ function logout() {
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                             <polyline points="17 6 23 6 23 12" />
                         </svg>
-                        <span>Tableau avancé</span>
+                        <span>{{ t('proLayout.nav.advancedDashboard') }}</span>
                     </router-link>
 
                     <router-link to="/pro/profil" class="sidebar-item" active-class="sidebar-item--active">
@@ -115,7 +118,7 @@ function logout() {
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                         </svg>
-                        <span>Mon Profil</span>
+                        <span>{{ t('proLayout.nav.myProfile') }}</span>
                     </router-link>
 
                     <div class="sidebar-divider"></div>
@@ -125,7 +128,7 @@ function logout() {
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                             <polyline points="9 22 9 12 15 12 15 22" />
                         </svg>
-                        <span>Retour au site</span>
+                        <span>{{ t('layout.footer.backToSite') }}</span>
                     </router-link>
                 </nav>
             </aside>
@@ -138,18 +141,16 @@ function logout() {
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
-                    <a href="#" class="footer-link">À propos</a>
-                    <a href="#" class="footer-link">Mentions légales</a>
-                    <a href="#" class="footer-link">Politique de confidentialité</a>
+                    <router-link to="/a-propos" class="footer-link">{{ t('layout.footer.about') }}</router-link>
+                    <router-link to="/mentions-legales" class="footer-link">{{ t('layout.footer.legal') }}</router-link>
+                    <router-link to="/mentions-legales#confidentialite" class="footer-link">{{ t('layout.footer.privacy') }}</router-link>
                 </div>
             </div>
             <div class="footer-bottom">
                 <div class="footer-container">
                     <span class="footer-logo">UpCycleConnect</span>
                     <div class="footer-lang">
-                        <span>Choisir la langue</span>
-                        <span class="lang-sep">&nbsp;·&nbsp;</span>
-                        <span>Français</span>
+                        <LanguageSwitcher />
                     </div>
                 </div>
             </div>

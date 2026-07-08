@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const form = ref({ first_name: '', last_name: '', email: '', telephone: '', poste: '' })
 const success = ref(false)
@@ -32,10 +34,10 @@ async function save() {
             await authStore.fetchCurrentUser()
         } else {
             const d = await res.json()
-            error.value = d.message ?? 'Erreur.'
+            error.value = d.message ?? t('salarie.profil.errorGeneric')
         }
     } catch {
-        error.value = 'Erreur réseau.'
+        error.value = t('salarie.profil.errorNetwork')
     }
     loading.value = false
 }
@@ -44,40 +46,40 @@ async function save() {
 <template>
     <div class="profil">
         <div class="page-header">
-            <h1 class="page-title">Mon Profil.</h1>
-            <p class="page-subtitle">Informations personnelles et de contact.</p>
+            <h1 class="page-title">{{ t('salarie.profil.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('salarie.profil.subtitle') }}</p>
         </div>
 
         <form class="form-card" @submit.prevent="save">
-            <div v-if="success" class="alert alert--success">Profil mis à jour.</div>
+            <div v-if="success" class="alert alert--success">{{ t('salarie.profil.updated') }}</div>
             <div v-if="error" class="alert alert--error">{{ error }}</div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Prénom</label>
+                    <label class="form-label">{{ t('salarie.profil.firstName') }}</label>
                     <input v-model="form.first_name" type="text" class="form-input" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Nom</label>
+                    <label class="form-label">{{ t('salarie.profil.lastName') }}</label>
                     <input v-model="form.last_name" type="text" class="form-input" />
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label">Email</label>
+                <label class="form-label">{{ t('salarie.profil.email') }}</label>
                 <input v-model="form.email" type="email" class="form-input" />
             </div>
             <div class="form-group">
-                <label class="form-label">Téléphone</label>
+                <label class="form-label">{{ t('salarie.profil.phone') }}</label>
                 <input v-model="form.telephone" type="tel" class="form-input" />
             </div>
             <div class="form-group">
-                <label class="form-label">Poste</label>
-                <input v-model="form.poste" type="text" class="form-input" placeholder="Ex: Animateur upcycling" />
+                <label class="form-label">{{ t('salarie.profil.position') }}</label>
+                <input v-model="form.poste" type="text" class="form-input" :placeholder="t('salarie.profil.positionPlaceholder')" />
             </div>
 
             <div class="form-actions">
                 <button type="submit" class="btn-primary" :disabled="loading">
-                    {{ loading ? 'Enregistrement…' : 'Enregistrer' }}
+                    {{ loading ? t('salarie.profil.saving') : t('salarie.profil.save') }}
                 </button>
             </div>
         </form>

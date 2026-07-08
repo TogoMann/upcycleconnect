@@ -37,6 +37,14 @@ func (s *Service) GetInvoiceById(id int64) (*InvoiceDetail, error) {
 	return s.repo.GetInvoiceById(id)
 }
 
+func (s *Service) CreateExpense(e Expense) error {
+	return s.repo.CreateExpense(e)
+}
+
+func (s *Service) GetAllExpenses() ([]Expense, error) {
+	return s.repo.GetAllExpenses()
+}
+
 func (s *Service) GeneratePDF(detail InvoiceDetail) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()

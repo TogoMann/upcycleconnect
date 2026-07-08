@@ -15,6 +15,7 @@ import {
 import { Bar, Pie, Doughnut } from 'vue-chartjs'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE } from '@/config'
+import { useI18n } from 'vue-i18n'
 
 ChartJS.register(
   Title, 
@@ -28,6 +29,7 @@ ChartJS.register(
   LineElement
 )
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const predictions = ref<any[]>([])
@@ -51,7 +53,7 @@ const actorChartData = computed(() => ({
 const prestationChartData = computed(() => ({
   labels: prestationStats.value.map((s: any) => s.type),
   datasets: [{
-    label: 'Nombre d\'inscriptions/achats',
+    label: t('admin.reporting.registrationsCount'),
     backgroundColor: '#3B82F6',
     data: prestationStats.value.map((s: any) => s.count)
   }]
@@ -110,62 +112,62 @@ onMounted(fetchReporting)
 
 <template>
   <div class="p-6">
-    <h1 class="text-2xl font-bold mb-6">Dashboards & Data Mining</h1>
+    <h1 class="text-2xl font-bold mb-6">{{ t('admin.reporting.pageTitle') }}</h1>
 
     <div v-if="loading" class="text-center py-10">
-      Chargement des données...
+      {{ t('admin.reporting.loading') }}
     </div>
 
     <div v-else>
       <div class="bg-white p-4 rounded-lg shadow mb-8 border-l-4 border-indigo-500 flex justify-between items-center">
         <div>
-          <h2 class="text-sm font-bold text-indigo-600 uppercase tracking-wider">État de l'Intelligence Artificielle</h2>
+          <h2 class="text-sm font-bold text-indigo-600 uppercase tracking-wider">{{ t('admin.reporting.aiStatus') }}</h2>
           <p class="text-gray-600 text-sm" v-if="mlStatus">
-            Dernier entraînement : <span class="font-semibold">{{ new Date(mlStatus.last_run).toLocaleString() }}</span>
+            {{ t('admin.reporting.lastTraining', { date: new Date(mlStatus.last_run).toLocaleString() }) }}
           </p>
         </div>
         <div class="text-right">
           <p class="text-2xl font-bold text-indigo-600">{{ mlStatus?.total_predictions || 0 }}</p>
-          <p class="text-xs text-gray-500">Profils analysés</p>
+          <p class="text-xs text-gray-500">{{ t('admin.reporting.profilesAnalyzed') }}</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-xl font-semibold mb-4">Répartition des Acteurs</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ t('admin.reporting.actorsBreakdown') }}</h2>
           <div class="h-64 flex items-center justify-center">
             <Pie v-if="actorStats.length > 0" :data="actorChartData" :options="{ maintainAspectRatio: false }" />
-            <p v-else class="text-gray-400 text-sm italic">Aucune donnée disponible</p>
+            <p v-else class="text-gray-400 text-sm italic">{{ t('admin.reporting.noDataAvailable') }}</p>
           </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-xl font-semibold mb-4">Succès des Prestations</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ t('admin.reporting.prestationsSuccess') }}</h2>
           <div class="h-64 flex items-center justify-center">
             <Bar v-if="prestationStats.length > 0" :data="prestationChartData" :options="{ maintainAspectRatio: false }" />
-            <p v-else class="text-gray-400 text-sm italic">Aucune donnée disponible</p>
+            <p v-else class="text-gray-400 text-sm italic">{{ t('admin.reporting.noDataAvailable') }}</p>
           </div>
         </div>
 
         <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-xl font-semibold mb-4">Tendances Prédictives</h2>
+          <h2 class="text-xl font-semibold mb-4">{{ t('admin.reporting.predictiveTrends') }}</h2>
           <div class="h-64 flex items-center justify-center">
             <Doughnut v-if="Object.keys(mlDistStats).length > 0" :data="mlChartData" :options="{ maintainAspectRatio: false }" />
-            <p v-else class="text-gray-400 text-sm italic">Calcul des prédictions en cours...</p>
+            <p v-else class="text-gray-400 text-sm italic">{{ t('admin.reporting.computingPredictions') }}</p>
           </div>
         </div>
       </div>
 
       <div class="bg-white p-6 rounded-lg shadow">
-        <h2 class="text-xl font-semibold mb-4">Prédictions de Prochaines Prestations (Modèle de Machine Learning)</h2>
+        <h2 class="text-xl font-semibold mb-4">{{ t('admin.reporting.predictionsTitle') }}</h2>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prédiction</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Probabilité</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.reporting.colUser') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.reporting.colEmail') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.reporting.colPrediction') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.reporting.colProbability') }}</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -186,16 +188,16 @@ onMounted(fetchReporting)
           <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
               <p class="text-sm text-gray-700 flex items-center gap-2">
-                Page 
-                <input 
-                  type="number" 
-                  min="1" 
-                  :max="totalPages" 
-                  v-model.lazy="currentPage" 
-                  @change="changePage(currentPage)" 
-                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600" 
+                {{ t('admin.reporting.page') }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="totalPages"
+                  v-model.lazy="currentPage"
+                  @change="changePage(currentPage)"
+                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
                 />
-                sur <span class="font-medium">{{ totalPages }}</span>
+                {{ t('admin.reporting.of') }} <span class="font-medium">{{ totalPages }}</span>
               </p>
             </div>
             <div>
@@ -205,7 +207,7 @@ onMounted(fetchReporting)
                   :disabled="currentPage === 1"
                   class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                 >
-                  <span class="sr-only">Précédent</span>
+                  <span class="sr-only">{{ t('admin.reporting.previous') }}</span>
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
                   </svg>
@@ -215,7 +217,7 @@ onMounted(fetchReporting)
                   :disabled="currentPage === totalPages"
                   class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                 >
-                  <span class="sr-only">Suivant</span>
+                  <span class="sr-only">{{ t('admin.reporting.next') }}</span>
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
                   </svg>

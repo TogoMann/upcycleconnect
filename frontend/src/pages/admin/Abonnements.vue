@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Abonnement {
@@ -32,27 +34,37 @@ function planClass(p: string) {
     if (p === 'pro') return 'badge badge--pro'
     return 'badge badge--free'
 }
+
+function planLabel(p: string): string {
+    if (p === 'premium') return t('admin.abonnements.planPremium')
+    if (p === 'pro') return t('admin.abonnements.planPro')
+    return t('admin.abonnements.planFree')
+}
+
+function statutLabel(s: string): string {
+    return s === 'actif' ? t('admin.abonnements.statusActive') : t('admin.abonnements.statusInactive')
+}
 </script>
 
 <template>
     <div class="abonnements">
         <div class="page-header">
-            <h1 class="page-title">Abonnements.</h1>
-            <p class="page-subtitle">Tous les abonnements professionnels actifs.</p>
+            <h1 class="page-title">{{ t('admin.abonnements.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.abonnements.subtitle') }}</p>
         </div>
 
         <div class="kpi-row">
             <div class="kpi-sm">
                 <div class="kpi-sm-value">{{ abonnements.filter(a => a.plan === 'premium').length }}</div>
-                <div class="kpi-sm-label">Premium</div>
+                <div class="kpi-sm-label">{{ t('admin.abonnements.kpiPremium') }}</div>
             </div>
             <div class="kpi-sm">
                 <div class="kpi-sm-value">{{ abonnements.filter(a => a.plan === 'pro').length }}</div>
-                <div class="kpi-sm-label">Pro</div>
+                <div class="kpi-sm-label">{{ t('admin.abonnements.kpiPro') }}</div>
             </div>
             <div class="kpi-sm">
                 <div class="kpi-sm-value">{{ abonnements.filter(a => a.statut === 'actif').length }}</div>
-                <div class="kpi-sm-label">Actifs</div>
+                <div class="kpi-sm-label">{{ t('admin.abonnements.kpiActive') }}</div>
             </div>
         </div>
 
@@ -60,27 +72,27 @@ function planClass(p: string) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Entreprise</th>
-                        <th>Utilisateur</th>
-                        <th>Plan</th>
-                        <th>Période</th>
-                        <th>Montant</th>
-                        <th>Statut</th>
+                        <th>{{ t('admin.abonnements.colCompany') }}</th>
+                        <th>{{ t('admin.abonnements.colUser') }}</th>
+                        <th>{{ t('admin.abonnements.colPlan') }}</th>
+                        <th>{{ t('admin.abonnements.colPeriod') }}</th>
+                        <th>{{ t('admin.abonnements.colAmount') }}</th>
+                        <th>{{ t('admin.abonnements.colStatus') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="abonnements.length === 0">
-                        <td colspan="6" class="empty">Aucun abonnement.</td>
+                        <td colspan="6" class="empty">{{ t('admin.abonnements.empty') }}</td>
                     </tr>
                     <tr v-for="a in abonnements" :key="a.id">
                         <td class="td-bold">{{ a.entreprise }}</td>
                         <td class="td-muted">{{ a.utilisateur }}</td>
-                        <td><span :class="planClass(a.plan)">{{ a.plan }}</span></td>
+                        <td><span :class="planClass(a.plan)">{{ planLabel(a.plan) }}</span></td>
                         <td class="td-muted">{{ a.debut }} → {{ a.fin }}</td>
-                        <td>{{ a.montant.toFixed(2) }} €/mois</td>
+                        <td>{{ t('admin.abonnements.perMonth', { amount: a.montant.toFixed(2) }) }}</td>
                         <td>
                             <span class="badge" :class="a.statut === 'actif' ? 'badge--active' : 'badge--inactive'">
-                                {{ a.statut }}
+                                {{ statutLabel(a.statut) }}
                             </span>
                         </td>
                     </tr>

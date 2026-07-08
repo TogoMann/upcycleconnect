@@ -475,3 +475,90 @@ CREATE TABLE IF NOT EXISTS logs (
     niveau VARCHAR(32) NOT NULL DEFAULT 'info',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE listing ADD COLUMN IF NOT EXISTS handoff_mode VARCHAR(20) NOT NULL DEFAULT 'main_propre';
+ALTER TABLE listing ADD COLUMN IF NOT EXISTS address VARCHAR(255);
+ALTER TABLE listing ADD COLUMN IF NOT EXISTS weight DECIMAL(8,2);
+
+ALTER TABLE item ADD COLUMN IF NOT EXISTS size LOCKER_SIZE DEFAULT 'M';
+
+ALTER TABLE event ADD COLUMN IF NOT EXISTS title VARCHAR(128) NOT NULL DEFAULT '';
+ALTER TABLE event ADD COLUMN IF NOT EXISTS description TEXT;
+
+ALTER TABLE news ADD COLUMN IF NOT EXISTS type VARCHAR(20) NOT NULL DEFAULT 'actualite';
+
+CREATE TABLE IF NOT EXISTS expenses (
+    id BIGSERIAL PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(64),
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_score_history_user_id ON score_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_listing_order_user_id ON listing_order(user_id);
+CREATE INDEX IF NOT EXISTS idx_listing_created_by ON listing(created_by);
+CREATE INDEX IF NOT EXISTS idx_item_owner_id ON item(owner_id);
+CREATE INDEX IF NOT EXISTS idx_locker_access_user_id ON locker_access(user_id);
+
+ALTER TABLE course ADD COLUMN IF NOT EXISTS type VARCHAR(20) NOT NULL DEFAULT 'presentiel';
+ALTER TABLE course ADD COLUMN IF NOT EXISTS session_link VARCHAR(500);
+
+CREATE TABLE IF NOT EXISTS course_document (
+    id BIGSERIAL PRIMARY KEY,
+    course_id BIGINT NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE chat_conversation ALTER COLUMN listing_id DROP NOT NULL;
+ALTER TABLE chat_conversation ADD COLUMN IF NOT EXISTS course_id BIGINT REFERENCES course(id) ON DELETE CASCADE;
+ALTER TABLE chat_conversation ADD CONSTRAINT chat_conversation_course_unique UNIQUE (course_id, buyer_id, seller_id);
+
+ALTER TABLE course ADD COLUMN IF NOT EXISTS end_date DATE;
+
+CREATE TABLE IF NOT EXISTS course_session (
+    id BIGSERIAL PRIMARY KEY,
+    course_id BIGINT NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+    session_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_course_session_course_id ON course_session(course_id);
+
+CREATE INDEX IF NOT EXISTS idx_course_document_course_id ON course_document(course_id);
+
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_listing_order_status_created_at ON listing_order(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_course_order_booked_at ON course_order(booked_at);
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_financial_summary AS
+SELECT date_trunc('month', created_at) AS mois, SUM(price) AS ca, 'listing' AS source
+FROM listing_order
+WHERE status = 'paid' OR status = 'completed'
+GROUP BY date_trunc('month', created_at)
+UNION ALL
+SELECT date_trunc('month', booked_at) AS mois, SUM(price) AS ca, 'course' AS source
+FROM course_order
+GROUP BY date_trunc('month', booked_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_financial_summary_mois_source ON mv_financial_summary(mois, source);
+
+CREATE TABLE IF NOT EXISTS platform_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    nom_site VARCHAR(128) NOT NULL DEFAULT 'UpCycleConnect',
+    logo_url VARCHAR(500) NOT NULL DEFAULT '',
+    email_contact VARCHAR(128) NOT NULL DEFAULT '',
+    telephone VARCHAR(32) NOT NULL DEFAULT '',
+    adresse VARCHAR(255) NOT NULL DEFAULT '',
+    commission_taux DECIMAL(5,2) NOT NULL DEFAULT 15.00,
+    maintenance BOOLEAN NOT NULL DEFAULT FALSE,
+    inscription_ouverte BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT platform_settings_single_row CHECK (id = 1)
+);
+
+INSERT INTO platform_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;

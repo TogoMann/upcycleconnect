@@ -2,8 +2,10 @@
 import { API_BASE } from '@/config'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -36,10 +38,10 @@ async function handleSubmit() {
             const data = await res.json()
             router.push(`/forum/${data.id}`)
         } else {
-            error.value = "Erreur lors de la création du sujet."
+            error.value = t('forumCreate.createError')
         }
     } catch {
-        error.value = "Erreur réseau."
+        error.value = t('forumCreate.networkError')
     }
     sending.value = false
 }
@@ -49,30 +51,30 @@ async function handleSubmit() {
     <div class="page-content">
         <section class="breadcrumb-bar">
             <div class="container">
-                <router-link to="/forum" class="breadcrumb-link">Forum</router-link>
+                <router-link to="/forum" class="breadcrumb-link">{{ t('layout.nav.forum') }}</router-link>
                 <span class="breadcrumb-sep">›</span>
-                <span class="breadcrumb-current">Nouveau sujet</span>
+                <span class="breadcrumb-current">{{ t('forumCreate.pageTitle') }}</span>
             </div>
         </section>
 
         <section class="form-section">
             <div class="container">
-                <h1 class="page-title">Créer un nouveau sujet</h1>
+                <h1 class="page-title">{{ t('forumCreate.heading') }}</h1>
 
                 <form class="create-thread-form" @submit.prevent="handleSubmit">
                     <div class="form-group">
-                        <label for="title">Titre du sujet</label>
+                        <label for="title">{{ t('forumCreate.titleLabel') }}</label>
                         <input
                             id="title"
                             v-model="title"
                             type="text"
-                            placeholder="De quoi souhaitez-vous discuter ?"
+                            :placeholder="t('forumCreate.titlePlaceholder')"
                             required
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="category">Catégorie</label>
+                        <label for="category">{{ t('forumCreate.categoryLabel') }}</label>
                         <select id="category" v-model="category">
                             <option v-for="cat in categories" :key="cat" :value="cat">
                                 {{ cat }}
@@ -81,12 +83,12 @@ async function handleSubmit() {
                     </div>
 
                     <div class="form-group">
-                        <label for="content">Contenu</label>
+                        <label for="content">{{ t('forumCreate.contentLabel') }}</label>
                         <textarea
                             id="content"
                             v-model="content"
                             rows="10"
-                            placeholder="Détaillez votre question ou votre partage..."
+                            :placeholder="t('forumCreate.contentPlaceholder')"
                             required
                         ></textarea>
                     </div>
@@ -94,9 +96,9 @@ async function handleSubmit() {
                     <div v-if="error" class="error-msg">{{ error }}</div>
 
                     <div class="form-actions">
-                        <button type="button" class="btn-cancel" @click="router.back()">Annuler</button>
+                        <button type="button" class="btn-cancel" @click="router.back()">{{ t('forumCreate.cancel') }}</button>
                         <button type="submit" class="btn-submit" :disabled="sending">
-                            {{ sending ? 'Création...' : 'Publier le sujet' }}
+                            {{ sending ? t('forumCreate.creating') : t('forumCreate.publish') }}
                         </button>
                     </div>
                 </form>

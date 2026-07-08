@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 interface Article {
@@ -10,21 +12,18 @@ interface Article {
     title: string
     content: string
     created_at: string
-    titre: string
     categorie: string
-    date: string
     statut: string
 }
 
 const articles = ref<Article[]>([])
 const showForm = ref(false)
 const editId = ref<number | null>(null)
-const form = ref({ titre: '', categorie: '', statut: 'publie', contenu: '' })
+const form = ref({ title: '', content: '', categorie: '', statut: 'publie' })
 const loading = ref(false)
+const errorMsg = ref('')
 
-onMounted(load)
-
-async function load() {
+async function fetchConseils() {
     const token = authStore.token
     if (!token) return
     try {
@@ -35,41 +34,68 @@ async function load() {
     } catch {}
 }
 
+onMounted(fetchConseils)
+
 function openCreate() {
     editId.value = null
-    form.value = { titre: '', categorie: '', statut: 'publie', contenu: '' }
+    form.value = { title: '', content: '', categorie: '', statut: 'publie' }
+    errorMsg.value = ''
     showForm.value = true
 }
 
 function openEdit(a: Article) {
     editId.value = a.id
-    form.value = { titre: a.title || a.titre, categorie: a.categorie || '', statut: a.statut || 'publie', contenu: a.content || '' }
+    form.value = { title: a.title, content: a.content, categorie: a.categorie || '', statut: a.statut || 'publie' }
+    errorMsg.value = ''
     showForm.value = true
 }
 
+function fmtDate(iso: string): string {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 async function save() {
-    if (!form.value.titre.trim()) {
-        alert('Le titre est obligatoire')
+    if (!form.value.title.trim() || !form.value.content.trim()) {
+        errorMsg.value = t('salarie.conseils.errorRequired')
         return
     }
     loading.value = true
-    const payload = { title: form.value.titre, content: form.value.contenu, statut: form.value.statut, categorie: form.value.categorie }
+    errorMsg.value = ''
     try {
-        const res = await fetch(`${API_BASE}/salarie/conseils`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
-            body: JSON.stringify(payload),
-        })
-        if (res.ok) {
-            showForm.value = false
-            await load()
+        if (editId.value) {
+            const res = await fetch(`${API_BASE}/salarie/conseils/${editId.value}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
+                body: JSON.stringify(form.value),
+            })
+            if (res.ok) {
+                await fetchConseils()
+                showForm.value = false
+            } else {
+                errorMsg.value = await res.text() || t('salarie.conseils.errorEdit')
+            }
+        } else {
+            const res = await fetch(`${API_BASE}/salarie/conseils`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authStore.token}` },
+                body: JSON.stringify(form.value),
+            })
+            if (res.ok) {
+                await fetchConseils()
+                showForm.value = false
+            } else {
+                errorMsg.value = await res.text() || t('salarie.conseils.errorCreate')
+            }
         }
-    } catch {}
+    } catch {
+        errorMsg.value = t('salarie.conseils.errorNetwork')
+    }
     loading.value = false
 }
 
 async function supprimer(id: number) {
-    if (!confirm('Supprimer cet article ?')) return
+    if (!confirm(t('salarie.conseils.confirmDelete'))) return
     await fetch(`${API_BASE}/salarie/conseils/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${authStore.token}` },
@@ -83,23 +109,23 @@ async function supprimer(id: number) {
         <div class="page-header">
             <div class="header-row">
                 <div>
-                    <h1 class="page-title">Conseils.</h1>
-                    <p class="page-subtitle">Créez, modifiez et supprimez vos articles de conseils.</p>
+                    <h1 class="page-title">{{ t('salarie.conseils.pageTitle') }}</h1>
+                    <p class="page-subtitle">{{ t('salarie.conseils.subtitle') }}</p>
                 </div>
-                <button class="btn-primary" @click="openCreate">+ Nouvel article</button>
+                <button class="btn-primary" @click="openCreate">{{ t('salarie.conseils.newArticle') }}</button>
             </div>
         </div>
 
         <div v-if="showForm" class="form-overlay" @click.self="showForm = false">
             <div class="form-modal">
-                <h3 class="modal-title">{{ editId ? 'Modifier l\'article' : 'Nouvel article' }}</h3>
+                <h3 class="modal-title">{{ editId ? t('salarie.conseils.editArticle') : t('salarie.conseils.newArticleModal') }}</h3>
                 <div class="form-group">
-                    <label class="form-label">Titre</label>
-                    <input v-model="form.titre" type="text" class="form-input" />
+                    <label class="form-label">{{ t('salarie.conseils.title') }}</label>
+                    <input v-model="form.title" type="text" class="form-input" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Contenu</label>
-                    <textarea v-model="form.contenu" class="form-input" rows="6" placeholder="Écrivez votre article ici…"></textarea>
+                    <label class="form-label">{{ t('salarie.conseils.content') }}</label>
+                    <textarea v-model="form.content" class="form-input form-textarea" rows="6"></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Catégorie</label>
@@ -117,10 +143,11 @@ async function supprimer(id: number) {
                         <option value="brouillon">Brouillon</option>
                     </select>
                 </div>
+                <div v-if="errorMsg" class="form-error">{{ errorMsg }}</div>
                 <div class="modal-actions">
-                    <button class="btn-secondary" @click="showForm = false">Annuler</button>
+                    <button class="btn-secondary" @click="showForm = false">{{ t('salarie.conseils.cancel') }}</button>
                     <button class="btn-primary" :disabled="loading" @click="save">
-                        {{ loading ? '…' : 'Enregistrer' }}
+                        {{ loading ? t('salarie.conseils.saving') : t('salarie.conseils.save') }}
                     </button>
                 </div>
             </div>
@@ -130,34 +157,36 @@ async function supprimer(id: number) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Titre</th>
+                        <th>{{ t('salarie.conseils.colTitle') }}</th>
+                        <th>{{ t('salarie.conseils.colExcerpt') }}</th>
                         <th>Catégorie</th>
-                        <th>Date</th>
+                        <th>{{ t('salarie.conseils.colDate') }}</th>
                         <th>Statut</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="articles.length === 0">
-                        <td colspan="5" class="empty">Aucun article.</td>
+                        <td colspan="6" class="empty">{{ t('salarie.conseils.empty') }}</td>
                     </tr>
                     <tr v-for="a in articles" :key="a.id">
-                        <td class="td-bold">{{ a.title || a.titre }}</td>
+                        <td class="td-bold">{{ a.title }}</td>
+                        <td class="td-muted">{{ a.content.slice(0, 80) }}{{ a.content.length > 80 ? '…' : '' }}</td>
                         <td class="td-muted">{{ a.categorie }}</td>
-                        <td class="td-muted">{{ (a.created_at || '').substring(0, 10) }}</td>
+                        <td class="td-muted">{{ fmtDate(a.created_at) }}</td>
                         <td>
                             <span class="badge" :class="a.statut === 'publie' ? 'badge--active' : 'badge--draft'">
                                 {{ a.statut === 'publie' ? 'Publié' : 'Brouillon' }}
                             </span>
                         </td>
                         <td class="td-actions">
-                            <button class="btn-icon" @click="openEdit(a)" title="Modifier">
+                            <button class="btn-icon" @click="openEdit(a)" :title="t('salarie.conseils.edit')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
                             </button>
-                            <button class="btn-icon btn-icon--danger" @click="supprimer(a.id)" title="Supprimer">
+                            <button class="btn-icon btn-icon--danger" @click="supprimer(a.id)" :title="t('salarie.conseils.delete')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6" />
                                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -186,6 +215,8 @@ async function supprimer(id: number) {
 .form-label { font-size: 0.85rem; font-weight: 600; color: var(--charcoal); opacity: 0.75; }
 .form-input { padding: 11px 14px; font-size: 0.9rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--cream); color: var(--charcoal); font-family: inherit; outline: none; transition: border-color 0.2s; }
 .form-input:focus { border-color: var(--green-mid); background: var(--white); }
+.form-textarea { resize: vertical; }
+.form-error { font-size: 0.82rem; color: #c53030; }
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
 .btn-secondary { padding: 11px 20px; background: transparent; color: var(--charcoal); border: 1.5px solid rgba(53,53,53,0.2); border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
 .btn-secondary:hover { border-color: var(--charcoal); }

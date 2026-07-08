@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
 import { API_BASE } from '@/config'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import Barcode from '@/components/Barcode.vue'
+import QrCode from '@/components/QrCode.vue'
 
+const { t, locale } = useI18n()
 const clientStore = useClientStore()
 const authStore = useAuthStore()
 
@@ -23,11 +26,11 @@ async function fetchAccesses() {
     }
 }
 
-const statusLabels: Record<string, string> = {
-    deposited: 'Déposé',
-    validated: 'Validé',
-    collected: 'Collecté',
-}
+const statusLabels = computed<Record<string, string>>(() => ({
+    deposited: t('client.mesDepots.statusDeposited'),
+    validated: t('client.mesDepots.statusValidated'),
+    collected: t('client.mesDepots.statusCollected'),
+}))
 
 const statusClass: Record<string, string> = {
     deposited: 'badge--deposited',
@@ -38,7 +41,7 @@ const statusClass: Record<string, string> = {
 function formatDate(ts: any): string {
     if (!ts) return '—'
     const date = new Date(ts.Time ?? ts)
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function formatWeight(w: any): string {
@@ -56,18 +59,18 @@ onMounted(() => {
 <template>
     <div class="page">
         <div class="page-header">
-            <h1 class="page-title">Mes Dépôts.</h1>
+            <h1 class="page-title">{{ t('client.mesDepots.pageTitle') }}</h1>
             <router-link to="/particulier/conteneurs/deposer" class="btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Déposer un objet
+                {{ t('client.mesDepots.depositItem') }}
             </router-link>
         </div>
 
         <div v-if="clientStore.isLoading" class="state-empty">
-            <p>Chargement…</p>
+            <p>{{ t('client.mesDepots.loading') }}</p>
         </div>
 
         <div v-else-if="clientStore.depots.length === 0" class="state-empty">
@@ -76,10 +79,10 @@ onMounted(() => {
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                 </svg>
             </div>
-            <p class="empty-title">Aucun objet déposé</p>
-            <p class="empty-sub">Déposez vos premiers objets dans nos conteneurs partenaires pour contribuer à l'upcycling.</p>
+            <p class="empty-title">{{ t('client.mesDepots.emptyTitle') }}</p>
+            <p class="empty-sub">{{ t('client.mesDepots.emptySubtitle') }}</p>
             <router-link to="/particulier/conteneurs/deposer" class="btn-primary btn-primary--mt">
-                Planifier un dépôt
+                {{ t('client.mesDepots.planDeposit') }}
             </router-link>
         </div>
 
@@ -87,29 +90,30 @@ onMounted(() => {
             <div class="stats-row">
                 <div class="stat-chip">
                     <span class="stat-value">{{ clientStore.depots.length }}</span>
-                    <span class="stat-label">objet(s) total</span>
+                    <span class="stat-label">{{ t('client.mesDepots.totalItems') }}</span>
                 </div>
                 <div class="stat-chip">
                     <span class="stat-value">{{ clientStore.depots.filter((d: any) => d.status === 'validated').length }}</span>
-                    <span class="stat-label">validé(s)</span>
+                    <span class="stat-label">{{ t('client.mesDepots.validated') }}</span>
                 </div>
                 <div class="stat-chip">
                     <span class="stat-value">{{ clientStore.depots.filter((d: any) => d.status === 'collected').length }}</span>
-                    <span class="stat-label">collecté(s)</span>
+                    <span class="stat-label">{{ t('client.mesDepots.collected') }}</span>
                 </div>
             </div>
 
             <div v-if="lockerAccesses.length > 0" class="access-section">
-                <h3 class="section-title">Codes d'accès aux casiers</h3>
+                <h3 class="section-title">{{ t('client.mesDepots.accessCodesTitle') }}</h3>
                 <div class="access-grid">
                     <div v-for="access in lockerAccesses" :key="access.id?.Int64" class="access-card">
                         <div class="access-header">
-                            <span class="access-locker">Casier {{ access.locker_label }}</span>
-                            <span class="access-expiry">Expire le {{ formatDate(access.expires_at) }}</span>
+                            <span class="access-locker">{{ t('client.mesDepots.locker', { label: access.locker_label }) }}</span>
+                            <span class="access-expiry">{{ t('client.mesDepots.expiresOn', { date: formatDate(access.expires_at) }) }}</span>
                         </div>
                         <p class="access-address">{{ access.container_address }}</p>
+                        <QrCode :value="access.access_code" :size="140" />
                         <Barcode :value="access.access_code" :height="60" />
-                        <p class="access-code-text">Code: {{ access.access_code }}</p>
+                        <p class="access-code-text">{{ t('client.mesDepots.code', { code: access.access_code }) }}</p>
                     </div>
                 </div>
             </div>
@@ -123,13 +127,13 @@ onMounted(() => {
                     </div>
                     <div class="depot-info">
                         <div class="depot-top">
-                            <span class="depot-material">{{ depot.material_type || 'Matériau non précisé' }}</span>
+                            <span class="depot-material">{{ depot.material_type || t('client.mesDepots.materialUnspecified') }}</span>
                             <span class="badge" :class="statusClass[depot.status] ?? 'badge--deposited'">
                                 {{ statusLabels[depot.status] ?? depot.status }}
                             </span>
                         </div>
                         <div class="depot-details">
-                            <span v-if="depot.physical_state" class="detail-item">État : {{ depot.physical_state }}</span>
+                            <span v-if="depot.physical_state" class="detail-item">{{ t('client.mesDepots.state', { state: depot.physical_state }) }}</span>
                             <span v-if="depot.weight" class="detail-item">{{ formatWeight(depot.weight) }}</span>
                             <span class="detail-item">{{ formatDate(depot.created_at) }}</span>
                         </div>

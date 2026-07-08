@@ -1,6 +1,6 @@
 <template>
     <div class="dashboard">
-        <h1 class="page-title">Tableau de bord.</h1>
+        <h1 class="page-title">{{ t('admin.dashboard.pageTitle') }}</h1>
 
         <div class="kpi-grid">
             <div class="kpi-card">
@@ -20,7 +20,7 @@
                     </svg>
                 </div>
                 <div class="kpi-value">{{ adminStore.usersCount }}</div>
-                <div class="kpi-label">Utilisateurs</div>
+                <div class="kpi-label">{{ t('admin.dashboard.users') }}</div>
             </div>
 
             <div class="kpi-card">
@@ -38,7 +38,7 @@
                     </svg>
                 </div>
                 <div class="kpi-value">{{ adminStore.listingsCount }}</div>
-                <div class="kpi-label">Annonces</div>
+                <div class="kpi-label">{{ t('admin.dashboard.listings') }}</div>
             </div>
 
             <div class="kpi-card">
@@ -58,25 +58,25 @@
                     </svg>
                 </div>
                 <div class="kpi-value">{{ adminStore.eventsCount }}</div>
-                <div class="kpi-label">Événements</div>
+                <div class="kpi-label">{{ t('admin.dashboard.events') }}</div>
             </div>
         </div>
 
         <div class="audit-section">
-            <h2 class="section-title">Audits & Rapports</h2>
+            <h2 class="section-title">{{ t('admin.dashboard.auditsTitle') }}</h2>
             <div class="audit-card">
                 <div class="audit-info">
-                    <h3>Extraction des dépôts (PDF)</h3>
-                    <p>Téléchargez le rapport du nombre total d'objets déposés sur une période donnée.</p>
+                    <h3>{{ t('admin.dashboard.auditExtractionTitle') }}</h3>
+                    <p>{{ t('admin.dashboard.auditExtractionDesc') }}</p>
                 </div>
                 <div class="audit-actions">
                     <div class="date-inputs">
                         <div class="input-group">
-                            <label for="startDate">Date de début</label>
+                            <label for="startDate">{{ t('admin.dashboard.startDate') }}</label>
                             <input type="date" id="startDate" v-model="auditStartDate" />
                         </div>
                         <div class="input-group">
-                            <label for="endDate">Date de fin</label>
+                            <label for="endDate">{{ t('admin.dashboard.endDate') }}</label>
                             <input type="date" id="endDate" v-model="auditEndDate" />
                         </div>
                     </div>
@@ -89,7 +89,7 @@
                             <polyline points="7 10 12 15 17 10" />
                             <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        {{ isDownloading ? 'Génération...' : 'Télécharger l\'audit' }}
+                        {{ isDownloading ? t('admin.dashboard.generating') : t('admin.dashboard.downloadAudit') }}
                     </button>
                     <p v-if="auditError" class="error-msg">{{ auditError }}</p>
                 </div>
@@ -103,7 +103,9 @@ import { ref, onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE } from '@/config'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const adminStore = useAdminStore()
 const authStore = useAuthStore()
 
@@ -127,7 +129,7 @@ const downloadAudit = async () => {
 
         if (!response.ok) {
             const errText = await response.text()
-            throw new Error(errText || 'Erreur lors de la génération du PDF')
+            throw new Error(errText || t('admin.dashboard.errorPdf'))
         }
 
         const blob = await response.blob()

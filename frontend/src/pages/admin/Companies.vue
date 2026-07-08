@@ -1,7 +1,7 @@
 <template>
     <div class="admin-page">
         <div class="section-header">
-            <h2 class="section-title">Gestion des entreprises</h2>
+            <h2 class="section-title">{{ t('admin.companies.pageTitle') }}</h2>
             <button class="btn-refresh" @click="adminStore.fetchCompanies()">
                 <svg
                     width="14"
@@ -19,12 +19,12 @@
                         d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
                     />
                 </svg>
-                Actualiser
+                {{ t('admin.companies.refresh') }}
             </button>
         </div>
 
         <div v-if="adminStore.isLoading" class="state-loading">
-            Chargement des entreprises...
+            {{ t('admin.companies.loading') }}
         </div>
 
         <div v-if="adminStore.error" class="state-error">
@@ -35,11 +35,11 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nom</th>
-                        <th>SIRET</th>
-                        <th>Adresse</th>
-                        <th>Date d'ajout</th>
+                        <th>{{ t('admin.companies.colId') }}</th>
+                        <th>{{ t('admin.companies.colName') }}</th>
+                        <th>{{ t('admin.companies.colSiret') }}</th>
+                        <th>{{ t('admin.companies.colAddress') }}</th>
+                        <th>{{ t('admin.companies.colDateAdded') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,9 +52,9 @@
                     </tr>
                 </tbody>
             </table>
-            
+
             <div v-if="adminStore.companies.length === 0" class="empty-state">
-                Aucune entreprise enregistrée.
+                {{ t('admin.companies.empty') }}
             </div>
         </div>
     </div>
@@ -63,13 +63,15 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const adminStore = useAdminStore()
 
 const formatDate = (dateStr: string) => {
     if (!dateStr) return '-'
     const date = new Date(dateStr)
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'

@@ -16,12 +16,16 @@ INSERT INTO city (name, zip_code) VALUES
 INSERT INTO address (city_id, street_name, street_number) VALUES
 (1, 'Rue de Rivoli', '1'),
 (2, 'Rue de la République', '10'),
-(3, 'La Canebière', '100');
+(3, 'La Canebière', '100'),
+(1, 'Rue du Faubourg Saint-Antoine', '25'),
+(2, 'Cours Lafayette', '58');
 
 INSERT INTO site (address_id, type_site, created_at) VALUES
 (1, 'Point de collecte', NOW()),
 (2, 'Atelier de réparation', NOW()),
-(3, 'Centre de tri', NOW());
+(3, 'Centre de tri', NOW()),
+(4, 'Centre de tri', NOW()),
+(5, 'Point de collecte', NOW());
 
 -- =========================
 -- COMPANIES
@@ -41,18 +45,32 @@ INSERT INTO container (site_id, status, created_at) VALUES
 (2, 'Active', NOW()),
 (2, 'Active', NOW()),
 (3, 'Active', NOW()),
-(3, 'Active', NOW());
+(3, 'Active', NOW()),
+(4, 'Active', NOW()),
+(4, 'Active', NOW()),
+(5, 'Active', NOW());
 
 INSERT INTO locker (container_id, label, status, size, created_at) VALUES
 (1, 'A1', 'Available', 'S', NOW()),
 (1, 'A2', 'Occupied', 'M', NOW()),
 (1, 'A3', 'Available', 'L', NOW()),
+(1, 'A4', 'Available', 'M', NOW()),
 (2, 'B1', 'Occupied', 'L', NOW()),
 (2, 'B2', 'Available', 'M', NOW()),
+(2, 'B3', 'Available', 'S', NOW()),
 (3, 'C1', 'HS', 'S', NOW()),
 (4, 'D1', 'Available', 'M', NOW()),
 (5, 'E1', 'Available', 'L', NOW()),
-(6, 'F1', 'Occupied', 'M', NOW());
+(6, 'F1', 'Occupied', 'M', NOW()),
+(7, 'G1', 'Available', 'S', NOW()),
+(7, 'G2', 'Available', 'M', NOW()),
+(7, 'G3', 'Occupied', 'L', NOW()),
+(8, 'H1', 'Available', 'L', NOW()),
+(8, 'H2', 'Occupied', 'S', NOW()),
+(8, 'H3', 'Available', 'M', NOW()),
+(9, 'I1', 'Available', 'M', NOW()),
+(9, 'I2', 'Available', 'S', NOW()),
+(9, 'I3', 'Occupied', 'M', NOW());
 
 -- =========================
 -- USERS

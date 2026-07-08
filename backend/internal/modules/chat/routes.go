@@ -2,20 +2,35 @@ package chat
 
 import (
 	"backend/internal/middlewares"
+	"backend/internal/modules/container"
+	"backend/internal/modules/course"
+	"backend/internal/modules/item"
 	"backend/internal/modules/listing"
 	"backend/internal/modules/subscriptions"
+	"backend/internal/modules/users"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func RegisterRoutes(r *http.ServeMux, db *pgxpool.Pool) {
+	userRepo := users.NewRepository(db)
+	userService := users.NewService(userRepo)
+
+	containerRepo := container.NewRepository(db)
+	containerService := container.NewService(containerRepo)
+	itemRepo := item.NewRepository(db)
+	itemService := item.NewService(itemRepo, userService)
+
 	listingRepo := listing.NewRepository(db)
 	subRepo := subscriptions.NewRepository(db)
-	listingService := listing.NewService(listingRepo, subRepo)
+	listingService := listing.NewService(listingRepo, subRepo, containerService, itemService, userService)
+
+	courseRepo := course.NewRepository(db)
+	courseService := course.NewService(courseRepo)
 
 	repo := NewRepository(db)
-	service := NewService(repo, listingService)
+	service := NewService(repo, listingService, courseService)
 	handler := NewHandler(service)
 
 	r.HandleFunc("POST /chat/messages", middlewares.Authenticated(handler.SendMessage))

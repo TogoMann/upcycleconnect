@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
+const route = useRoute()
+const checkoutMessage = ref('')
+const payingId = ref<number | null>(null)
 
 interface Ad {
     id: { Int64: number; Valid: boolean }
@@ -13,6 +19,7 @@ interface Ad {
     ad_type: string
     budget: { Int: any; Exp: number; Status: number } | number
     status: string
+    stripe_payment_intent_id: string
     start_date: { Time: string; Valid: boolean }
     end_date: { Time: string; Valid: boolean }
     created_at: { Time: string; Valid: boolean }
@@ -77,26 +84,30 @@ function getBudget(ad: Ad): number {
 
 function formatDate(d: { Time: string; Valid: boolean } | undefined) {
     if (!d?.Valid) return '—'
-    return new Date(d.Time).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(d.Time).toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function statusConfig(s: string) {
     const map: Record<string, { label: string; class: string }> = {
-        pending: { label: 'En attente', class: 'badge--pending' },
-        validated: { label: 'Active', class: 'badge--active' },
-        rejected: { label: 'Refusée', class: 'badge--rejected' },
-        expired: { label: 'Expirée', class: 'badge--expired' },
+        pending: { label: t('pro.publicites.statusPending'), class: 'badge--pending' },
+        validated: { label: t('pro.publicites.statusActive'), class: 'badge--active' },
+        rejected: { label: t('pro.publicites.statusRejected'), class: 'badge--rejected' },
+        expired: { label: t('pro.publicites.statusExpired'), class: 'badge--expired' },
     }
     return map[s] || { label: s, class: 'badge--default' }
 }
 
-function targetTypeLabel(t: string) {
-    const map: Record<string, string> = { listing: 'Annonce', project: 'Projet', brand: 'Marque' }
-    return map[t] || t
+function targetTypeLabel(targetType: string) {
+    const map: Record<string, string> = {
+        listing: t('pro.publicites.targetListing'),
+        project: t('pro.publicites.targetProject'),
+        brand: t('pro.publicites.targetBrand'),
+    }
+    return map[targetType] || targetType
 }
 
-function adTypeLabel(t: string) {
-    return t === 'partnership' ? 'Partenariat' : 'Autre'
+function adTypeLabel(adType: string) {
+    return adType === 'partnership' ? t('pro.publicites.adTypePartnership') : t('pro.publicites.adTypeOther')
 }
 
 const targetOptions = computed(() => {
@@ -135,8 +146,42 @@ onMounted(async () => {
         brands.value = Array.isArray(data) ? data : []
     }
 
+    const sessionId = route.query.session_id as string | undefined
+    if (sessionId) {
+        try {
+            const verifyRes = await fetch(`${API_BASE}/payments/verify?session_id=${sessionId}`, { headers })
+            if (verifyRes.ok) {
+                const verifyData = await verifyRes.json()
+                checkoutMessage.value = verifyData.paid
+                    ? t('pro.publicites.paymentConfirmed')
+                    : t('pro.publicites.paymentNotConfirmed')
+            }
+        } catch {
+            checkoutMessage.value = t('pro.publicites.paymentCheckError')
+        }
+    }
+
     loading.value = false
 })
+
+async function handlePay(ad: Ad) {
+    payingId.value = ad.id.Int64
+    try {
+        const res = await fetch(`${API_BASE}/advertisement/${ad.id.Int64}/checkout`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (!res.ok) {
+            const errText = await res.text()
+            throw new Error(errText || t('pro.publicites.errorPayment'))
+        }
+        const data = await res.json()
+        window.location.href = data.url
+    } catch (e: any) {
+        createError.value = e.message
+        payingId.value = null
+    }
+}
 
 function openCreate() {
     form.value = { target_type: 'listing', target_id: 0, ad_type: 'partnership', budget: '', start_date: '', end_date: '' }
@@ -145,10 +190,10 @@ function openCreate() {
 }
 
 async function submitCreate() {
-    if (!form.value.target_id) { createError.value = 'Veuillez sélectionner une cible.'; return }
-    if (!form.value.budget || parseFloat(form.value.budget) <= 0) { createError.value = 'Le budget est requis.'; return }
-    if (!form.value.start_date || !form.value.end_date) { createError.value = 'Les dates sont requises.'; return }
-    if (new Date(form.value.start_date) >= new Date(form.value.end_date)) { createError.value = 'La date de fin doit être après la date de début.'; return }
+    if (!form.value.target_id) { createError.value = t('pro.publicites.errorSelectTarget'); return }
+    if (!form.value.budget || parseFloat(form.value.budget) <= 0) { createError.value = t('pro.publicites.errorBudgetRequired'); return }
+    if (!form.value.start_date || !form.value.end_date) { createError.value = t('pro.publicites.errorDatesRequired'); return }
+    if (new Date(form.value.start_date) >= new Date(form.value.end_date)) { createError.value = t('pro.publicites.errorEndAfterStart'); return }
 
     creating.value = true
     createError.value = ''
@@ -178,10 +223,10 @@ async function submitCreate() {
             }
         } else {
             const d = await res.text()
-            createError.value = d || 'Erreur lors de la création.'
+            createError.value = d || t('pro.publicites.errorCreate')
         }
     } catch {
-        createError.value = 'Erreur réseau.'
+        createError.value = t('pro.publicites.errorNetwork')
     }
     creating.value = false
 }
@@ -192,36 +237,38 @@ async function submitCreate() {
         <div class="page-header">
             <div class="header-row">
                 <div>
-                    <h1 class="page-title">Publicités.</h1>
-                    <p class="page-subtitle">Créez et suivez vos campagnes publicitaires sur la plateforme.</p>
+                    <h1 class="page-title">{{ t('pro.publicites.pageTitle') }}</h1>
+                    <p class="page-subtitle">{{ t('pro.publicites.subtitle') }}</p>
                 </div>
                 <button class="btn-primary" @click="openCreate">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Nouvelle publicité
+                    {{ t('pro.publicites.newAd') }}
                 </button>
             </div>
         </div>
 
-        <div v-if="loading" class="loading-state">Chargement...</div>
+        <div v-if="loading" class="loading-state">{{ t('pro.publicites.loading') }}</div>
+
+        <div v-if="checkoutMessage" class="alert alert--info">{{ checkoutMessage }}</div>
 
         <template v-else>
             <!-- KPIs -->
             <div class="kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-value">{{ stats.total }}</div>
-                    <div class="kpi-label">Total</div>
+                    <div class="kpi-label">{{ t('pro.publicites.total') }}</div>
                 </div>
                 <div class="kpi-card kpi-card--green">
                     <div class="kpi-value">{{ stats.active }}</div>
-                    <div class="kpi-label">Actives</div>
+                    <div class="kpi-label">{{ t('pro.publicites.active') }}</div>
                 </div>
                 <div class="kpi-card kpi-card--yellow">
                     <div class="kpi-value">{{ stats.pending }}</div>
-                    <div class="kpi-label">En attente</div>
+                    <div class="kpi-label">{{ t('pro.publicites.pending') }}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-value">{{ stats.totalBudget.toFixed(0) }}€</div>
-                    <div class="kpi-label">Budget total</div>
+                    <div class="kpi-label">{{ t('pro.publicites.totalBudget') }}</div>
                 </div>
             </div>
 
@@ -230,7 +277,7 @@ async function submitCreate() {
                 <button v-for="f in ['all', 'pending', 'validated', 'rejected', 'expired']" :key="f"
                     class="filter-btn" :class="{ 'filter-btn--active': filter === f }"
                     @click="filter = f">
-                    {{ f === 'all' ? 'Toutes' : statusConfig(f).label }}
+                    {{ f === 'all' ? t('pro.publicites.all') : statusConfig(f).label }}
                 </button>
             </div>
 
@@ -239,8 +286,8 @@ async function submitCreate() {
                 <div class="empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
                 </div>
-                <p class="empty-text">{{ filter === 'all' ? 'Aucune publicité pour le moment.' : 'Aucune publicité avec ce statut.' }}</p>
-                <button v-if="filter === 'all'" class="btn-primary" @click="openCreate">Créer une publicité</button>
+                <p class="empty-text">{{ filter === 'all' ? t('pro.publicites.noAds') : t('pro.publicites.noAdsWithStatus') }}</p>
+                <button v-if="filter === 'all'" class="btn-primary" @click="openCreate">{{ t('pro.publicites.createAd') }}</button>
             </div>
 
             <!-- Liste des pubs -->
@@ -267,7 +314,16 @@ async function submitCreate() {
                         </div>
                     </div>
                     <div class="ad-footer">
-                        <span class="ad-created">Créée le {{ formatDate(ad.created_at) }}</span>
+                        <span class="ad-created">{{ t('pro.publicites.createdOn', { date: formatDate(ad.created_at) }) }}</span>
+                        <button
+                            v-if="!ad.stripe_payment_intent_id && ad.status !== 'rejected'"
+                            class="btn-pay-ad"
+                            :disabled="payingId === ad.id.Int64"
+                            @click="handlePay(ad)"
+                        >
+                            {{ payingId === ad.id.Int64 ? t('pro.publicites.redirecting') : t('pro.publicites.pay') }}
+                        </button>
+                        <span v-else-if="ad.stripe_payment_intent_id" class="ad-paid-label">{{ t('pro.publicites.paid') }}</span>
                     </div>
                 </div>
             </div>
@@ -277,51 +333,51 @@ async function submitCreate() {
         <Teleport to="body">
             <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
                 <div class="modal-card">
-                    <h3 class="modal-title">Nouvelle publicité</h3>
-                    <p class="modal-subtitle">Votre publicité sera soumise à validation par l'administration.</p>
+                    <h3 class="modal-title">{{ t('pro.publicites.newAdModalTitle') }}</h3>
+                    <p class="modal-subtitle">{{ t('pro.publicites.modalSubtitle') }}</p>
 
                     <form class="modal-form" @submit.prevent="submitCreate">
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Type de cible *</label>
+                                <label class="form-label">{{ t('pro.publicites.targetTypeLabel') }}</label>
                                 <select v-model="form.target_type" class="form-input" @change="form.target_id = 0">
-                                    <option value="listing">Annonce</option>
-                                    <option value="project">Projet</option>
-                                    <option value="brand">Marque</option>
+                                    <option value="listing">{{ t('pro.publicites.targetListing') }}</option>
+                                    <option value="project">{{ t('pro.publicites.targetProject') }}</option>
+                                    <option value="brand">{{ t('pro.publicites.targetBrand') }}</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Cible *</label>
+                                <label class="form-label">{{ t('pro.publicites.targetLabel') }}</label>
                                 <select v-model.number="form.target_id" class="form-input">
-                                    <option :value="0" disabled>Sélectionner...</option>
+                                    <option :value="0" disabled>{{ t('pro.publicites.selectPlaceholder') }}</option>
                                     <option v-for="opt in targetOptions" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
                                 </select>
-                                <p v-if="targetOptions.length === 0" class="form-hint">Aucun(e) {{ targetTypeLabel(form.target_type).toLowerCase() }} disponible. Créez-en un(e) d'abord.</p>
+                                <p v-if="targetOptions.length === 0" class="form-hint">{{ t('pro.publicites.noTargetAvailable', { type: targetTypeLabel(form.target_type).toLowerCase() }) }}</p>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Type de publicité *</label>
+                                <label class="form-label">{{ t('pro.publicites.adTypeLabel') }}</label>
                                 <select v-model="form.ad_type" class="form-input">
-                                    <option value="partnership">Partenariat</option>
-                                    <option value="other">Autre</option>
+                                    <option value="partnership">{{ t('pro.publicites.adTypePartnership') }}</option>
+                                    <option value="other">{{ t('pro.publicites.adTypeOther') }}</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Budget (€) *</label>
-                                <input v-model="form.budget" type="number" min="100" max="500" step="10" class="form-input" placeholder="100 - 500" />
-                                <p class="form-hint">Entre 100€ et 500€/mois</p>
+                                <label class="form-label">{{ t('pro.publicites.budgetLabel') }}</label>
+                                <input v-model="form.budget" type="number" min="100" max="500" step="10" class="form-input" :placeholder="t('pro.publicites.budgetPlaceholder')" />
+                                <p class="form-hint">{{ t('pro.publicites.budgetHint') }}</p>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Date de début *</label>
+                                <label class="form-label">{{ t('pro.publicites.startDateLabel') }}</label>
                                 <input v-model="form.start_date" type="date" class="form-input" />
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Date de fin *</label>
+                                <label class="form-label">{{ t('pro.publicites.endDateLabel') }}</label>
                                 <input v-model="form.end_date" type="date" class="form-input" />
                             </div>
                         </div>
@@ -329,9 +385,9 @@ async function submitCreate() {
                         <div v-if="createError" class="alert alert--error">{{ createError }}</div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn-secondary" @click="showCreateModal = false" :disabled="creating">Annuler</button>
+                            <button type="button" class="btn-secondary" @click="showCreateModal = false" :disabled="creating">{{ t('pro.publicites.cancel') }}</button>
                             <button type="submit" class="btn-primary" :disabled="creating">
-                                {{ creating ? 'Envoi...' : 'Soumettre la publicité' }}
+                                {{ creating ? t('pro.publicites.sending') : t('pro.publicites.submitAd') }}
                             </button>
                         </div>
                     </form>
@@ -387,8 +443,12 @@ async function submitCreate() {
 .ad-info { display: flex; flex-direction: column; gap: 8px; }
 .ad-info-item { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--charcoal); opacity: 0.7; }
 .ad-info-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.5; }
-.ad-footer { border-top: 1px solid rgba(53,53,53,0.06); padding-top: 10px; }
+.ad-footer { border-top: 1px solid rgba(53,53,53,0.06); padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ad-created { font-size: 0.78rem; color: var(--charcoal); opacity: 0.4; }
+.btn-pay-ad { padding: 6px 14px; background: var(--green-dark); color: var(--white); border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+.btn-pay-ad:hover:not(:disabled) { background: var(--green-mid); }
+.btn-pay-ad:disabled { opacity: 0.6; cursor: not-allowed; }
+.ad-paid-label { font-size: 0.75rem; font-weight: 700; color: var(--green-mid); }
 
 /* Badges */
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
@@ -413,8 +473,9 @@ async function submitCreate() {
 .form-input { padding: 10px 14px; font-size: 0.88rem; border: 1.5px solid rgba(53,53,53,0.15); border-radius: 8px; background: var(--cream); color: var(--charcoal); font-family: inherit; outline: none; transition: border-color 0.2s; }
 .form-input:focus { border-color: var(--green-mid); background: var(--white); }
 .form-hint { font-size: 0.76rem; color: var(--charcoal); opacity: 0.4; margin: 0; }
-.alert { padding: 12px 16px; border-radius: 8px; font-size: 0.86rem; font-weight: 500; }
+.alert { padding: 12px 16px; border-radius: 8px; font-size: 0.86rem; font-weight: 500; margin-bottom: 20px; }
 .alert--error { background: #fee2e2; color: #991b1b; }
+.alert--info { background: var(--green-pale); color: var(--green-dark); }
 .btn-secondary { padding: 12px 24px; background: transparent; color: var(--charcoal); border: 1.5px solid rgba(53,53,53,0.2); border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: border-color 0.2s; }
 .btn-secondary:hover { border-color: var(--charcoal); }
 

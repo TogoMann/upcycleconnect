@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useClientStore } from '@/stores/client'
 
+const { t } = useI18n()
 const clientStore = useClientStore()
 
 const searchQuery = ref('')
 const filterType = ref('')
 const filterCategorie = ref('')
 const filterLocalisation = ref('')
+const filterNiveauMin = ref(0)
 
 onMounted(async () => {
     await clientStore.fetchAllAnnonces()
@@ -21,6 +24,9 @@ const annonces = computed(() => {
             priceVal = typeof a.price === 'object' ? (a.price.Float64 ?? a.price.Int64) : Number(a.price)
         }
         
+        const sellerScore = a.seller_score || 0
+        const sellerLevel = a.seller_level || Math.floor(Math.max(sellerScore, 0) / 100) + 1
+
         return {
             id: a.id.Int64 || a.id,
             titre: a.name,
@@ -32,12 +38,18 @@ const annonces = computed(() => {
                 day: 'numeric',
                 month: 'short',
             }),
-            vendeur: a.created_by_name || 'Utilisateur',
+            vendeur: a.created_by_name || t('listings.unknownUser'),
+            sellerLevel,
             categorie: a.category || 'Non classé',
+            handoffMode: a.handoff_mode === 'casier' ? t('listings.handoffLocker') : t('listings.handoffInPerson'),
             img: a.image_url ? `${API_BASE}` + a.image_url : 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
         }
     })
 })
+
+function typeLabel(type: string): string {
+    return type === 'Don' ? t('listings.filterDon') : t('listings.filterVente')
+}
 
 const annoncesFiltrees = computed(() => {
     return annonces.value.filter((a) => {
@@ -49,7 +61,8 @@ const annoncesFiltrees = computed(() => {
             (filterType.value === 'Vente' && a.type === 'Vente')
         const matchCat = !filterCategorie.value || a.categorie === filterCategorie.value
         const matchLoc = !filterLocalisation.value || a.localisation === filterLocalisation.value
-        return matchSearch && matchType && matchCat && matchLoc
+        const matchNiveau = !filterNiveauMin.value || a.sellerLevel >= filterNiveauMin.value
+        return matchSearch && matchType && matchCat && matchLoc && matchNiveau
     })
 })
 </script>
@@ -58,7 +71,7 @@ const annoncesFiltrees = computed(() => {
     <div class="page-content">
         <section class="hero">
             <div class="container">
-                <h1 class="hero-title">A vendre ou à donner.</h1>
+                <h1 class="hero-title">{{ t('listings.pageTitle') }}</h1>
             </div>
         </section>
 
@@ -68,10 +81,10 @@ const annoncesFiltrees = computed(() => {
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Rechercher un objet..."
+                        :placeholder="t('listings.searchPlaceholder')"
                         class="search-input"
                     />
-                    <button class="search-btn" aria-label="Rechercher">
+                    <button class="search-btn" :aria-label="t('listings.search')">
                         <svg
                             width="18"
                             height="18"
@@ -89,18 +102,18 @@ const annoncesFiltrees = computed(() => {
                 </div>
 
                 <div class="filters-row">
-                    <span class="filters-label">Type d'offre</span>
+                    <span class="filters-label">{{ t('listings.filterTypeLabel') }}</span>
                     <div class="select-wrap">
                         <select v-model="filterType" class="filter-select">
-                            <option value="">Don/Vente</option>
-                            <option value="Don">Don</option>
-                            <option value="Vente">Vente</option>
+                            <option value="">{{ t('listings.filterDonVente') }}</option>
+                            <option value="Don">{{ t('listings.filterDon') }}</option>
+                            <option value="Vente">{{ t('listings.filterVente') }}</option>
                         </select>
                         <span class="chevron">&#8964;</span>
                     </div>
                     <div class="select-wrap">
                         <select v-model="filterCategorie" class="filter-select">
-                            <option value="">Catégorie</option>
+                            <option value="">{{ t('listings.filterCategory') }}</option>
                             <option>Mobilier</option>
                             <option>Décoration</option>
                             <option>Vêtement</option>
@@ -113,12 +126,21 @@ const annoncesFiltrees = computed(() => {
                     </div>
                     <div class="select-wrap">
                         <select v-model="filterLocalisation" class="filter-select">
-                            <option value="">Localisation</option>
+                            <option value="">{{ t('listings.filterLocation') }}</option>
                             <option>Nantes</option>
                             <option>Paris</option>
                             <option>Lyon</option>
                             <option>Bordeaux</option>
                             <option>Marseille</option>
+                        </select>
+                        <span class="chevron">&#8964;</span>
+                    </div>
+                    <div class="select-wrap">
+                        <select v-model.number="filterNiveauMin" class="filter-select">
+                            <option :value="0">Niveau minimum</option>
+                            <option :value="2">Niveau 2+</option>
+                            <option :value="5">Niveau 5+</option>
+                            <option :value="10">Niveau 10+</option>
                         </select>
                         <span class="chevron">&#8964;</span>
                     </div>
@@ -145,7 +167,7 @@ const annoncesFiltrees = computed(() => {
                                     class="badge"
                                     :class="annonce.type === 'Don' ? 'badge--don' : 'badge--vente'"
                                 >
-                                    {{ annonce.type }}
+                                    {{ typeLabel(annonce.type) }}
                                     <template v-if="annonce.type === 'Vente' && annonce.prix">
                                         &nbsp;- {{ annonce.prix }}€
                                     </template>
@@ -170,15 +192,19 @@ const annoncesFiltrees = computed(() => {
                                 <span>{{ annonce.localisation }} - {{ annonce.date }}</span>
                             </div>
 
-                            <p class="annonce-vendeur">{{ annonce.vendeur }}</p>
+                            <p class="annonce-vendeur">
+                                {{ annonce.vendeur }}
+                                <span class="niveau-badge">Niv. {{ annonce.sellerLevel }}</span>
+                                · {{ annonce.handoffMode }}
+                            </p>
 
-                            <span class="btn-annonce">Voir l'annonce</span>
+                            <span class="btn-annonce">{{ t('listings.viewListing') }}</span>
                         </div>
                     </router-link>
                 </div>
 
                 <div v-if="annoncesFiltrees.length === 0" class="empty-state">
-                    <p>Aucune annonce ne correspond à votre recherche.</p>
+                    <p>{{ t('listings.noResults') }}</p>
                 </div>
             </div>
         </section>
@@ -413,6 +439,16 @@ const annoncesFiltrees = computed(() => {
     color: var(--charcoal);
     opacity: 0.7;
     margin: 0 0 12px;
+}
+.niveau-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: var(--green-pale);
+    color: var(--green-dark);
+    font-weight: 700;
+    font-size: 0.72rem;
+    opacity: 1;
 }
 
 .btn-annonce {

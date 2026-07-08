@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"backend/internal/utils"
 	"encoding/json"
 	"net/http"
 )
@@ -68,6 +69,39 @@ func (h *Handler) AdminRequestReset(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Email de réinitialisation envoyé"})
+}
+
+func (h *Handler) VerifySiret(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	siret := r.URL.Query().Get("siret")
+	if len(siret) != 14 {
+		json.NewEncoder(w).Encode(map[string]bool{"valid": false})
+		return
+	}
+
+	valid := utils.VerifySiret(siret)
+	json.NewEncoder(w).Encode(map[string]bool{"valid": valid})
+}
+
+func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.RequestPasswordReset(req.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé."})
 }
 
 func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {

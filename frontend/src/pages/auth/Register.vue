@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted, computed } from 'vue'
+import { reactive, ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { usePlansStore, type Plan } from '@/stores/plans'
+import { API_BASE } from '@/config'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const plansStore = usePlansStore()
@@ -23,6 +26,22 @@ const form = reactive({
 const error = ref('')
 const loading = ref(false)
 const plans = ref<Plan[]>([])
+const siretStatus = ref<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
+
+watch(() => form.siret, async (val) => {
+    if (val.length !== 14) {
+        siretStatus.value = 'idle'
+        return
+    }
+    siretStatus.value = 'checking'
+    try {
+        const res = await fetch(`${API_BASE}/siret/verify?siret=${val}`)
+        const data = await res.json()
+        siretStatus.value = data.valid ? 'valid' : 'invalid'
+    } catch {
+        siretStatus.value = 'invalid'
+    }
+})
 
 const selectedPlanName = computed(() => {
     const plan = plans.value.find((p) => p.id === form.planId)
@@ -41,28 +60,43 @@ onMounted(async () => {
     }
 })
 
+function isPasswordStrong(pw: string): boolean {
+    if (pw.length < 10) return false
+    const hasLetter = /[a-zA-Z]/.test(pw)
+    const hasNumber = /[0-9]/.test(pw)
+    return hasLetter && hasNumber
+}
+
 async function handleRegister() {
     error.value = ''
 
+    if (!isPasswordStrong(form.password)) {
+        error.value = t('auth.register.weakPassword')
+        return
+    }
+
     if (form.password !== form.confirmPassword) {
-        error.value = 'Les mots de passe ne correspondent pas.'
+        error.value = t('auth.register.passwordMismatch')
         return
     }
 
     if (selectedPlanName.value === 'Pro') {
         if (!form.siret) {
-            error.value = 'Le numéro SIRET est obligatoire pour le plan Pro.'
+            error.value = t('auth.register.siretRequired')
             return
         }
         if (!/^\d{14}$/.test(form.siret)) {
-            error.value = 'Le numéro SIRET doit être composé de exactement 14 chiffres.'
+            error.value = t('auth.register.siretInvalidFormat')
+            return
+        }
+        if (siretStatus.value !== 'valid') {
+            error.value = t('auth.register.siretNotFound')
             return
         }
     }
 
     if (!form.acceptTerms) {
-
-        error.value = "Vous devez accepter les conditions d'utilisation."
+        error.value = t('auth.register.termsRequired')
         return
     }
 
@@ -83,7 +117,7 @@ async function handleRegister() {
         else if (role === 'interne') router.push('/salarie')
         else router.push('/particulier')
     } catch (e: any) {
-        error.value = e.message || 'Erreur lors de la cr�ation du compte.'
+        error.value = e.message || t('auth.register.genericError')
     } finally {
         loading.value = false
     }
@@ -93,13 +127,13 @@ async function handleRegister() {
 <template>
     <div class="page-content">
         <div class="container">
-            <h1 class="page-title">Cr�er un compte.</h1>
+            <h1 class="page-title">{{ t('auth.register.title') }}</h1>
 
             <form class="register-form" @submit.prevent="handleRegister">
                 <input
                     v-model="form.username"
                     type="text"
-                    placeholder="Nom d'utilisateur"
+                    :placeholder="t('auth.register.username')"
                     class="form-input"
                     autocomplete="username"
                     required
@@ -109,7 +143,7 @@ async function handleRegister() {
                     <input
                         v-model="form.prenom"
                         type="text"
-                        placeholder="Pr�nom"
+                        :placeholder="t('auth.register.firstName')"
                         class="form-input"
                         autocomplete="given-name"
                         required
@@ -117,7 +151,7 @@ async function handleRegister() {
                     <input
                         v-model="form.nom"
                         type="text"
-                        placeholder="Nom"
+                        :placeholder="t('auth.register.lastName')"
                         class="form-input"
                         autocomplete="family-name"
                         required
@@ -127,7 +161,7 @@ async function handleRegister() {
                 <input
                     v-model="form.email"
                     type="email"
-                    placeholder="Email"
+                    :placeholder="t('auth.register.email')"
                     class="form-input"
                     autocomplete="email"
                     required
@@ -136,23 +170,24 @@ async function handleRegister() {
                 <input
                     v-model="form.password"
                     type="password"
-                    placeholder="Mot de passe"
+                    :placeholder="t('auth.register.password')"
                     class="form-input"
                     autocomplete="new-password"
                     required
                 />
+                <p class="form-hint">{{ t('auth.register.passwordHint') }}</p>
 
                 <input
                     v-model="form.confirmPassword"
                     type="password"
-                    placeholder="Confirmer le mot de passe"
+                    :placeholder="t('auth.register.confirmPassword')"
                     class="form-input"
                     autocomplete="new-password"
                     required
                 />
 
                 <div class="plan-select-wrap">
-                    <label class="plan-label">Choisir votre plan :</label>
+                    <label class="plan-label">{{ t('auth.register.choosePlan') }}</label>
                     <select v-model="form.planId" class="form-input plan-select">
                         <option v-for="plan in plans" :key="plan.id" :value="plan.id">
                             {{ plan.name }} - {{ plan.price }}€ / {{ plan.billing_cycle }}
@@ -160,36 +195,41 @@ async function handleRegister() {
                     </select>
                 </div>
 
-                <input
-                    v-if="selectedPlanName === 'Pro'"
-                    v-model="form.siret"
-                    type="text"
-                    placeholder="Num�ro SIRET (14 chiffres)"
-                    class="form-input"
-                    maxlength="14"
-                    required
-                />
+                <div v-if="selectedPlanName === 'Pro'" class="siret-wrap">
+                    <input
+                        v-model="form.siret"
+                        type="text"
+                        :placeholder="t('auth.register.siret')"
+                        class="form-input"
+                        :class="{ 'form-input--valid': siretStatus === 'valid', 'form-input--invalid': siretStatus === 'invalid' }"
+                        maxlength="14"
+                        required
+                    />
+                    <span v-if="siretStatus === 'checking'" class="siret-status siret-status--checking">{{ t('auth.register.siretChecking') }}</span>
+                    <span v-else-if="siretStatus === 'valid'" class="siret-status siret-status--valid">{{ t('auth.register.siretValid') }}</span>
+                    <span v-else-if="siretStatus === 'invalid'" class="siret-status siret-status--invalid">{{ t('auth.register.siretNotFoundShort') }}</span>
+                </div>
 
                 <p v-if="error" class="error-msg">{{ error }}</p>
 
                 <label class="terms-label">
                     <input type="checkbox" v-model="form.acceptTerms" class="terms-checkbox" />
                     <span>
-                        J'accepte les
-                        <a href="#" class="terms-link">conditions d'utilisation</a>
-                        et la
-                        <a href="#" class="terms-link">politique de confidentialit�</a>
+                        {{ t('auth.register.acceptTerms1') }}
+                        <router-link to="/mentions-legales#cgu" class="terms-link">{{ t('auth.register.termsLink') }}</router-link>
+                        {{ t('auth.register.acceptTerms2') }}
+                        <router-link to="/mentions-legales#confidentialite" class="terms-link">{{ t('auth.register.privacyLink') }}</router-link>
                     </span>
                 </label>
 
                 <button type="submit" class="btn-submit" :disabled="loading">
-                    {{ loading ? 'Cr�ation...' : 'Cr�er mon compte' }}
+                    {{ loading ? t('auth.register.creating') : t('auth.register.submit') }}
                 </button>
             </form>
 
             <div class="login-link-wrap">
                 <router-link to="/auth/login" class="login-link">
-                    J'ai d�jà un compte
+                    {{ t('auth.register.alreadyHaveAccount') }}
                 </router-link>
             </div>
         </div>
@@ -280,6 +320,37 @@ async function handleRegister() {
     font-size: 0.88rem;
     color: #c0392b;
     margin: 0;
+}
+
+.form-hint {
+    font-size: 0.78rem;
+    color: rgba(53, 53, 53, 0.5);
+    margin: -8px 0 0;
+}
+
+.siret-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.form-input--valid {
+    border-color: var(--green-mid);
+}
+.form-input--invalid {
+    border-color: #c0392b;
+}
+.siret-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.siret-status--checking {
+    color: rgba(53, 53, 53, 0.5);
+}
+.siret-status--valid {
+    color: var(--green-mid);
+}
+.siret-status--invalid {
+    color: #c0392b;
 }
 
 .terms-label {

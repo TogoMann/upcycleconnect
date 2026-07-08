@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const typeObjet = ref('')
 const codePostal = ref('')
 
@@ -30,7 +32,7 @@ const handleRecherche = () => {
     <div class="page-content">
         <section class="hero">
             <div class="container">
-                <h1 class="hero-title">Réparer vos objets.</h1>
+                <h1 class="hero-title">{{ t('repair.pageTitle') }}</h1>
             </div>
         </section>
 
@@ -38,20 +40,20 @@ const handleRecherche = () => {
             <div class="container">
                 <div class="search-card">
                     <div class="search-card-header">
-                        <h2 class="search-card-title">Trouver une ressource de réparation</h2>
+                        <h2 class="search-card-title">{{ t('repair.cardTitle') }}</h2>
                     </div>
 
                     <div class="search-card-body">
                         <div class="search-fields">
                             <div class="field-group">
-                                <label class="field-label">Type d'objet</label>
+                                <label class="field-label">{{ t('repair.itemTypeLabel') }}</label>
                                 <div class="select-wrap">
                                     <select v-model="typeObjet" class="field-select">
                                         <option value="" disabled>
-                                            Électronique, Mobilier, Vêtement...
+                                            {{ t('repair.itemTypePlaceholder') }}
                                         </option>
-                                        <option v-for="t in typesObjets" :key="t" :value="t">
-                                            {{ t }}
+                                        <option v-for="ty in typesObjets" :key="ty" :value="ty">
+                                            {{ ty }}
                                         </option>
                                     </select>
                                     <span class="select-arrow">&#8964;</span>
@@ -59,7 +61,7 @@ const handleRecherche = () => {
                             </div>
 
                             <div class="field-group field-group--sm">
-                                <label class="field-label">Code Postal</label>
+                                <label class="field-label">{{ t('repair.zipLabel') }}</label>
                                 <div class="select-wrap">
                                     <select v-model="codePostal" class="field-select">
                                         <option value="" disabled>75001</option>
@@ -72,7 +74,7 @@ const handleRecherche = () => {
                             </div>
                         </div>
 
-                        <button class="btn-search" @click="handleRecherche">Rechercher</button>
+                        <button class="btn-search" @click="handleRecherche">{{ t('repair.search') }}</button>
                     </div>
                 </div>
             </div>

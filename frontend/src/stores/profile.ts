@@ -6,6 +6,7 @@ import { API_BASE } from '@/config'
 export const useProfileStore = defineStore('profile', () => {
     const score = ref<number>(0)
     const scoreHistory = ref<any[]>([])
+    const quests = ref<any[]>([])
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
@@ -40,6 +41,14 @@ export const useProfileStore = defineStore('profile', () => {
         }
     }
 
+    async function fetchQuests() {
+        try {
+            const res = await fetch(`${API_BASE}/users/me/quests`, { headers: authHeaders() })
+            if (!res.ok) return
+            quests.value = await res.json()
+        } catch {}
+    }
+
     async function markTutorialSeen() {
         const authStore = useAuthStore()
         if (!authStore.user) return
@@ -67,10 +76,12 @@ export const useProfileStore = defineStore('profile', () => {
     return {
         score,
         scoreHistory,
+        quests,
         isLoading,
         error,
         fetchScore,
         fetchScoreHistory,
+        fetchQuests,
         markTutorialSeen,
         updateProfile
     }

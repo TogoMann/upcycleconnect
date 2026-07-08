@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE } from '@/config'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Plan {
@@ -88,7 +90,7 @@ async function save() {
 }
 
 async function supprimer(id: number) {
-    if (!confirm('Supprimer ce plan ?')) return
+    if (!confirm(t('admin.plans.confirmDelete'))) return
     try {
         const res = await fetch(`${API_BASE}/admin/plans/${id}`, {
             method: 'DELETE',
@@ -97,6 +99,15 @@ async function supprimer(id: number) {
         if (res.ok) fetchPlans()
     } catch {}
 }
+
+function cycleLabel(cycle: string): string {
+    switch (cycle) {
+        case 'monthly': return t('admin.plans.cycleMonthly')
+        case 'yearly': return t('admin.plans.cycleYearly')
+        case 'once': return t('admin.plans.cycleOnce')
+        default: return cycle
+    }
+}
 </script>
 
 <template>
@@ -104,56 +115,56 @@ async function supprimer(id: number) {
         <div class="page-header">
             <div class="header-row">
                 <div>
-                    <h1 class="page-title">Plans & Tiers.</h1>
-                    <p class="page-subtitle">Gérez les offres d'abonnement et bonus.</p>
+                    <h1 class="page-title">{{ t('admin.plans.pageTitle') }}</h1>
+                    <p class="page-subtitle">{{ t('admin.plans.subtitle') }}</p>
                 </div>
-                <button class="btn-primary" @click="openCreate">+ Nouveau Plan</button>
+                <button class="btn-primary" @click="openCreate">{{ t('admin.plans.newPlan') }}</button>
             </div>
         </div>
 
         <div v-if="showForm" class="form-overlay" @click.self="showForm = false">
             <div class="form-modal">
-                <h3 class="modal-title">{{ editId ? 'Modifier le plan' : 'Nouveau plan' }}</h3>
-                
+                <h3 class="modal-title">{{ editId ? t('admin.plans.editPlan') : t('admin.plans.newPlanModal') }}</h3>
+
                 <div class="form-group">
-                    <label class="form-label">Nom</label>
-                    <input v-model="form.name" type="text" class="form-input" placeholder="ex: Premium" />
+                    <label class="form-label">{{ t('admin.plans.name') }}</label>
+                    <input v-model="form.name" type="text" class="form-input" :placeholder="t('admin.plans.namePlaceholder')" />
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Prix (€)</label>
+                        <label class="form-label">{{ t('admin.plans.price') }}</label>
                         <input v-model="form.price" type="number" step="0.01" class="form-input" />
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Cycle</label>
+                        <label class="form-label">{{ t('admin.plans.cycle') }}</label>
                         <select v-model="form.billing_cycle" class="form-input">
-                            <option value="monthly">Mensuel</option>
-                            <option value="yearly">Annuel</option>
-                            <option value="once">Une fois</option>
+                            <option value="monthly">{{ t('admin.plans.cycleMonthly') }}</option>
+                            <option value="yearly">{{ t('admin.plans.cycleYearly') }}</option>
+                            <option value="once">{{ t('admin.plans.cycleOnce') }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Description</label>
+                    <label class="form-label">{{ t('admin.plans.description') }}</label>
                     <textarea v-model="form.description" class="form-input form-textarea" rows="2"></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Avantages (un par ligne)</label>
-                    <textarea v-model="form.features" class="form-input form-textarea" rows="4" placeholder="Bonus 1&#10;Bonus 2"></textarea>
+                    <label class="form-label">{{ t('admin.plans.features') }}</label>
+                    <textarea v-model="form.features" class="form-input form-textarea" rows="4" :placeholder="t('admin.plans.featuresPlaceholder')"></textarea>
                 </div>
 
                 <div class="form-group form-check">
                     <input id="active" v-model="form.is_active" type="checkbox" />
-                    <label for="active" class="form-label">Plan actif</label>
+                    <label for="active" class="form-label">{{ t('admin.plans.activePlan') }}</label>
                 </div>
 
                 <div class="modal-actions">
-                    <button class="btn-secondary" @click="showForm = false">Annuler</button>
+                    <button class="btn-secondary" @click="showForm = false">{{ t('admin.plans.cancel') }}</button>
                     <button class="btn-primary" :disabled="loading" @click="save">
-                        {{ loading ? '…' : 'Enregistrer' }}
+                        {{ loading ? t('admin.plans.saving') : t('admin.plans.save') }}
                     </button>
                 </div>
             </div>
@@ -163,24 +174,24 @@ async function supprimer(id: number) {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Plan</th>
-                        <th>Prix</th>
-                        <th>Cycle</th>
-                        <th>Statut</th>
+                        <th>{{ t('admin.plans.colPlan') }}</th>
+                        <th>{{ t('admin.plans.colPrice') }}</th>
+                        <th>{{ t('admin.plans.colCycle') }}</th>
+                        <th>{{ t('admin.plans.colStatus') }}</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="plans.length === 0">
-                        <td colspan="5" class="empty">Aucun plan configuré.</td>
+                        <td colspan="5" class="empty">{{ t('admin.plans.empty') }}</td>
                     </tr>
                     <tr v-for="p in plans" :key="p.id">
                         <td class="td-bold">{{ p.name }}</td>
                         <td>{{ p.price.toFixed(2) }} €</td>
-                        <td class="td-muted">{{ p.billing_cycle }}</td>
+                        <td class="td-muted">{{ cycleLabel(p.billing_cycle) }}</td>
                         <td>
                             <span class="badge" :class="p.is_active ? 'badge--active' : 'badge--inactive'">
-                                {{ p.is_active ? 'Actif' : 'Inactif' }}
+                                {{ p.is_active ? t('admin.plans.active') : t('admin.plans.inactive') }}
                             </span>
                         </td>
                         <td class="td-actions">

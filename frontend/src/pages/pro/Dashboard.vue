@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 const stats = ref({ annonces: 0, projets: 0, vues: 0, score: 0 })
@@ -26,9 +28,9 @@ onMounted(async () => {
     <div class="dashboard">
         <div class="page-header">
             <h1 class="page-title">
-                Bonjour, {{ authStore.user?.first_name || authStore.user?.username || 'vous' }}.
+                {{ t('pro.dashboard.greeting', { name: authStore.user?.first_name || authStore.user?.username || t('pro.dashboard.you') }) }}
             </h1>
-            <p class="page-subtitle">Vue d'ensemble de votre espace professionnel.</p>
+            <p class="page-subtitle">{{ t('pro.dashboard.subtitle') }}</p>
         </div>
 
         <div class="kpi-grid">
@@ -42,7 +44,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.annonces }}</div>
-                <div class="kpi-label">Annonces actives</div>
+                <div class="kpi-label">{{ t('pro.dashboard.activeListings') }}</div>
             </router-link>
 
             <router-link to="/pro/projets" class="kpi-card kpi-card--link">
@@ -52,7 +54,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.projets }}</div>
-                <div class="kpi-label">Projets en cours</div>
+                <div class="kpi-label">{{ t('pro.dashboard.ongoingProjects') }}</div>
             </router-link>
 
             <router-link to="/pro/publicites" class="kpi-card kpi-card--link">
@@ -62,7 +64,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.vues }}</div>
-                <div class="kpi-label">Vues ce mois</div>
+                <div class="kpi-label">{{ t('pro.dashboard.viewsThisMonth') }}</div>
             </router-link>
 
             <router-link to="/pro/abonnements" class="kpi-card kpi-card--link">
@@ -72,12 +74,12 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ stats.score }}</div>
-                <div class="kpi-label">Score upcycling</div>
+                <div class="kpi-label">{{ t('pro.dashboard.upcyclingScore') }}</div>
             </router-link>
         </div>
 
         <div class="actions-section">
-            <h2 class="section-title">Actions rapides</h2>
+            <h2 class="section-title">{{ t('pro.dashboard.quickActions') }}</h2>
             <div class="actions-grid">
                 <router-link to="/pro/projets/nouveau" class="action-card">
                     <div class="action-icon">
@@ -87,8 +89,8 @@ onMounted(async () => {
                             <line x1="8" y1="12" x2="16" y2="12" />
                         </svg>
                     </div>
-                    <span class="action-label">Nouveau projet</span>
-                    <span class="action-desc">Créer un projet upcycling</span>
+                    <span class="action-label">{{ t('pro.dashboard.newProject') }}</span>
+                    <span class="action-desc">{{ t('pro.dashboard.newProjectDesc') }}</span>
                 </router-link>
 
                 <router-link to="/pro/conteneurs/recuperer" class="action-card">
@@ -97,8 +99,8 @@ onMounted(async () => {
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                         </svg>
                     </div>
-                    <span class="action-label">Récupérer un objet</span>
-                    <span class="action-desc">Scanner un code-barres</span>
+                    <span class="action-label">{{ t('pro.dashboard.retrieveItem') }}</span>
+                    <span class="action-desc">{{ t('pro.dashboard.retrieveItemDesc') }}</span>
                 </router-link>
 
                 <router-link to="/pro/facturation" class="action-card">
@@ -108,8 +110,8 @@ onMounted(async () => {
                             <polyline points="14 2 14 8 20 8" />
                         </svg>
                     </div>
-                    <span class="action-label">Mes factures</span>
-                    <span class="action-desc">Télécharger vos PDF</span>
+                    <span class="action-label">{{ t('pro.dashboard.myInvoices') }}</span>
+                    <span class="action-desc">{{ t('pro.dashboard.myInvoicesDesc') }}</span>
                 </router-link>
 
                 <router-link to="/pro/chat" class="action-card">
@@ -118,8 +120,8 @@ onMounted(async () => {
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
                     </div>
-                    <span class="action-label">Messagerie</span>
-                    <span class="action-desc">Discutez avec vos acheteurs</span>
+                    <span class="action-label">{{ t('pro.dashboard.messaging') }}</span>
+                    <span class="action-desc">{{ t('pro.dashboard.messagingDesc') }}</span>
                 </router-link>
             </div>
         </div>

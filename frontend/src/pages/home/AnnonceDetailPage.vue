@@ -2,9 +2,11 @@
 import { API_BASE } from '@/config'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useClientStore } from '@/stores/client'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -53,6 +55,21 @@ const formattedDate = computed(() => {
     })
 })
 
+const mainImage = computed(() => {
+    if (!listing.value?.image_url) return 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=800&q=80'
+    return `${API_BASE}${listing.value.image_url}`
+})
+
+const isLockerHandoff = computed(() => listing.value?.handoff_mode === 'casier')
+
+const sellerLevel = computed(() => {
+    if (!listing.value) return 1
+    return listing.value.seller_level || Math.floor(Math.max(listing.value.seller_score || 0, 0) / 100) + 1
+})
+
+const sellerName = computed(() => listing.value?.created_by_name || t('listings.unknownUser'))
+const sellerInitial = computed(() => sellerName.value.charAt(0).toUpperCase())
+
 function getItemId(item: any): number {
     if (!item) return 0
     if (item.id && typeof item.id === 'object' && 'Int64' in item.id) {
@@ -91,17 +108,17 @@ function handleAction() {
 <template>
     <div class="page-content">
         <div v-if="loading" class="container loading-state">
-            Chargement de l'annonce...
+            {{ t('listingDetail.loading') }}
         </div>
 
         <div v-else-if="!listing" class="container error-state">
-            Annonce introuvable.
+            {{ t('listingDetail.notFound') }}
         </div>
 
         <template v-else>
             <section class="breadcrumb-bar">
                 <div class="container">
-                    <router-link to="/annonces" class="breadcrumb-link">Annonces</router-link>
+                    <router-link to="/annonces" class="breadcrumb-link">{{ t('layout.nav.listings') }}</router-link>
                     <span class="breadcrumb-sep">›</span>
                     <span class="breadcrumb-current">{{ listing.name }}</span>
                 </div>
@@ -112,16 +129,16 @@ function handleAction() {
                     <div class="detail-layout">
                         <div class="detail-left">
                             <div class="main-img-wrap">
-                                <img src="https://images.unsplash.com/photo-1592078615290-033ee584e267?w=800&q=80" :alt="listing.name" class="main-img" />
+                                <img :src="mainImage" :alt="listing.name" class="main-img" />
                             </div>
                         </div>
 
                         <div class="detail-right">
                             <div class="detail-badges">
                                 <span class="badge" :class="isFree ? 'badge--don' : 'badge--vente'">
-                                    {{ isFree ? 'Don' : 'Vente' }}
+                                    {{ isFree ? t('listings.filterDon') : t('listings.filterVente') }}
                                 </span>
-                                <span class="badge badge--cat">{{ listing.category || 'Non classé' }}</span>
+                                <span class="badge badge--cat">{{ listing.category || t('listingDetail.uncategorized') }}</span>
                             </div>
 
                             <h1 class="detail-titre">{{ listing.name }}</h1>
@@ -129,14 +146,14 @@ function handleAction() {
                             <div v-if="!isFree" class="detail-prix">
                                 {{ formattedPrice }} €
                             </div>
-                            <div v-else class="detail-gratuit">Gratuit</div>
+                            <div v-else class="detail-gratuit">{{ t('listingDetail.free') }}</div>
 
                             <div class="detail-meta">
                                 <div class="meta-item">
                                     <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
                                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                                     </svg>
-                                    <span>{{ listing.city_name || 'Localisation inconnue' }}</span>
+                                    <span>{{ listing.city_name || t('listingDetail.unknownLocation') }}</span>
                                 </div>
                                 <div class="meta-item">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -145,28 +162,44 @@ function handleAction() {
                                         <line x1="8" y1="2" x2="8" y2="6"/>
                                         <line x1="3" y1="10" x2="21" y2="10"/>
                                     </svg>
-                                    <span>Publié le {{ formattedDate }}</span>
+                                    <span>{{ t('listingDetail.publishedOn', { date: formattedDate }) }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <rect x="1" y="7" width="22" height="13" rx="2" ry="2"/>
+                                        <path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/>
+                                    </svg>
+                                    <span v-if="isLockerHandoff">{{ t('listings.handoffLocker') }}</span>
+                                    <span v-else>{{ t('listings.handoffInPerson') }}{{ listing.address ? ' — ' + listing.address : '' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="vendeur-card">
+                                <div class="vendeur-avatar">{{ sellerInitial }}</div>
+                                <div class="vendeur-info">
+                                    <span class="vendeur-nom">{{ sellerName }}</span>
+                                    <span class="vendeur-since">Niveau {{ sellerLevel }}</span>
                                 </div>
                             </div>
 
                             <div class="detail-desc">
-                                <h2 class="desc-title">Description</h2>
-                                <p class="desc-text">{{ listing.description || 'Aucune description disponible.' }}</p>
+                                <h2 class="desc-title">{{ t('listingDetail.description') }}</h2>
+                                <p class="desc-text">{{ listing.description || t('listingDetail.noDescription') }}</p>
                             </div>
 
                             <div class="detail-actions">
-                                <button 
-                                    class="btn-contact" 
+                                <button
+                                    class="btn-contact"
                                     :class="{ 'btn-contact--active': listing && clientStore.isChattingWith(getItemId(listing)) }"
                                     @click="handleAction"
                                 >
-                                    {{ listing && clientStore.isChattingWith(getItemId(listing)) ? 'Continuer la discussion' : 'Contacter le vendeur' }}
+                                    {{ listing && clientStore.isChattingWith(getItemId(listing)) ? t('listingDetail.continueChat') : t('listingDetail.contactSeller') }}
                                 </button>
                                 <button v-if="!listing || !clientStore.isChattingWith(getItemId(listing))" class="btn-save">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                     </svg>
-                                    Sauvegarder
+                                    {{ t('listingDetail.save') }}
                                 </button>
                             </div>
                         </div>
@@ -183,8 +216,6 @@ function handleAction() {
     text-align: center;
     opacity: 0.6;
 }
-/* ... rest of styles ... */
-<style scoped>
 .page-content {
     flex: 1;
     display: flex;

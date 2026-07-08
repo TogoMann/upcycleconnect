@@ -3,7 +3,9 @@ import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -33,7 +35,7 @@ function formatPrice(p: any): string {
 function formatDate(ts: any): string {
     if (!ts) return '—'
     const date = new Date(ts.Time ?? ts)
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    return date.toLocaleDateString(locale.value === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 onMounted(async () => {
@@ -68,7 +70,7 @@ async function valider() {
 }
 
 async function refuser() {
-    if (!confirm('Désapprouver cette annonce ?')) return
+    if (!confirm(t('admin.annonceDetail.confirmDisapprove'))) return
     try {
         const res = await fetch(`${API_BASE}/listing/${route.params.id}/disapprove`, {
             method: 'PATCH',
@@ -83,7 +85,7 @@ async function refuser() {
 }
 
 async function supprimer() {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement cette annonce ?')) return
+    if (!confirm(t('admin.annonceDetail.confirmDeleteDefinitively'))) return
     try {
         const res = await fetch(`${API_BASE}/listing/${route.params.id}`, {
             method: 'DELETE',
@@ -104,10 +106,10 @@ async function supprimer() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6" />
             </svg>
-            Retour
+            {{ t('admin.annonceDetail.back') }}
         </router-link>
 
-        <div v-if="loading" class="loading">Chargement…</div>
+        <div v-if="loading" class="loading">{{ t('admin.annonceDetail.loading') }}</div>
 
         <template v-else-if="annonce">
             <div class="page-header">
@@ -117,7 +119,7 @@ async function supprimer() {
                         class="badge"
                         :class="annonce.approved ? 'badge--active' : 'badge--pending'"
                     >
-                        {{ annonce.approved ? 'Approuvée' : 'En attente' }}
+                        {{ annonce.approved ? t('admin.annonceDetail.approved') : t('admin.annonceDetail.pending') }}
                     </span>
                 </div>
             </div>
@@ -131,32 +133,32 @@ async function supprimer() {
 
             <div class="info-grid">
                 <div class="info-card">
-                    <div class="info-label">Auteur</div>
-                    <div class="info-value">{{ annonce.created_by_name || 'Inconnu' }}</div>
+                    <div class="info-label">{{ t('admin.annonceDetail.author') }}</div>
+                    <div class="info-value">{{ annonce.created_by_name || t('admin.annonceDetail.unknown') }}</div>
                 </div>
                 <div class="info-card">
-                    <div class="info-label">Catégorie</div>
+                    <div class="info-label">{{ t('admin.annonceDetail.category') }}</div>
                     <div class="info-value">{{ annonce.category }}</div>
                 </div>
                 <div class="info-card">
-                    <div class="info-label">Prix</div>
+                    <div class="info-label">{{ t('admin.annonceDetail.price') }}</div>
                     <div class="info-value">{{ formatPrice(annonce.price) }} €</div>
                 </div>
                 <div class="info-card">
-                    <div class="info-label">Date</div>
+                    <div class="info-label">{{ t('admin.annonceDetail.date') }}</div>
                     <div class="info-value">{{ formatDate(annonce.created_at) }}</div>
                 </div>
             </div>
 
             <div class="desc-section">
-                <h3 class="section-title">Description</h3>
+                <h3 class="section-title">{{ t('admin.annonceDetail.description') }}</h3>
                 <p class="desc-text">{{ annonce.description }}</p>
             </div>
 
             <div class="actions-row">
-                <button v-if="!annonce.approved" class="btn-validate" @click="valider">Approuver l'annonce</button>
-                <button v-else class="btn-refuse" @click="refuser">Désapprouver</button>
-                <button class="btn-delete" @click="supprimer">Supprimer définitivement</button>
+                <button v-if="!annonce.approved" class="btn-validate" @click="valider">{{ t('admin.annonceDetail.approve') }}</button>
+                <button v-else class="btn-refuse" @click="refuser">{{ t('admin.annonceDetail.disapprove') }}</button>
+                <button class="btn-delete" @click="supprimer">{{ t('admin.annonceDetail.deleteDefinitively') }}</button>
             </div>
         </template>
     </div>

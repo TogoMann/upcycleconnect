@@ -24,30 +24,32 @@ func (r *Repository) GetUserPlanning(userId pgtype.Int8) ([]PlanningItem, error)
 
 		UNION ALL
 
-		SELECT c.id, 'workshop' as type, c.name as title, COALESCE(c.description, '') as description, COALESCE(TO_CHAR(c.date, 'YYYY-MM-DD'), '') as date, COALESCE(TO_CHAR(c.start_time, 'HH24:MI'), '') as start_time, COALESCE(TO_CHAR(c.end_time, 'HH24:MI'), '') as end_time, '' as location
+		SELECT c.id, 'workshop' as type, c.name as title, COALESCE(c.description, '') as description, TO_CHAR(cs.session_date, 'YYYY-MM-DD') as date, TO_CHAR(cs.start_time, 'HH24:MI') as start_time, TO_CHAR(cs.end_time, 'HH24:MI') as end_time, '' as location
 		FROM course c
 		JOIN course_order co ON c.id = co.course_id
+		JOIN course_session cs ON cs.course_id = c.id
 		WHERE co.buyer_id = $1
 
 		UNION ALL
 
-		SELECT c.id, 'workshop' as type, c.name as title, COALESCE(c.description, '') as description, COALESCE(TO_CHAR(c.date, 'YYYY-MM-DD'), '') as date, COALESCE(TO_CHAR(c.start_time, 'HH24:MI'), '') as start_time, COALESCE(TO_CHAR(c.end_time, 'HH24:MI'), '') as end_time, '' as location
+		SELECT c.id, 'formation' as type, c.name as title, COALESCE(c.description, '') as description, TO_CHAR(cs.session_date, 'YYYY-MM-DD') as date, TO_CHAR(cs.start_time, 'HH24:MI') as start_time, TO_CHAR(cs.end_time, 'HH24:MI') as end_time, '' as location
 		FROM course c
+		JOIN course_session cs ON cs.course_id = c.id
 		WHERE c.created_by = $1
 
 		UNION ALL
 
-		SELECT e.id, 'event' as type, 'Événement' as title, '' as description, TO_CHAR(e.date, 'YYYY-MM-DD') as date, TO_CHAR(e.start_time, 'HH24:MI') as start_time, TO_CHAR(e.end_time, 'HH24:MI') as end_time, COALESCE(e.location, '') as location 
-		FROM event e 
-		JOIN event_participation ep ON e.id = ep.event_id 
+		SELECT e.id, 'event' as type, 'Événement' as title, '' as description, TO_CHAR(e.date, 'YYYY-MM-DD') as date, TO_CHAR(e.start_time, 'HH24:MI') as start_time, TO_CHAR(e.end_time, 'HH24:MI') as end_time, COALESCE(e.location, '') as location
+		FROM event e
+		JOIN event_participation ep ON e.id = ep.event_id
 		WHERE ep.user_id = $1
 
 		UNION ALL
 
-		SELECT id, 'personal' as type, title, COALESCE(description, '') as description, TO_CHAR(date, 'YYYY-MM-DD') as date, TO_CHAR(start_time, 'HH24:MI') as start_time, TO_CHAR(end_time, 'HH24:MI') as end_time, '' as location 
-		FROM personal_event 
+		SELECT id, 'personal' as type, title, COALESCE(description, '') as description, TO_CHAR(date, 'YYYY-MM-DD') as date, TO_CHAR(start_time, 'HH24:MI') as start_time, TO_CHAR(end_time, 'HH24:MI') as end_time, '' as location
+		FROM personal_event
 		WHERE user_id = $1
-		
+
 		ORDER BY date ASC, start_time ASC
 	`, userId)
 	if err != nil {
@@ -58,16 +60,17 @@ func (r *Repository) GetUserPlanning(userId pgtype.Int8) ([]PlanningItem, error)
 
 func (r *Repository) GetAllPlannings() ([]AdminPlanningItem, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT 
-			c.id, 
-			c.name as titre, 
-			'formation' as type, 
-			u.first_name || ' ' || u.last_name as responsable, 
-			COALESCE(TO_CHAR(c.date, 'YYYY-MM-DD'), '') as date, 
-			COALESCE(TO_CHAR(c.start_time, 'HH24:MI'), '') as heure_debut, 
-			COALESCE(TO_CHAR(c.end_time, 'HH24:MI'), '') as heure_fin,
+		SELECT
+			c.id,
+			c.name as titre,
+			'formation' as type,
+			u.first_name || ' ' || u.last_name as responsable,
+			TO_CHAR(cs.session_date, 'YYYY-MM-DD') as date,
+			TO_CHAR(cs.start_time, 'HH24:MI') as heure_debut,
+			TO_CHAR(cs.end_time, 'HH24:MI') as heure_fin,
 			(SELECT COUNT(*) FROM course_order WHERE course_id = c.id)::int as participants
 		FROM course c
+		JOIN course_session cs ON cs.course_id = c.id
 		JOIN users u ON c.created_by = u.id
 
 		UNION ALL

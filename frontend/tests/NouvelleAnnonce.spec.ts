@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
+import { createI18n } from 'vue-i18n'
 import NouvelleAnnonce from '../src/pages/client/NouvelleAnnonce.vue'
 import { useClientStore } from '../src/stores/client'
+import fr from '../src/i18n/locales/fr.json'
+import en from '../src/i18n/locales/en.json'
+
+const i18n = createI18n({ legacy: false, locale: 'fr', fallbackLocale: 'fr', messages: { fr, en } })
 
 const router = createRouter({
     history: createWebHistory(),
@@ -21,7 +26,7 @@ describe('NouvelleAnnonce Component', () => {
 
     it('shows validation errors when submitting empty form', async () => {
         const wrapper = mount(NouvelleAnnonce, {
-            global: { plugins: [router] }
+            global: { plugins: [router, i18n] }
         })
 
         await wrapper.find('form').trigger('submit.prevent')
@@ -40,7 +45,7 @@ describe('NouvelleAnnonce Component', () => {
         const pushSpy = vi.spyOn(router, 'push')
 
         const wrapper = mount(NouvelleAnnonce, {
-            global: { plugins: [router] }
+            global: { plugins: [router, i18n] }
         })
 
         // Fill form

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { API_BASE } from '@/config'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -16,13 +18,23 @@ const success = ref(false)
 onMounted(() => {
     token.value = route.query.token as string || ''
     if (!token.value) {
-        error.value = 'Lien de réinitialisation invalide ou manquant.'
+        error.value = t('auth.resetPassword.missingToken')
     }
 })
 
+function isPasswordStrong(pw: string): boolean {
+    if (pw.length < 10) return false
+    return /[a-zA-Z]/.test(pw) && /[0-9]/.test(pw)
+}
+
 const handleSubmit = async () => {
+    if (!isPasswordStrong(password.value)) {
+        error.value = t('auth.register.weakPassword')
+        return
+    }
+
     if (password.value !== confirmPassword.value) {
-        error.value = 'Les mots de passe ne correspondent pas.'
+        error.value = t('auth.register.passwordMismatch')
         return
     }
 
@@ -41,7 +53,7 @@ const handleSubmit = async () => {
 
         if (!res.ok) {
             const data = await res.text()
-            throw new Error(data || 'Erreur lors de la réinitialisation.')
+            throw new Error(data || t('auth.resetPassword.error'))
         }
 
         success.value = true
@@ -59,52 +71,53 @@ const handleSubmit = async () => {
 <template>
     <div class="reset-page">
         <div class="card">
-            <h2 class="title">Nouveau mot de passe</h2>
-            <p class="subtitle">Veuillez choisir un nouveau mot de passe pour votre compte.</p>
+            <h2 class="title">{{ t('auth.resetPassword.title') }}</h2>
+            <p class="subtitle">{{ t('auth.resetPassword.subtitle') }}</p>
 
             <div v-if="success" class="state-success">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                     <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                Mot de passe modifié avec succès ! Redirection vers la page de connexion...
+                {{ t('auth.resetPassword.success') }}
             </div>
 
             <form v-else-if="token" @submit.prevent="handleSubmit" class="form">
                 <div v-if="error" class="state-error">{{ error }}</div>
 
                 <div class="form-group">
-                    <label>Nouveau mot de passe</label>
-                    <input 
-                        type="password" 
-                        v-model="password" 
-                        required 
+                    <label>{{ t('auth.resetPassword.newPassword') }}</label>
+                    <input
+                        type="password"
+                        v-model="password"
+                        required
                         class="form-input"
                         placeholder="••••••••"
                     />
+                    <p class="form-hint">{{ t('auth.register.passwordHint') }}</p>
                 </div>
 
                 <div class="form-group">
-                    <label>Confirmer le mot de passe</label>
-                    <input 
-                        type="password" 
-                        v-model="confirmPassword" 
-                        required 
+                    <label>{{ t('auth.register.confirmPassword') }}</label>
+                    <input
+                        type="password"
+                        v-model="confirmPassword"
+                        required
                         class="form-input"
                         placeholder="••••••••"
                     />
                 </div>
 
                 <button type="submit" class="btn-submit" :disabled="isLoading">
-                    {{ isLoading ? 'Modification...' : 'Changer mon mot de passe' }}
+                    {{ isLoading ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit') }}
                 </button>
             </form>
 
             <div v-else class="state-error">
-                {{ error || 'Token manquant.' }}
+                {{ error || t('auth.resetPassword.missingToken') }}
             </div>
-            
-            <router-link to="/auth/login" class="back-link">Retour à la connexion</router-link>
+
+            <router-link to="/auth/login" class="back-link">{{ t('auth.forgotPassword.backToLogin') }}</router-link>
         </div>
     </div>
 </template>
@@ -158,6 +171,12 @@ const handleSubmit = async () => {
     font-size: 0.85rem;
     font-weight: 600;
     color: #353535;
+}
+
+.form-hint {
+    font-size: 0.78rem;
+    color: rgba(53, 53, 53, 0.5);
+    margin: 0;
 }
 
 .form-input {

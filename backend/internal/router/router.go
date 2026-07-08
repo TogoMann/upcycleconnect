@@ -3,8 +3,8 @@ package router
 import (
 	db "backend/internal/database"
 	"backend/internal/modules/advertisement"
-	"backend/internal/modules/brands"
 	"backend/internal/modules/auth"
+	"backend/internal/modules/brands"
 	"backend/internal/modules/cart"
 	"backend/internal/modules/chat"
 	"backend/internal/modules/city"
@@ -21,15 +21,18 @@ import (
 	"backend/internal/modules/item"
 	"backend/internal/modules/listing"
 	listingorder "backend/internal/modules/listing_order"
+	"backend/internal/modules/logs"
 	"backend/internal/modules/news"
 	"backend/internal/modules/notifications"
 	paymentmethods "backend/internal/modules/payment_methods"
+	"backend/internal/modules/payments"
 	"backend/internal/modules/planning"
 	"backend/internal/modules/plans"
 	"backend/internal/modules/post"
 	"backend/internal/modules/project"
-	"backend/internal/modules/logs"
 	"backend/internal/modules/reporting"
+	"backend/internal/modules/settings"
+	"backend/internal/modules/stats"
 	"backend/internal/modules/subscriptions"
 	"backend/internal/modules/thread"
 	"backend/internal/modules/users"
@@ -89,6 +92,37 @@ func NewRouter(db *pgxpool.Pool) *http.ServeMux {
 	brands.RegisterRoutes(r, db)
 	paymentmethods.RegisterRoutes(r, db)
 	logs.RegisterRoutes(r, db)
+
+	userRepo := users.NewRepository(db)
+	userSvc := users.NewService(userRepo)
+
+	containerRepo := container.NewRepository(db)
+	containerSvc := container.NewService(containerRepo)
+	itemRepo := item.NewRepository(db)
+	itemSvc := item.NewService(itemRepo, userSvc)
+
+	listingRepo := listing.NewRepository(db)
+	subRepo := subscriptions.NewRepository(db)
+	listingSvc := listing.NewService(listingRepo, subRepo, containerSvc, itemSvc, userSvc)
+
+	chatRepo := chat.NewRepository(db)
+	finRepo := financial.NewRepository(db)
+	finSvc := financial.NewService(finRepo)
+	listingOrderRepo := listingorder.NewRepository(db)
+	listingOrderSvc := listingorder.NewService(listingOrderRepo, finSvc, listingSvc, chatRepo, containerSvc, itemSvc, userSvc)
+
+	advertisementRepo := advertisement.NewRepository(db)
+	advertisementSvc := advertisement.NewService(advertisementRepo)
+
+	planRepo := plans.NewRepository(db)
+	planSvc := plans.NewService(planRepo)
+
+	subscriptionRepo := subscriptions.NewRepository(db)
+	subscriptionSvc := subscriptions.NewService(subscriptionRepo, userRepo, planRepo, finSvc)
+
+	payments.RegisterRoutes(r, db, listingSvc, listingOrderSvc, advertisementSvc, planSvc, subscriptionSvc)
+	stats.RegisterRoutes(r, db)
+	settings.RegisterRoutes(r, db)
 
 	return r
 }

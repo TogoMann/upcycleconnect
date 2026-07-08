@@ -1,47 +1,94 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
+import { API_BASE } from '@/config'
 
+const { t } = useI18n()
 const route = useRoute()
-const itemName = computed(() => (route.query.name as string) || 'votre article')
+const authStore = useAuthStore()
+const itemName = computed(() => (route.query.name as string) || t('client.confirmationPaiement.defaultItem'))
 const itemPrice = computed(() => Number(route.query.price) || 0)
+const sessionId = computed(() => route.query.session_id as string | undefined)
+
+const verifying = ref(false)
+const verified = ref(!sessionId.value)
+const verifyFailed = ref(false)
+
+onMounted(async () => {
+    if (!sessionId.value) return
+    verifying.value = true
+    try {
+        const res = await fetch(`${API_BASE}/payments/verify?session_id=${sessionId.value}`, {
+            headers: { Authorization: `Bearer ${authStore.token}` },
+        })
+        if (res.ok) {
+            const data = await res.json()
+            verified.value = !!data.paid
+            verifyFailed.value = !data.paid
+        } else {
+            verifyFailed.value = true
+        }
+    } catch {
+        verifyFailed.value = true
+    } finally {
+        verifying.value = false
+    }
+})
 </script>
 
 <template>
     <div class="page">
-        <div class="confirmation-card">
+        <div v-if="verifying" class="confirmation-card">
+            <p class="confirm-subtitle">{{ t('client.confirmationPaiement.verifying') }}</p>
+        </div>
+
+        <div v-else-if="verifyFailed" class="confirmation-card">
+            <h1 class="confirm-title">{{ t('client.confirmationPaiement.failedTitle') }}</h1>
+            <p class="confirm-subtitle">
+                {{ t('client.confirmationPaiement.failedSubtitle') }}
+            </p>
+            <div class="confirm-actions">
+                <router-link to="/particulier/catalogue" class="btn-secondary">
+                    {{ t('client.confirmationPaiement.backToCatalogue') }}
+                </router-link>
+            </div>
+        </div>
+
+        <div v-else class="confirmation-card">
             <div class="success-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
                 </svg>
             </div>
 
-            <h1 class="confirm-title">Paiement confirmé !</h1>
+            <h1 class="confirm-title">{{ t('client.confirmationPaiement.successTitle') }}</h1>
             <p class="confirm-subtitle">
-                Votre commande pour <strong>{{ itemName }}</strong> a bien été enregistrée.
+                {{ t('client.confirmationPaiement.successSubtitle', { item: itemName }) }}
             </p>
 
             <div class="receipt">
                 <div class="receipt-row">
-                    <span class="receipt-label">Article</span>
+                    <span class="receipt-label">{{ t('client.confirmationPaiement.item') }}</span>
                     <span class="receipt-value">{{ itemName }}</span>
                 </div>
                 <div class="receipt-row">
-                    <span class="receipt-label">Montant</span>
+                    <span class="receipt-label">{{ t('client.confirmationPaiement.amount') }}</span>
                     <span class="receipt-value receipt-value--price">{{ itemPrice.toFixed(2) }} €</span>
                 </div>
                 <div class="receipt-row">
-                    <span class="receipt-label">Statut</span>
-                    <span class="receipt-status">Payé</span>
+                    <span class="receipt-label">{{ t('client.confirmationPaiement.status') }}</span>
+                    <span class="receipt-status">{{ t('client.confirmationPaiement.paid') }}</span>
                 </div>
             </div>
 
             <div class="confirm-actions">
                 <router-link to="/particulier/catalogue" class="btn-secondary">
-                    Retour au catalogue
+                    {{ t('client.confirmationPaiement.backToCatalogue') }}
                 </router-link>
                 <router-link to="/particulier" class="btn-primary">
-                    Tableau de bord
+                    {{ t('client.confirmationPaiement.dashboard') }}
                 </router-link>
             </div>
         </div>

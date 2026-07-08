@@ -6,6 +6,8 @@ import (
 
 type Event struct {
 	Id          pgtype.Int8      `db:"id" json:"id"`
+	Title       string           `db:"title" json:"title"`
+	Description pgtype.Text      `db:"description" json:"description"`
 	Approved    bool             `db:"approved" json:"approved"`
 	ApprovedBy  pgtype.Int8      `db:"approved_by" json:"approved_by"`
 	ApprovedAt  pgtype.Timestamp `db:"approved_at" json:"approved_at"`
@@ -21,6 +23,8 @@ type Event struct {
 
 type EventFull struct {
 	Id               pgtype.Int8      `db:"id" json:"id"`
+	Title            string           `db:"title" json:"title"`
+	Description      pgtype.Text      `db:"description" json:"description"`
 	Approved         bool             `db:"approved" json:"approved"`
 	ApprovedBy       pgtype.Int8      `db:"approved_by" json:"approved_by"`
 	ApprovedAt       pgtype.Timestamp `db:"approved_at" json:"approved_at"`

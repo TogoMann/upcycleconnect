@@ -67,6 +67,22 @@ export const useCartStore = defineStore('cart', () => {
         }
     }
 
+    async function clearCart() {
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/cart`, {
+                method: 'DELETE',
+                headers: authHeaders(),
+            })
+            if (!res.ok) throw new Error('Erreur lors de la suppression du panier')
+            await fetchCart()
+        } catch (e: any) {
+            console.error('Clear Cart Error:', e)
+            error.value = e.message
+            throw e
+        }
+    }
+
     async function checkoutCart() {
         const catalogueStore = useCatalogueStore()
         error.value = null
@@ -96,6 +112,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchCart,
         addToCart,
         removeFromCart,
+        clearCart,
         checkoutCart
     }
 })

@@ -2,7 +2,9 @@
 import { API_BASE } from '@/config'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 interface Annonce {
@@ -51,7 +53,7 @@ onMounted(() => {
 })
 
 async function deleteAnnonce(id: number) {
-    if (!confirm('Supprimer cette annonce ?')) return
+    if (!confirm(t('admin.annonces.confirmDelete'))) return
     try {
         const res = await fetch(`${API_BASE}/listing/${id}`, {
             method: 'DELETE',
@@ -91,52 +93,52 @@ async function disapproveAnnonce(id: number) {
 <template>
     <div class="admin-annonces">
         <div class="page-header">
-            <h1 class="page-title">Annonces.</h1>
-            <p class="page-subtitle">Gestion des annonces de la plateforme.</p>
+            <h1 class="page-title">{{ t('admin.annonces.pageTitle') }}</h1>
+            <p class="page-subtitle">{{ t('admin.annonces.subtitle') }}</p>
         </div>
 
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Nom</th>
-                        <th>Catégorie</th>
-                        <th>Prix</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
+                        <th>{{ t('admin.annonces.colName') }}</th>
+                        <th>{{ t('admin.annonces.colCategory') }}</th>
+                        <th>{{ t('admin.annonces.colPrice') }}</th>
+                        <th>{{ t('admin.annonces.colStatus') }}</th>
+                        <th>{{ t('admin.annonces.colActions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="loading"><td colspan="5" class="empty">Chargement...</td></tr>
-                    <tr v-else-if="annonces.length === 0"><td colspan="5" class="empty">Aucune annonce.</td></tr>
+                    <tr v-if="loading"><td colspan="5" class="empty">{{ t('admin.common.loading') }}</td></tr>
+                    <tr v-else-if="annonces.length === 0"><td colspan="5" class="empty">{{ t('admin.annonces.empty') }}</td></tr>
                     <tr v-for="a in annonces" :key="a.id">
                         <td class="td-bold">{{ a.name }}</td>
                         <td class="td-muted">{{ a.category }}</td>
                         <td>{{ formatPrice(a.price) }} €</td>
                         <td>
                             <span class="badge" :class="a.approved ? 'badge--active' : 'badge--inactive'">
-                                {{ a.approved ? 'Approuvée' : 'En attente' }}
+                                {{ a.approved ? t('admin.common.approved') : t('admin.common.pending') }}
                             </span>
                         </td>
                         <td class="td-actions">
-                            <button v-if="!a.approved" class="btn-icon" title="Approuver" @click="approveAnnonce(a.id)">
+                            <button v-if="!a.approved" class="btn-icon" :title="t('admin.common.approve')" @click="approveAnnonce(a.id)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             </button>
-                            <button v-else class="btn-icon" title="Désapprouver" @click="disapproveAnnonce(a.id)">
+                            <button v-else class="btn-icon" :title="t('admin.common.disapprove')" @click="disapproveAnnonce(a.id)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
-                            <router-link :to="`/admin/annonces/${a.id}`" class="btn-icon" title="Voir">
+                            <router-link :to="`/admin/annonces/${a.id}`" class="btn-icon" :title="t('admin.common.view')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                     <circle cx="12" cy="12" r="3" />
                                 </svg>
                             </router-link>
-                            <button class="btn-icon btn-icon--danger" title="Supprimer" @click="deleteAnnonce(a.id)">
+                            <button class="btn-icon btn-icon--danger" :title="t('admin.common.delete')" @click="deleteAnnonce(a.id)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6" />
                                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -152,16 +154,16 @@ async function disapproveAnnonce(id: number) {
           <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
               <p class="text-sm text-gray-700 flex items-center gap-2">
-                Page 
-                <input 
-                  type="number" 
-                  min="1" 
-                  :max="totalPages" 
-                  v-model.lazy="currentPage" 
-                  @change="fetchAnnonces(currentPage)" 
-                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600" 
+                {{ t('admin.common.page') }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="totalPages"
+                  v-model.lazy="currentPage"
+                  @change="fetchAnnonces(currentPage)"
+                  class="w-16 px-2 py-1 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
                 />
-                sur <span class="font-medium">{{ totalPages }}</span>
+                {{ t('admin.common.of') }} <span class="font-medium">{{ totalPages }}</span>
               </p>
             </div>
             <div>
@@ -171,7 +173,7 @@ async function disapproveAnnonce(id: number) {
                   :disabled="currentPage === 1"
                   class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                 >
-                  <span class="sr-only">Précédent</span>
+                  <span class="sr-only">{{ t('admin.common.previous') }}</span>
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
                   </svg>
@@ -181,7 +183,7 @@ async function disapproveAnnonce(id: number) {
                   :disabled="currentPage === totalPages"
                   class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                 >
-                  <span class="sr-only">Suivant</span>
+                  <span class="sr-only">{{ t('admin.common.next') }}</span>
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
                   </svg>

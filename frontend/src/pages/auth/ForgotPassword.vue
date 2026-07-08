@@ -1,39 +1,59 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { API_BASE } from '@/config'
 
+const { t } = useI18n()
 const sent = ref(false)
+const sending = ref(false)
+const error = ref('')
 const form = reactive({ email: '' })
 
-function handleSubmit() {
-    console.log('forgot password:', form.email)
-    sent.value = true
+async function handleSubmit() {
+    sending.value = true
+    error.value = ''
+    try {
+        const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: form.email }),
+        })
+        if (!res.ok) throw new Error(t('auth.forgotPassword.error'))
+        sent.value = true
+    } catch (e: any) {
+        error.value = e.message || t('auth.forgotPassword.error')
+    } finally {
+        sending.value = false
+    }
 }
 </script>
 
 <template>
     <div class="page-content">
         <div class="container">
-            <h1 class="page-title">Mot de passe oublié.</h1>
+            <h1 class="page-title">{{ t('auth.forgotPassword.title') }}</h1>
 
             <div v-if="!sent" class="form-wrap">
                 <p class="form-desc">
-                    Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser
-                    votre mot de passe.
+                    {{ t('auth.forgotPassword.description') }}
                 </p>
                 <form class="forgot-form" @submit.prevent="handleSubmit">
                     <input
                         v-model="form.email"
                         type="email"
-                        placeholder="Email"
+                        :placeholder="t('auth.register.email')"
                         class="form-input"
                         autocomplete="email"
                         required
                     />
-                    <button type="submit" class="btn-submit">Envoyer le lien</button>
+                    <p v-if="error" class="form-error">{{ error }}</p>
+                    <button type="submit" class="btn-submit" :disabled="sending">
+                        {{ sending ? t('auth.forgotPassword.sending') : t('auth.forgotPassword.submit') }}
+                    </button>
                 </form>
                 <div class="back-wrap">
                     <router-link to="/auth/login" class="back-link">
-                        Retour à la connexion
+                        {{ t('auth.forgotPassword.backToLogin') }}
                     </router-link>
                 </div>
             </div>
@@ -44,12 +64,11 @@ function handleSubmit() {
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 2.92 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.09 6.09l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
                 </div>
-                <h2 class="success-title">Email envoyé !</h2>
+                <h2 class="success-title">{{ t('auth.forgotPassword.successTitle') }}</h2>
                 <p class="success-desc">
-                    Si cette adresse est associée à un compte, vous recevrez un email avec un lien
-                    de réinitialisation dans quelques minutes.
+                    {{ t('auth.forgotPassword.successDescription') }}
                 </p>
-                <router-link to="/auth/login" class="btn-back">Retour à la connexion</router-link>
+                <router-link to="/auth/login" class="btn-back">{{ t('auth.forgotPassword.backToLogin') }}</router-link>
             </div>
         </div>
     </div>
@@ -143,6 +162,20 @@ function handleSubmit() {
 }
 .btn-submit:active {
     transform: translateY(0);
+}
+.btn-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.form-error {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    margin: 0;
 }
 
 .back-wrap {

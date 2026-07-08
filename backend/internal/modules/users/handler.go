@@ -222,6 +222,25 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	role, _ := claims["role"].(string)
+
+	if !ok {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	if int64(sub) != idInt && role != string(Admin) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	score, err := h.service.GetScore(pgtype.Int8{Int64: idInt, Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -266,6 +285,30 @@ func (h *Handler) GetScoreHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(history)
+}
+
+func (h *Handler) GetMyQuests(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	quests, err := h.service.GetQuestProgress(pgtype.Int8{Int64: int64(sub), Valid: true})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(quests)
 }
 
 func (h *Handler) UpdateTutorialSeen(w http.ResponseWriter, r *http.Request) {

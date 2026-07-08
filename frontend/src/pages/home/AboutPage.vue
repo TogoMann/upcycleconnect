@@ -1,44 +1,46 @@
 <script setup lang="ts">
-const valeurs = [
-    {
-        num: '01',
-        titre: 'Économie circulaire',
-        texte: 'Nous croyons en un modèle où les ressources ne sont jamais gaspillées. Chaque objet a une deuxième, une troisième vie.',
-    },
-    {
-        num: '02',
-        titre: 'Savoir-faire artisanal',
-        texte: "Nous valorisons le travail manuel et les compétences locales. Nos artisans sont au cœur de chaque projet que nous accompagnons.",
-    },
-    {
-        num: '03',
-        titre: 'Communauté & partage',
-        texte: "La plateforme vit grâce à ses membres. Partager une technique, offrir un objet, trouver un réparateur — tout commence ici.",
-    },
-    {
-        num: '04',
-        titre: 'Impact mesurable',
-        texte: 'Chaque action sur la plateforme contribue à réduire les déchets. Nous rendons cet impact visible et concret pour chacun.',
-    },
-]
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { API_BASE } from '@/config'
 
-const chiffres = [
-    { valeur: '12 000+', label: 'Membres actifs' },
-    { valeur: '4 800+', label: 'Objets remis en vie' },
-    { valeur: '340+', label: 'Artisans partenaires' },
-    { valeur: '18', label: 'Régions couvertes' },
-]
+const { t } = useI18n()
+
+const valeurs = computed(() => [
+    { num: '01', titre: t('about.values.item1.title'), texte: t('about.values.item1.text') },
+    { num: '02', titre: t('about.values.item2.title'), texte: t('about.values.item2.text') },
+    { num: '03', titre: t('about.values.item3.title'), texte: t('about.values.item3.text') },
+    { num: '04', titre: t('about.values.item4.title'), texte: t('about.values.item4.text') },
+])
+
+const stats = ref({
+    active_members: 0,
+    items_renewed: 0,
+    partner_artisans: 0,
+    regions_covered: 0,
+})
+
+onMounted(async () => {
+    try {
+        const res = await fetch(`${API_BASE}/stats/public`)
+        if (res.ok) stats.value = await res.json()
+    } catch {}
+})
+
+const chiffres = computed(() => [
+    { valeur: `${stats.value.active_members}`, label: t('about.stats.activeMembers') },
+    { valeur: `${stats.value.items_renewed}`, label: t('about.stats.itemsRenewed') },
+    { valeur: `${stats.value.partner_artisans}`, label: t('about.stats.partnerArtisans') },
+    { valeur: `${stats.value.regions_covered}`, label: t('about.stats.regionsCovered') },
+])
 </script>
 
 <template>
     <div class="page-content">
         <section class="hero">
             <div class="container">
-                <h1 class="hero-title">Notre mission.</h1>
+                <h1 class="hero-title">{{ t('about.hero.title') }}</h1>
                 <p class="hero-subtitle">
-                    UpCycleConnect est né d'une conviction simple : les objets que nous possédons
-                    méritent mieux que la poubelle. Nous construisons les ponts entre ceux qui ont
-                    et ceux qui savent faire.
+                    {{ t('about.hero.subtitle') }}
                 </p>
             </div>
         </section>
@@ -48,7 +50,7 @@ const chiffres = [
                 <div class="hero-img-wrap">
                     <img
                         src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1400&q=85"
-                        alt="Atelier artisanal upcycling"
+                        :alt="t('about.hero.imageAlt')"
                         class="hero-img"
                     />
                 </div>
@@ -70,11 +72,10 @@ const chiffres = [
             <div class="container valeurs-inner">
                 <div class="valeurs-header">
                     <h2 class="valeurs-title">
-                        Ce en quoi nous <span class="green">croyons.</span>
+                        {{ t('about.values.title') }} <span class="green">{{ t('about.values.titleAccent') }}</span>
                     </h2>
                     <p class="valeurs-subtitle">
-                        Quatre principes guident chaque décision que nous prenons, chaque
-                        fonctionnalité que nous développons.
+                        {{ t('about.values.subtitle') }}
                     </p>
                 </div>
 
@@ -95,24 +96,20 @@ const chiffres = [
                 <div class="story-img-wrap">
                     <img
                         src="https://images.unsplash.com/photo-1582738412745-8660e269a986?w=700&q=80"
-                        alt="Objet upcyclé"
+                        :alt="t('about.story.imageAlt')"
                         class="story-img"
                     />
                 </div>
                 <div class="story-content">
-                    <h2 class="story-title">Notre histoire.</h2>
+                    <h2 class="story-title">{{ t('about.story.title') }}</h2>
                     <p class="story-text">
-                        UpCycleConnect est né en 2023 de la rencontre entre des designers, des
-                        artisans et des ingénieurs partageant la même frustration : il était trop
-                        compliqué de donner une seconde vie à ses objets.
+                        {{ t('about.story.text1') }}
                     </p>
                     <p class="story-text">
-                        Depuis, nous avons construit une plateforme qui simplifie chaque étape —
-                        trouver un réparateur, déposer une annonce, rejoindre un atelier ou
-                        simplement s'inspirer de ce que la communauté crée chaque jour.
+                        {{ t('about.story.text2') }}
                     </p>
                     <router-link to="/auth/register" class="btn-join">
-                        Rejoindre la communauté
+                        {{ t('about.story.cta') }}
                     </router-link>
                 </div>
             </div>

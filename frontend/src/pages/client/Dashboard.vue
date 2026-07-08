@@ -2,8 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useClientStore } from '@/stores/client'
+import { useI18n } from 'vue-i18n'
 import TutorialOverlay from '@/components/TutorialOverlay.vue'
 
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const clientStore = useClientStore()
 
@@ -40,9 +42,9 @@ onMounted(async () => {
 
         <div class="page-header">
             <h1 class="page-title">
-                Bonjour, {{ authStore.user?.first_name || authStore.user?.username || 'vous' }}.
+                {{ t('client.dashboard.greeting', { name: authStore.user?.first_name || authStore.user?.username || t('client.dashboard.you') }) }}
             </h1>
-            <p class="page-subtitle">Voici un résumé de votre activité upcycling.</p>
+            <p class="page-subtitle">{{ t('client.dashboard.subtitle') }}</p>
         </div>
 
         <div class="kpi-grid">
@@ -53,7 +55,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ kpiScore }}</div>
-                <div class="kpi-label">Score upcycling</div>
+                <div class="kpi-label">{{ t('client.dashboard.upcyclingScore') }}</div>
             </router-link>
 
             <router-link to="/particulier/annonces" class="kpi-card kpi-card--link">
@@ -64,7 +66,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ kpiAnnonces }}</div>
-                <div class="kpi-label">Annonces actives</div>
+                <div class="kpi-label">{{ t('client.dashboard.activeListings') }}</div>
             </router-link>
 
             <router-link to="/particulier/conteneurs" class="kpi-card kpi-card--link">
@@ -74,7 +76,7 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ kpiDepots }}</div>
-                <div class="kpi-label">Objets déposés</div>
+                <div class="kpi-label">{{ t('client.dashboard.itemsDeposited') }}</div>
             </router-link>
 
             <router-link to="/particulier/planning" class="kpi-card kpi-card--link">
@@ -87,26 +89,26 @@ onMounted(async () => {
                     </svg>
                 </div>
                 <div class="kpi-value">{{ kpiEntries }}</div>
-                <div class="kpi-label">Créneaux planifiés</div>
+                <div class="kpi-label">{{ t('client.dashboard.plannedSlots') }}</div>
             </router-link>
         </div>
 
         <div class="actions-section">
-            <h2 class="section-title">Mes codes de retrait (Casiers)</h2>
+            <h2 class="section-title">{{ t('client.dashboard.lockerCodesTitle') }}</h2>
             <div v-if="clientStore.lockerAccesses.length === 0" class="no-data">
-                <p>Vous n'avez aucun objet en attente de retrait dans un casier.</p>
+                <p>{{ t('client.dashboard.noLockerItems') }}</p>
             </div>
             <div v-else class="lockers-grid">
                 <div v-for="access in clientStore.lockerAccesses" :key="access.id.Int64" class="locker-card">
                     <div class="locker-header">
-                        <h3>Casier {{ access.locker_label }}</h3>
-                        <span class="locker-status">À retirer avant le {{ new Date(access.expires_at.Time).toLocaleDateString('fr-FR') }}</span>
+                        <h3>{{ t('client.dashboard.locker', { label: access.locker_label }) }}</h3>
+                        <span class="locker-status">{{ t('client.dashboard.pickupBefore', { date: new Date(access.expires_at.Time).toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR') }) }}</span>
                     </div>
                     <div class="locker-body">
                         <p class="locker-address">📍 {{ access.container_address }}</p>
                         <div class="qr-container">
-                            <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${access.access_code}`" alt="QR Code d'accès au casier" class="qr-code" />
-                            <p class="qr-hint">Scannez ce code au conteneur pour déverrouiller le casier et récupérer votre objet.</p>
+                            <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${access.access_code}`" :alt="t('client.dashboard.qrAlt')" class="qr-code" />
+                            <p class="qr-hint">{{ t('client.dashboard.qrHint') }}</p>
                         </div>
                     </div>
                 </div>
@@ -114,7 +116,7 @@ onMounted(async () => {
         </div>
 
         <div class="actions-section">
-            <h2 class="section-title">Actions rapides</h2>
+            <h2 class="section-title">{{ t('client.dashboard.quickActionsTitle') }}</h2>
             <div class="actions-grid">
                 <router-link to="/particulier/conteneurs/deposer" class="action-card">
                     <div class="action-icon">
@@ -124,8 +126,8 @@ onMounted(async () => {
                             <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
                         </svg>
                     </div>
-                    <span class="action-label">Déposer un objet</span>
-                    <span class="action-desc">Planifier un créneau de dépôt</span>
+                    <span class="action-label">{{ t('client.dashboard.depositItem') }}</span>
+                    <span class="action-desc">{{ t('client.dashboard.depositItemDesc') }}</span>
                 </router-link>
 
                 <router-link to="/particulier/annonces/nouvelle" class="action-card">
@@ -136,8 +138,8 @@ onMounted(async () => {
                             <line x1="8" y1="12" x2="16" y2="12" />
                         </svg>
                     </div>
-                    <span class="action-label">Nouvelle annonce</span>
-                    <span class="action-desc">Mettre un objet en vente</span>
+                    <span class="action-label">{{ t('client.dashboard.newListing') }}</span>
+                    <span class="action-desc">{{ t('client.dashboard.newListingDesc') }}</span>
                 </router-link>
 
                 <router-link to="/particulier/catalogue" class="action-card">
@@ -149,8 +151,8 @@ onMounted(async () => {
                             <rect x="3" y="14" width="7" height="7" />
                         </svg>
                     </div>
-                    <span class="action-label">Explorer le catalogue</span>
-                    <span class="action-desc">Ateliers et événements</span>
+                    <span class="action-label">{{ t('client.dashboard.exploreCatalogue') }}</span>
+                    <span class="action-desc">{{ t('client.dashboard.exploreCatalogueDesc') }}</span>
                 </router-link>
             </div>
         </div>

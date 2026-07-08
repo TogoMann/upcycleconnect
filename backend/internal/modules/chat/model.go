@@ -21,13 +21,17 @@ const (
 
 type Conversation struct {
 	Id           int64            `db:"id" json:"id"`
-	ListingId    int64            `db:"listing_id" json:"listing_id"`
+	ListingId    pgtype.Int8      `db:"listing_id" json:"listing_id"`
+	CourseId     pgtype.Int8      `db:"course_id" json:"course_id"`
 	BuyerId      int64            `db:"buyer_id" json:"buyer_id"`
 	SellerId     int64            `db:"seller_id" json:"seller_id"`
 	IsClosed     bool             `db:"is_closed" json:"is_closed"`
 	CreatedAt    pgtype.Timestamp `db:"created_at" json:"created_at"`
 	UpdatedAt    pgtype.Timestamp `db:"updated_at" json:"updated_at"`
 	ListingTitle string           `json:"listing_title"`
+	CourseTitle  string           `json:"course_title"`
+	BuyerName    string           `json:"buyer_name"`
+	SellerName   string           `json:"seller_name"`
 }
 
 type Message struct {
@@ -52,6 +56,7 @@ type MessageEditHistory struct {
 
 type CreateMessageRequest struct {
 	ListingId      int64       `json:"listing_id"`
+	CourseId       int64       `json:"course_id"`
 	ConversationId int64       `json:"conversation_id"`
 	Content        string      `json:"content"`
 	MessageType    MessageType `json:"message_type"`

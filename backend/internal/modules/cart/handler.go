@@ -115,6 +115,27 @@ func (h *Handler) Remove(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) Clear(w http.ResponseWriter, r *http.Request) {
+	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
+
+	userId := pgtype.Int8{Int64: int64(sub), Valid: true}
+	if err := h.service.Clear(userId); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
 	if !ok {

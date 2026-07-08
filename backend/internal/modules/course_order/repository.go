@@ -85,6 +85,15 @@ func (r *Repository) Delete(id pgtype.Int8) error {
 	return nil
 }
 
+func (r *Repository) CountByCourseId(courseId pgtype.Int8) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(db.Ctx, "SELECT COUNT(*) FROM course_order WHERE course_id = $1", courseId).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("package courseorder/repo CountByCourseId query: %w", err)
+	}
+	return count, nil
+}
+
 func (r *Repository) ExistsById(id pgtype.Int8) (bool, error) {
 	var idFound int64
 	err := r.db.QueryRow(db.Ctx, "SELECT 1 FROM course_order WHERE id = $1", id).Scan(&idFound)

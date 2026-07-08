@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useChatStore, type Conversation, type Message, type EditHistory } from '@/stores/chat';
+import { useI18n } from 'vue-i18n';
 
+const { t, locale } = useI18n();
 const chatStore = useChatStore();
 
+const CENSORED_MARKER = '[Message censuré par la modération]';
+
 const conversations = ref<Conversation[]>([]);
-const selectedListingId = ref<number | null>(null);
+const selectedListingId = ref<string | null>(null);
 const selectedConv = ref<Conversation | null>(null);
 const messages = ref<Message[]>([]);
 const history = ref<EditHistory[]>([]);
@@ -17,7 +21,7 @@ async function loadConversations() {
     try {
         conversations.value = await chatStore.adminGetConversations();
         // If a listing was selected, keep it, otherwise clear selections
-        if (selectedListingId.value && !listingsWithConversations.value.some(l => l.listing_id === selectedListingId.value)) {
+        if (selectedListingId.value && !listingsWithConversations.value.some(l => l.group_key === selectedListingId.value)) {
             selectedListingId.value = null;
             selectedConv.value = null;
         }
@@ -28,31 +32,38 @@ async function loadConversations() {
     }
 }
 
-// Group conversations by listing
+function conversationGroupKey(conv: Conversation): string {
+    return conv.course_id ? `course-${conv.course_id}` : `listing-${conv.listing_id}`;
+}
+
+// Group conversations by listing or course
 const listingsWithConversations = computed(() => {
-    const groups: { [key: number]: { listing_id: number; listing_title: string; conversations: Conversation[] } } = {};
+    const groups: { [key: string]: { group_key: string; listing_title: string; conversations: Conversation[] } } = {};
     for (const conv of conversations.value) {
-        const title = conv.listing_title || `Annonce #${conv.listing_id}`;
-        if (!groups[conv.listing_id]) {
-            groups[conv.listing_id] = {
-                listing_id: conv.listing_id,
+        const key = conversationGroupKey(conv);
+        const title = conv.course_id
+            ? (conv.course_title || t('admin.chatReview.trainingFallback', { id: conv.course_id }))
+            : (conv.listing_title || t('admin.chatReview.listingFallback', { id: conv.listing_id }));
+        if (!groups[key]) {
+            groups[key] = {
+                group_key: key,
                 listing_title: title,
                 conversations: []
             };
         }
-        groups[conv.listing_id].conversations.push(conv);
+        groups[key].conversations.push(conv);
     }
     return Object.values(groups);
 });
 
 // Selected listing object
 const selectedListing = computed(() => {
-    return listingsWithConversations.value.find(l => l.listing_id === selectedListingId.value) || null;
+    return listingsWithConversations.value.find(l => l.group_key === selectedListingId.value) || null;
 });
 
-function selectListing(listingId: number) {
-    selectedListingId.value = listingId;
-    const group = listingsWithConversations.value.find(l => l.listing_id === listingId);
+function selectListing(groupKey: string) {
+    selectedListingId.value = groupKey;
+    const group = listingsWithConversations.value.find(l => l.group_key === groupKey);
     if (group && group.conversations.length > 0) {
         selectConversation(group.conversations[0]);
     } else {
@@ -83,7 +94,7 @@ function getMessageHistory(msgId: number) {
 }
 
 async function censorMessage(msgId: number) {
-    if (!confirm('Voulez-vous vraiment censurer ce message ?')) return;
+    if (!confirm(t('admin.chatReview.confirmCensor'))) return;
     loading.value = true;
     try {
         await chatStore.adminCensorMessage(msgId);
@@ -91,7 +102,7 @@ async function censorMessage(msgId: number) {
             await selectConversation(selectedConv.value);
         }
     } catch (e) {
-        alert('Erreur lors de la censure du message.');
+        alert(t('admin.chatReview.errorCensor'));
     } finally {
         loading.value = false;
     }
@@ -104,44 +115,41 @@ onMounted(loadConversations);
     <div class="admin-chat">
         <header class="page-header">
             <div>
-                <h1 class="page-title">Modération des Conversations.</h1>
-                <p class="page-subtitle">Sélectionnez un sujet, puis une conversation pour examiner et modérer les échanges.</p>
+                <h1 class="page-title">{{ t('admin.chatReview.pageTitle') }}</h1>
+                <p class="page-subtitle">{{ t('admin.chatReview.subtitle') }}</p>
             </div>
             <button @click="loadConversations" class="btn-refresh" :disabled="loading">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                Actualiser
+                {{ t('admin.chatReview.refresh') }}
             </button>
         </header>
 
-        <!-- 2-Column Navigation Layout -->
         <div class="two-column-layout">
-            
-            <!-- Column 1: Subjects (Listings) -->
+
             <section class="column column--subjects">
-                <h3 class="column-title">Annonces</h3>
+                <h3 class="column-title">{{ t('admin.chatReview.subjects') }}</h3>
                 <div class="column-content">
-                    <div v-if="loading && listingsWithConversations.length === 0" class="loading-state">Chargement...</div>
-                    <div v-else-if="listingsWithConversations.length === 0" class="empty-state">Aucun sujet de discussion.</div>
-                    
-                    <div v-for="list in listingsWithConversations" :key="list.listing_id"
+                    <div v-if="loading && listingsWithConversations.length === 0" class="loading-state">{{ t('admin.chatReview.loading') }}</div>
+                    <div v-else-if="listingsWithConversations.length === 0" class="empty-state">{{ t('admin.chatReview.noSubjects') }}</div>
+
+                    <div v-for="list in listingsWithConversations" :key="list.group_key"
                          class="list-item list-item--subject"
-                         :class="{ active: selectedListingId === list.listing_id }"
-                         @click="selectListing(list.listing_id)">
+                         :class="{ active: selectedListingId === list.group_key }"
+                         @click="selectListing(list.group_key)">
                         <div class="subject-title">{{ list.listing_title }}</div>
-                        <div class="subject-meta">{{ list.conversations.length }} conversation(s)</div>
+                        <div class="subject-meta">{{ t('admin.chatReview.conversationsCount', { count: list.conversations.length }) }}</div>
                     </div>
                 </div>
             </section>
 
-            <!-- Column 2: Live Transcript, Tabs & Details -->
             <section class="column column--transcript">
-                <h3 class="column-title">Messages</h3>
+                <h3 class="column-title">{{ t('admin.chatReview.messages') }}</h3>
                 <div class="column-content transcript-container">
                     <div v-if="!selectedListingId" class="select-prompt">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
-                        <p>Sélectionnez un sujet à gauche pour afficher les discussions.</p>
+                        <p>{{ t('admin.chatReview.selectSubjectPrompt') }}</p>
                     </div>
 
                     <div v-else class="transcript-wrapper">
@@ -160,25 +168,27 @@ onMounted(loadConversations);
                                 <div class="chat-feed-header">
                                     <div>
                                         <h4 class="chat-feed-title">{{ selectedListing?.listing_title }}</h4>
-                                        <p class="chat-feed-subtitle">Réf. Annonce #{{ selectedConv.listing_id }} | Chat #{{ selectedConv.id }}</p>
+                                        <p class="chat-feed-subtitle">
+                                            {{ selectedConv.course_id ? t('admin.chatReview.trainingRef', { id: selectedConv.course_id }) : t('admin.chatReview.listingRef', { id: selectedConv.listing_id }) }} | Chat #{{ selectedConv.id }}
+                                        </p>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <button class="btn-toggle-audit" @click="showAudit = !showAudit">
-                                            {{ showAudit ? '✕ Masquer l\'historique' : '📜 Historique (' + history.length + ')' }}
+                                            {{ showAudit ? t('admin.chatReview.hideHistory') : t('admin.chatReview.showHistory', { count: history.length }) }}
                                         </button>
                                     </div>
                                 </div>
 
                                 <div class="messages-scroll">
-                                    <div v-if="messages.length === 0" class="no-messages">Aucun message échangé.</div>
-                                    <div v-for="msg in messages" :key="msg.id" 
+                                    <div v-if="messages.length === 0" class="no-messages">{{ t('admin.chatReview.noMessages') }}</div>
+                                    <div v-for="msg in messages" :key="msg.id"
                                          class="message-row"
                                          :class="msg.sender_id === selectedConv.buyer_id ? 'msg-left' : 'msg-right'">
-                                        
+
                                         <div class="msg-meta">
                                             <strong>{{ msg.sender_id === selectedConv.buyer_id ? selectedConv.buyer_name : selectedConv.seller_name }}</strong>
                                             <span class="role-label" :class="msg.sender_id === selectedConv.buyer_id ? 'buyer' : 'seller'">
-                                                {{ msg.sender_id === selectedConv.buyer_id ? 'Acheteur' : 'Vendeur' }}
+                                                {{ msg.sender_id === selectedConv.buyer_id ? t('admin.chatReview.buyer') : t('admin.chatReview.seller') }}
                                             </span>
                                             <span class="time-label">{{ new Date(msg.created_at.Time ?? msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
                                         </div>
@@ -186,45 +196,44 @@ onMounted(loadConversations);
                                         <div class="msg-bubble" :class="{
                                             'bubble-buyer': msg.sender_id === selectedConv.buyer_id,
                                             'bubble-seller': msg.sender_id !== selectedConv.buyer_id,
-                                            'bubble-censored': msg.content === '[Message censuré par la modération]'
+                                            'bubble-censored': msg.content === CENSORED_MARKER
                                         }">
-                                            <div class="msg-text">{{ msg.content }}</div>
+                                            <div class="msg-text">{{ msg.content === CENSORED_MARKER ? t('admin.chatReview.censoredMessage') : msg.content }}</div>
 
                                             <div v-if="msg.message_type === 'price_proposal'" class="proposal-box">
-                                                <div class="proposal-title font-semibold">Proposition de prix</div>
+                                                <div class="proposal-title font-semibold">{{ t('admin.chatReview.priceProposal') }}</div>
                                                 <div class="proposal-price">{{ msg.proposed_price }} €</div>
                                                 <span class="proposal-badge" :class="msg.proposal_status">
-                                                    Statut : {{ msg.proposal_status }}
+                                                    {{ t('admin.chatReview.statusLabel', { status: msg.proposal_status }) }}
                                                 </span>
                                             </div>
 
-                                            <button v-if="msg.content !== '[Message censuré par la modération]'"
+                                            <button v-if="msg.content !== CENSORED_MARKER"
                                                     class="btn-bubble-censor"
                                                     @click.stop="censorMessage(msg.id)">
-                                                🚫 Censurer le message
+                                                {{ t('admin.chatReview.censorMessage') }}
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Message Audit History logs -->
                             <div v-if="showAudit" class="audit-sidebar">
-                                <h4 class="audit-title">Historique des éditions</h4>
+                                <h4 class="audit-title">{{ t('admin.chatReview.editHistory') }}</h4>
                                 <div class="audit-scroll">
-                                    <div v-if="history.length === 0" class="no-audit">Aucune modification détectée sur les messages de ce chat.</div>
+                                    <div v-if="history.length === 0" class="no-audit">{{ t('admin.chatReview.noEdits') }}</div>
                                     <div v-for="h in history" :key="h.id" class="audit-card">
                                         <div class="audit-card-meta">
-                                            <span class="msg-id">Msg #{{ h.message_id }}</span>
-                                            <span class="audit-date">{{ new Date(h.edited_at.Time ?? h.edited_at).toLocaleString('fr-FR', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) }}</span>
+                                            <span class="msg-id">{{ t('admin.chatReview.msgNumber', { id: h.message_id }) }}</span>
+                                            <span class="audit-date">{{ new Date(h.edited_at.Time ?? h.edited_at).toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) }}</span>
                                         </div>
                                         <div class="audit-card-body">
                                             <div v-if="h.old_content" class="audit-change-item">
-                                                <span class="change-label">Ancien texte :</span>
+                                                <span class="change-label">{{ t('admin.chatReview.oldText') }}</span>
                                                 <span class="change-val">"{{ h.old_content }}"</span>
                                             </div>
                                             <div v-if="h.old_proposed_price" class="audit-change-item">
-                                                <span class="change-label">Ancien prix :</span>
+                                                <span class="change-label">{{ t('admin.chatReview.oldPrice') }}</span>
                                                 <span class="change-val">{{ h.old_proposed_price }} €</span>
                                             </div>
                                         </div>
@@ -233,7 +242,7 @@ onMounted(loadConversations);
                             </div>
                         </div>
                         <div v-else class="select-prompt">
-                            <p>Aucune conversation sélectionnée pour ce sujet.</p>
+                            <p>{{ t('admin.chatReview.noConversationSelected') }}</p>
                         </div>
                     </div>
                 </div>

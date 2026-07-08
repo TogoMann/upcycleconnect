@@ -4,12 +4,14 @@ import { API_BASE } from '@/config'
 export interface Conversation {
   id: number
   listing_id: number
+  course_id?: number
   buyer_id: number
   seller_id: number
   is_closed: boolean
   created_at: any
   updated_at: any
   listing_title?: string
+  course_title?: string
   buyer_name?: string
   seller_name?: string
 }
@@ -38,11 +40,12 @@ export const useChatStore = defineStore('chat', () => {
   const authStore = useAuthStore()
 
   async function sendMessage(
-    listingId: number,
+    listingId: number | undefined,
     content: string,
     type: 'text' | 'price_proposal' = 'text',
     price?: number,
     conversationId?: number,
+    courseId?: number,
   ) {
     const res = await fetch(`${API_BASE}/chat/messages`, {
       method: 'POST',
@@ -52,6 +55,7 @@ export const useChatStore = defineStore('chat', () => {
       },
       body: JSON.stringify({
         listing_id: listingId,
+        course_id: courseId,
         conversation_id: conversationId,
         content: content,
         message_type: type,

@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const router = useRouter()
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-const footerLinks = ['À propos', 'Mentions légales', 'Politique de confidentialité']
+const footerLinks = computed(() => [
+    { label: t('layout.footer.about'), to: '/a-propos' },
+    { label: t('layout.footer.legal'), to: '/mentions-legales' },
+    { label: t('layout.footer.privacy'), to: '/mentions-legales#confidentialite' },
+])
 
 function espaceUrl(): string {
     const role = authStore.userRole
@@ -54,16 +61,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <div class="nav-container">
                 <router-link to="/" class="nav-logo">UpCycleConnect</router-link>
                 <nav class="nav-links">
-                    <router-link to="/" class="nav-link" exact-active-class="nav-link--active">Accueil</router-link>
-                    <router-link to="/prestations" class="nav-link" active-class="nav-link--active">Prestations</router-link>
-                    <router-link to="/evenements" class="nav-link" active-class="nav-link--active">Évènements</router-link>
-                    <router-link to="/annonces" class="nav-link" active-class="nav-link--active">Annonces</router-link>
-                    <router-link to="/forum" class="nav-link" active-class="nav-link--active">Forum</router-link>
-                    <router-link to="/a-propos" class="nav-link" active-class="nav-link--active">À propos</router-link>
+                    <router-link to="/" class="nav-link" exact-active-class="nav-link--active">{{ t('layout.nav.home') }}</router-link>
+                    <router-link to="/prestations" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.prestations') }}</router-link>
+                    <router-link to="/evenements" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.events') }}</router-link>
+                    <router-link to="/annonces" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.listings') }}</router-link>
+                    <router-link to="/conseils" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.conseils') }}</router-link>
+                    <router-link to="/formations" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.formations') }}</router-link>
+                    <router-link to="/forum" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.forum') }}</router-link>
+                    <router-link to="/a-propos" class="nav-link" active-class="nav-link--active">{{ t('layout.nav.about') }}</router-link>
                 </nav>
 
                 <router-link v-if="!authStore.isAuthenticated" to="/auth/login" class="btn-nav">
-                    S'inscrire / Se connecter
+                    {{ t('layout.nav.login') }}
                 </router-link>
 
                 <div v-else class="user-dropdown" ref="dropdownRef">
@@ -82,14 +91,14 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                                 <rect x="10" y="7" width="4" height="14" />
                                 <rect x="17" y="3" width="4" height="18" />
                             </svg>
-                            Mon espace
+                            {{ t('layout.dropdown.mySpace') }}
                         </router-link>
                         <router-link :to="profilUrl()" class="dropdown-item" @click="dropdownOpen = false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                 <circle cx="12" cy="7" r="4" />
                             </svg>
-                            Mon profil
+                            {{ t('layout.dropdown.myProfile') }}
                         </router-link>
                         <div class="dropdown-divider"></div>
                         <button class="dropdown-item dropdown-item--danger" @click="logout">
@@ -98,7 +107,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                                 <polyline points="16 17 21 12 16 7" />
                                 <line x1="21" y1="12" x2="9" y2="12" />
                             </svg>
-                            Se déconnecter
+                            {{ t('layout.dropdown.logout') }}
                         </button>
                     </div>
                 </div>
@@ -112,18 +121,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-links-wrap">
-                    <a v-for="link in footerLinks" :key="link" href="#" class="footer-link">
-                        {{ link }}
-                    </a>
+                    <router-link v-for="link in footerLinks" :key="link.to" :to="link.to" class="footer-link">
+                        {{ link.label }}
+                    </router-link>
                 </div>
             </div>
             <div class="footer-bottom">
                 <div class="footer-container">
                     <span class="footer-logo">UpCycleConnect</span>
                     <div class="footer-lang">
-                        <span>Choisir la langue</span>
-                        <span class="lang-sep"> &nbsp;·&nbsp; </span>
-                        <span>Français</span>
+                        <LanguageSwitcher />
                     </div>
                 </div>
             </div>
@@ -152,7 +159,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     height: 68px;
     display: flex;
     align-items: center;
-    gap: 40px;
+    gap: 24px;
 }
 .nav-logo {
     font-weight: 800;
@@ -164,15 +171,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 }
 .nav-links {
     display: flex;
-    gap: 32px;
+    gap: 18px;
     flex: 1;
     justify-content: center;
+    min-width: 0;
 }
 .nav-link {
-    font-size: 0.875rem;
+    font-size: 0.82rem;
     color: var(--green-mid);
     text-decoration: none;
     font-weight: 400;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: color 0.2s;
 }
 .nav-link:hover {

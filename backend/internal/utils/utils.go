@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -19,7 +20,7 @@ func init() {
 	godotenv.Load()
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "oubliez-pas-le-soutien"
+		log.Fatal("JWT_SECRET environment variable must be set")
 	}
 	JwtSecret = []byte(secret)
 }

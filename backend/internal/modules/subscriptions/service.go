@@ -54,11 +54,17 @@ func (s *Service) ChoosePlan(userId int64, planId int64, siret string) error {
 	}
 
 	price, _ := p.Price.Float64Value()
+
+	until := time.Now().AddDate(0, 1, 0)
+	if p.BillingCycle == "yearly" || p.BillingCycle == "annual" {
+		until = time.Now().AddDate(1, 0, 0)
+	}
+
 	sub := Subscription{
 		SubscriberId: pgtype.Int8{Int64: userId, Valid: true},
 		Price:        price.Float64,
 		Tier:         p.Name,
-		Until:        pgtype.Date{Time: time.Now().AddDate(0, 1, 0), Valid: true},
+		Until:        pgtype.Date{Time: until, Valid: true},
 	}
 
 	id, err := s.repo.Create(sub)
