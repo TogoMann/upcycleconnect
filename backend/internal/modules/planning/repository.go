@@ -2,6 +2,7 @@ package planning
 
 import (
 	db "backend/internal/database"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,7 +18,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) GetUserPlanning(userId pgtype.Int8) ([]PlanningItem, error) {
 	rows, err := r.db.Query(db.Ctx, `
-		SELECT id, 'depot' as type, 'Dépôt d''objet' as title, '' as description, TO_CHAR(schedule, 'YYYY-MM-DD') as date, TO_CHAR(start, 'HH24:MI') as start_time, TO_CHAR(ending, 'HH24:MI') as end_time, '' as location
+		SELECT id, 'depot' as type, 'Dépôt d''objet' as title, '' as description, COALESCE(TO_CHAR(schedule, 'YYYY-MM-DD'), '') as date, COALESCE(TO_CHAR(start, 'HH24:MI'), '') as start_time, COALESCE(TO_CHAR(ending, 'HH24:MI'), '') as end_time, '' as location
 		FROM entry
 		WHERE created_by = $1
 

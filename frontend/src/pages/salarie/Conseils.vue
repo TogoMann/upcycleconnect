@@ -12,12 +12,14 @@ interface Article {
     title: string
     content: string
     created_at: string
+    categorie: string
+    statut: string
 }
 
 const articles = ref<Article[]>([])
 const showForm = ref(false)
 const editId = ref<number | null>(null)
-const form = ref({ title: '', content: '' })
+const form = ref({ title: '', content: '', categorie: '', statut: 'publie' })
 const loading = ref(false)
 const errorMsg = ref('')
 
@@ -36,14 +38,14 @@ onMounted(fetchConseils)
 
 function openCreate() {
     editId.value = null
-    form.value = { title: '', content: '' }
+    form.value = { title: '', content: '', categorie: '', statut: 'publie' }
     errorMsg.value = ''
     showForm.value = true
 }
 
 function openEdit(a: Article) {
     editId.value = a.id
-    form.value = { title: a.title, content: a.content }
+    form.value = { title: a.title, content: a.content, categorie: a.categorie || '', statut: a.statut || 'publie' }
     errorMsg.value = ''
     showForm.value = true
 }
@@ -125,6 +127,22 @@ async function supprimer(id: number) {
                     <label class="form-label">{{ t('salarie.conseils.content') }}</label>
                     <textarea v-model="form.content" class="form-input form-textarea" rows="6"></textarea>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Catégorie</label>
+                    <select v-model="form.categorie" class="form-input">
+                        <option value="">Choisir</option>
+                        <option value="upcycling">Upcycling</option>
+                        <option value="ecologie">Écologie</option>
+                        <option value="diy">DIY</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Statut</label>
+                    <select v-model="form.statut" class="form-input">
+                        <option value="publie">Publier immédiatement</option>
+                        <option value="brouillon">Brouillon</option>
+                    </select>
+                </div>
                 <div v-if="errorMsg" class="form-error">{{ errorMsg }}</div>
                 <div class="modal-actions">
                     <button class="btn-secondary" @click="showForm = false">{{ t('salarie.conseils.cancel') }}</button>
@@ -141,18 +159,26 @@ async function supprimer(id: number) {
                     <tr>
                         <th>{{ t('salarie.conseils.colTitle') }}</th>
                         <th>{{ t('salarie.conseils.colExcerpt') }}</th>
+                        <th>Catégorie</th>
                         <th>{{ t('salarie.conseils.colDate') }}</th>
+                        <th>Statut</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-if="articles.length === 0">
-                        <td colspan="4" class="empty">{{ t('salarie.conseils.empty') }}</td>
+                        <td colspan="6" class="empty">{{ t('salarie.conseils.empty') }}</td>
                     </tr>
                     <tr v-for="a in articles" :key="a.id">
                         <td class="td-bold">{{ a.title }}</td>
                         <td class="td-muted">{{ a.content.slice(0, 80) }}{{ a.content.length > 80 ? '…' : '' }}</td>
+                        <td class="td-muted">{{ a.categorie }}</td>
                         <td class="td-muted">{{ fmtDate(a.created_at) }}</td>
+                        <td>
+                            <span class="badge" :class="a.statut === 'publie' ? 'badge--active' : 'badge--draft'">
+                                {{ a.statut === 'publie' ? 'Publié' : 'Brouillon' }}
+                            </span>
+                        </td>
                         <td class="td-actions">
                             <button class="btn-icon" @click="openEdit(a)" :title="t('salarie.conseils.edit')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -204,6 +230,9 @@ async function supprimer(id: number) {
 .td-muted { opacity: 0.55; font-size: 0.85rem; }
 .td-actions { display: flex; gap: 8px; align-items: center; }
 .empty { text-align: center; opacity: 0.4; padding: 40px !important; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.badge--active { background: var(--green-pale); color: var(--green-dark); }
+.badge--draft { background: rgba(53,53,53,0.08); color: var(--charcoal); }
 .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1.5px solid rgba(53,53,53,0.12); background: transparent; cursor: pointer; color: var(--charcoal); transition: border-color 0.2s, color 0.2s; }
 .btn-icon svg { width: 14px; height: 14px; }
 .btn-icon:hover { border-color: var(--green-dark); color: var(--green-dark); }

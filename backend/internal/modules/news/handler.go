@@ -58,6 +58,29 @@ func (h *Handler) GetAllConseils(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", string(res))
 }
 
+func (h *Handler) GetAllConseilsPublic(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	posts, err := h.service.GetPublishedByType(string(Conseil))
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	res, _ := json.Marshal(posts)
+	fmt.Fprintf(w, "%s", string(res))
+}
+
+func (h *Handler) GetAllPublic(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	posts, err := h.service.GetAllPublished()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	res, _ := json.Marshal(posts)
+	fmt.Fprintf(w, "%s", string(res))
+}
+
 func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idStr := r.PathValue("id")
@@ -96,6 +119,9 @@ func (h *Handler) createWithType(w http.ResponseWriter, r *http.Request, newsTyp
 	}
 
 	newsDto.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
+	if newsDto.Status == "" {
+		newsDto.Status = "publie"
+	}
 	newsDto.Type = newsType
 
 	id, err := h.service.Create(newsDto)

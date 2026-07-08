@@ -36,12 +36,12 @@ func (s *Service) GetUserCourses(userId pgtype.Int8) ([]UserCourse, error) {
 	return s.repo.GetUserCourses(userId)
 }
 
-func (s *Service) GetCoursesByCreator(userId pgtype.Int8) ([]Course, error) {
-	return s.repo.GetCoursesByCreator(userId)
+func (s *Service) GetCreatedByUser(userId pgtype.Int8) ([]FormationListItem, error) {
+	return s.repo.GetCreatedByUser(userId)
 }
 
-func (s *Service) Create(c Course) (pgtype.Int8, error) {
-	return s.repo.Create(c)
+func (s *Service) Create(c Course, categorie string, duree string) (pgtype.Int8, error) {
+	return s.repo.Create(c, categorie, duree)
 }
 
 func (s *Service) Update(id pgtype.Int8, c Course) error {

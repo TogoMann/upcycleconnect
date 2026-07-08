@@ -11,9 +11,10 @@ import (
 	"sort"
 	"strconv"
 
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"time"
 )
 
 func normalizeTime(t string) string {
@@ -189,6 +190,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		StartTime   string         `json:"start_time"`
 		EndTime     string         `json:"end_time"`
 		MaxCapacity *int32         `json:"max_capacity"`
+		Duree       string         `json:"duree"`
 		Type        string         `json:"type"`
 		SessionLink string         `json:"session_link"`
 		Sessions    []sessionInput `json:"sessions"`
@@ -207,6 +209,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	price := input.Prix
 	if price == 0 {
 		price = input.Price
+	}
+	if price < 0 {
+		http.Error(w, "Le prix ne peut pas être négatif", http.StatusBadRequest)
+		return
+	}
+	if input.MaxCapacity != nil && *input.MaxCapacity < 0 {
+		http.Error(w, "La capacité maximale ne peut pas être négative", http.StatusBadRequest)
+		return
 	}
 
 	courseType := CourseType(input.Type)
@@ -238,7 +248,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	c.Price.UnmarshalJSON([]byte(fmt.Sprintf("%f", price)))
 	c.CreatedBy = pgtype.Int8{Int64: int64(sub), Valid: true}
 
-	id, err := h.service.Create(c)
+	id, err := h.service.Create(c, input.Categorie, input.Duree)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -309,6 +319,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		StartTime   string         `json:"start_time"`
 		EndTime     string         `json:"end_time"`
 		MaxCapacity *int32         `json:"max_capacity"`
+		Duree       string         `json:"duree"`
 		Type        string         `json:"type"`
 		SessionLink string         `json:"session_link"`
 		Sessions    []sessionInput `json:"sessions"`
@@ -327,6 +338,14 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	price := input.Prix
 	if price == 0 {
 		price = input.Price
+	}
+	if price < 0 {
+		http.Error(w, "Le prix ne peut pas être négatif", http.StatusBadRequest)
+		return
+	}
+	if input.MaxCapacity != nil && *input.MaxCapacity < 0 {
+		http.Error(w, "La capacité maximale ne peut pas être négative", http.StatusBadRequest)
+		return
 	}
 
 	courseType := CourseType(input.Type)
@@ -472,7 +491,7 @@ func (h *Handler) GetMyCourses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courses, err := h.service.GetCoursesByCreator(pgtype.Int8{Int64: int64(sub), Valid: true})
+	courses, err := h.service.GetCreatedByUser(pgtype.Int8{Int64: int64(sub), Valid: true})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

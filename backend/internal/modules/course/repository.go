@@ -2,6 +2,7 @@ package course
 
 import (
 	db "backend/internal/database"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -120,22 +121,6 @@ func (r *Repository) GetById(id pgtype.Int8) (*Course, error) {
 	return &course, nil
 }
 
-func (r *Repository) GetCoursesByCreator(userId pgtype.Int8) ([]Course, error) {
-	rows, err := r.db.Query(db.Ctx, `
-		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at,
-			c.price, c.date, c.start_time, c.end_time, c.status, c.correction_comment, c.type, c.session_link, c.end_date,
-			COALESCE(u.first_name || ' ' || u.last_name, '') as created_by_name
-		FROM course c
-		JOIN users u ON c.created_by = u.id
-		WHERE c.created_by = $1
-		ORDER BY c.created_at DESC
-	`, userId)
-	if err != nil {
-		return nil, err
-	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[Course])
-}
-
 func (r *Repository) GetUserCourses(userId pgtype.Int8) ([]UserCourse, error) {
 	rows, err := r.db.Query(db.Ctx, `
 		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at,
@@ -152,9 +137,27 @@ func (r *Repository) GetUserCourses(userId pgtype.Int8) ([]UserCourse, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[UserCourse])
 }
 
-func (r *Repository) Create(c Course) (pgtype.Int8, error) {
+func (r *Repository) GetCreatedByUser(userId pgtype.Int8) ([]FormationListItem, error) {
+	rows, err := r.db.Query(db.Ctx, `
+		SELECT c.id, c.name, c.description, c.max_capacity, c.created_by, c.created_at, c.approved, c.approved_by, c.approved_at,
+			c.price, c.date, c.start_time, c.end_time, c.status, c.correction_comment, c.type, c.session_link, c.end_date,
+			COALESCE(u.first_name || ' ' || u.last_name, '') as created_by_name,
+			COALESCE(c.categorie, '') as categorie,
+			COALESCE(c.duree, '') as duree,
+			(SELECT COUNT(*) FROM course_order WHERE course_id = c.id)::int as inscrits
+		FROM course c
+		JOIN users u ON c.created_by = u.id
+		WHERE c.created_by = $1
+		ORDER BY c.created_at DESC`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByName[FormationListItem])
+}
+
+func (r *Repository) Create(c Course, categorie string, duree string) (pgtype.Int8, error) {
 	var id int64
-	err := r.db.QueryRow(db.Ctx, "INSERT INTO course (name, description, max_capacity, created_by, price, date, start_time, end_time, status, approved, type, session_link, end_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id", c.Name, c.Description, c.MaxCapacity, c.CreatedBy, c.Price, c.Date, c.StartTime, c.EndTime, c.Status, c.Approved, c.Type, c.SessionLink, c.EndDate).Scan(&id)
+	err := r.db.QueryRow(db.Ctx, "INSERT INTO course (name, description, max_capacity, created_by, price, date, start_time, end_time, status, approved, type, session_link, end_date, categorie, duree) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id", c.Name, c.Description, c.MaxCapacity, c.CreatedBy, c.Price, c.Date, c.StartTime, c.EndTime, c.Status, c.Approved, c.Type, c.SessionLink, c.EndDate, categorie, duree).Scan(&id)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}

@@ -20,6 +20,8 @@ type NewsFrontend struct {
 	CreatedAt string `db:"created_at" json:"created_at"`
 	Upvotes   int32  `db:"upvotes" json:"upvotes"`
 	Downvotes int32  `db:"downvotes" json:"downvotes"`
+	Status    string `db:"status" json:"statut"`
+	Categorie string `db:"categorie" json:"categorie"`
 }
 
 type News struct {
@@ -31,4 +33,6 @@ type News struct {
 	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
 	Upvotes   int32            `db:"upvotes" json:"upvotes"`
 	Downvotes int32            `db:"downvotes" json:"downvotes"`
+	Status    string           `db:"status" json:"statut"`
+	Categorie string           `db:"categorie" json:"categorie"`
 }

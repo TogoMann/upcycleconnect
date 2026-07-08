@@ -23,6 +23,7 @@ const form = reactive({
     prix: '',
     max_capacity: '',
 })
+
 const error = ref('')
 const loading = ref(false)
 
@@ -369,11 +370,11 @@ async function submit() {
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">{{ t('salarie.formationForm.priceLabel') }}</label>
-                    <input v-model="form.prix" type="number" step="0.01" class="form-input" placeholder="0.00" />
+                    <input v-model="form.prix" type="number" step="0.01" min="0" class="form-input" placeholder="0.00" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">{{ t('salarie.formationForm.capacityLabel') }}</label>
-                    <input v-model="form.max_capacity" type="number" class="form-input" :placeholder="t('salarie.formationForm.capacityPlaceholder')" />
+                    <input v-model="form.max_capacity" type="number" min="0" class="form-input" :placeholder="t('salarie.formationForm.capacityPlaceholder')" />
                 </div>
             </div>
 

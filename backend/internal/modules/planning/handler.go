@@ -19,6 +19,13 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
+func normalizeTime(s string) string {
+	if len(s) == 5 {
+		return s + ":00"
+	}
+	return s
+}
+
 func (h *Handler) GetMyPlanning(w http.ResponseWriter, r *http.Request) {
 	claims, ok := r.Context().Value(middlewares.ClaimsKey).(jwt.MapClaims)
 	if !ok {
@@ -91,8 +98,8 @@ func (h *Handler) CreatePersonalEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e.StartTime.Scan(input.StartTime)
-	e.EndTime.Scan(input.EndTime)
+	e.StartTime.Scan(normalizeTime(input.StartTime))
+	e.EndTime.Scan(normalizeTime(input.EndTime))
 
 	if !e.StartTime.Valid {
 		e.StartTime.Scan("00:00:00")
